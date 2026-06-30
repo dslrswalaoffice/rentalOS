@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RentalOS — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16181d;--ink-2:#3c4150;--ink-3:#6b7280;--ink-4:#9aa1ad;
+  --surface:#fff;--panel:#f6f7f9;--panel-2:#eef0f4;--line:#e3e6ec;--line-2:#d3d7e0;
+  --brand:#2d44c7;--brand-ink:#1d2f96;--brand-wash:#eef1ff;
+  --ok:#1f9d57;--ok-wash:#e7f6ed;--warn:#b9791b;--warn-wash:#fbf1df;
+  --bad:#cc3340;--bad-wash:#fbe9eb;--pend:#7a8294;--pend-wash:#eef0f4;
+  --purple:#7c3aed;--purple-wash:#f3e8ff;--view:#0e1320;
+  --r:10px;--r-lg:14px;--sh:0 1px 2px rgba(16,18,29,.05),0 1px 1px rgba(16,18,29,.04);
+  --sh-lg:0 8px 30px rgba(16,18,29,.10);
+  --font:"Inter",system-ui,sans-serif;--disp:"Space Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--panel);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}a{color:inherit}::selection{background:var(--brand-wash)}
+
+.appbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:18px;height:58px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:-.01em}
+.logo{position:relative;width:26px;height:26px;flex:none}
+.logo::before,.logo::after{content:"";position:absolute;width:8px;height:8px;border:2px solid var(--brand)}
+.logo::before{top:0;left:0;border-right:0;border-bottom:0}.logo::after{bottom:0;right:0;border-left:0;border-top:0}
+.logo i{position:absolute;inset:7px;border-radius:50%;background:var(--brand);display:block}
+.brand small{font-family:var(--font);font-weight:500;font-size:11px;color:var(--ink-4)}
+.appbar .spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 11px;color:var(--ink-4);width:240px;max-width:26vw}
+.search input{border:0;background:transparent;outline:none;font-family:inherit;font-size:13px;color:var(--ink);width:100%}
+.roleswitch{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px}
+.roleswitch button{border:0;background:transparent;color:var(--ink-3);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:6px;transition:.12s}
+.roleswitch button.on{background:var(--surface);color:var(--brand-ink);box-shadow:var(--sh);font-weight:600}
+.who{display:flex;align-items:center;gap:9px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:600;font-size:12px}
+.who b{font-size:13px;font-weight:600;display:block;line-height:1.1}.who span{font-size:11px;color:var(--ink-4)}
+
+.layout{display:flex;min-height:calc(100vh - 58px)}
+.side{width:222px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:12px 12px;position:sticky;top:58px;height:calc(100vh - 58px);overflow:auto}
+.side .grp{font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-4);padding:13px 10px 5px}
+.nav{border:0;background:transparent;width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;color:var(--ink-2);font-size:13px;font-weight:500;transition:.1s;margin-bottom:1px}
+.nav:hover{background:var(--panel)}.nav.on{background:var(--brand-wash);color:var(--brand-ink);font-weight:600}
+.nav svg{flex:none}.nav .tag{margin-left:auto;font-size:10px;font-weight:600;color:#fff;background:var(--bad);border-radius:20px;padding:1px 7px}
+.main{flex:1;min-width:0;padding:24px 28px 60px}
+
+.ribbon{background:var(--warn-wash);border:1px solid #efdcb6;color:#8a5d12;font-size:12px;font-weight:500;padding:7px 14px;border-radius:8px;margin-bottom:20px;display:flex;gap:8px;align-items:center}
+.h1{font-family:var(--disp);font-size:22px;font-weight:600;letter-spacing:-.015em;margin:0}
+.sub{color:var(--ink-3);font-size:13.5px;margin:3px 0 0}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.btn{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:550;display:inline-flex;align-items:center;gap:7px;transition:.12s}
+.btn:hover{background:var(--panel)}.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}.btn.pri:hover{background:var(--brand-ink)}
+.btn.sm{padding:6px 11px;font-size:12px}.btn:disabled{opacity:.5;cursor:not-allowed}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh)}.card.pad{padding:18px}
+.grid{display:grid;gap:16px}.mono{font-family:var(--mono);font-feature-settings:"tnum"}.muted{color:var(--ink-3)}
+.sectionlabel{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);margin:0 0 10px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;box-shadow:var(--sh)}
+.kpi .lbl{font-size:12px;color:var(--ink-3);font-weight:500}
+.kpi .val{font-family:var(--disp);font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:8px}
+.kpi .val small{font-family:var(--mono);font-size:13px;color:var(--ink-4);font-weight:500}
+.kpi .delta{font-size:11.5px;font-weight:600;margin-top:5px}
+.delta.up{color:var(--ok)}.delta.down{color:var(--bad)}.delta.flat{color:var(--ink-4)}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-4);padding:10px 14px;border-bottom:1px solid var(--line)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line)}.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr{transition:.08s}.tbl tbody tr:hover{background:var(--panel)}.tbl .clickable{cursor:pointer}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+.chip.ok{color:var(--ok);background:var(--ok-wash)}.chip.warn{color:var(--warn);background:var(--warn-wash)}
+.chip.bad{color:var(--bad);background:var(--bad-wash)}.chip.pend{color:var(--pend);background:var(--pend-wash)}
+.chip.brand{color:var(--brand-ink);background:var(--brand-wash)}.chip.purple{color:var(--purple);background:var(--purple-wash)}
+.chip.plain::before{display:none}
+.tierbadge{font-size:11px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:6px}
+.tier-vip{background:#f3e8ff;color:#6b21a8}.tier-premium{background:#fff4e0;color:#92600c}.tier-normal{background:var(--panel-2);color:var(--ink-2)}
+
+.steps{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:4px 0}
+.step{display:flex;align-items:center;gap:8px;font-size:12px}
+.step .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line-2);background:var(--surface);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--ink-4)}
+.step.done .dot{background:var(--ok);border-color:var(--ok);color:#fff}
+.step.now .dot{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 0 0 4px var(--brand-wash)}
+.step .nm{font-weight:550;color:var(--ink-3)}.step.done .nm,.step.now .nm{color:var(--ink)}
+.step .bar{width:30px;height:2px;background:var(--line-2);margin:0 4px}.step.done .bar{background:var(--ok)}
+
+.bar-track{height:8px;background:var(--panel-2);border-radius:20px;overflow:hidden}.bar-fill{height:100%;border-radius:20px;background:var(--brand)}
+.gauge{--p:0;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--brand) calc(var(--p)*1%),var(--panel-2) 0);display:grid;place-items:center;position:relative;flex:none}
+.gauge::after{content:"";position:absolute;inset:12px;background:var(--surface);border-radius:50%}.gauge b{position:relative;font-family:var(--disp);font-size:26px;font-weight:600}
+
+.tl{list-style:none;margin:0;padding:0;position:relative}
+.tl::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl li{position:relative;padding:0 0 16px 28px}
+.tl li::before{content:"";position:absolute;left:2px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--brand)}
+.tl li.muted::before{border-color:var(--line-2)}.tl .t{font-size:11px;color:var(--ink-4);font-family:var(--mono)}.tl .m{font-size:13px;margin-top:1px}
+
+.scanwrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px}
+.viewer{position:relative;background:var(--view);border-radius:var(--r-lg);overflow:hidden;aspect-ratio:4/3;display:grid;place-items:center}
+.viewer .feed{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 40%,#1b2436 0%,#0c111c 70%);opacity:.9}
+.frame{position:relative;width:60%;aspect-ratio:1}
+.frame span{position:absolute;width:26px;height:26px;border:3px solid rgba(255,255,255,.85)}
+.frame span:nth-child(1){top:0;left:0;border-right:0;border-bottom:0}.frame span:nth-child(2){top:0;right:0;border-left:0;border-bottom:0}
+.frame span:nth-child(3){bottom:0;left:0;border-right:0;border-top:0}.frame span:nth-child(4){bottom:0;right:0;border-left:0;border-top:0}
+.scanline{position:absolute;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,#5cf2a6,transparent);box-shadow:0 0 12px #5cf2a6;animation:scan 2.4s ease-in-out infinite}
+@keyframes scan{0%,100%{top:14%}50%{top:84%}}
+.viewer .hint{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:rgba(255,255,255,.6);font-size:11.5px;font-family:var(--mono)}
+.scanmsg{position:absolute;top:12px;left:12px;right:12px;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:600;display:none;align-items:center;gap:8px}
+.scanmsg.show{display:flex}.scanmsg.good{background:rgba(31,157,87,.92);color:#fff}.scanmsg.err{background:rgba(204,51,64,.94);color:#fff}
+.checklist{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh);overflow:hidden}
+.checklist .ch-h{padding:14px 16px;border-bottom:1px solid var(--line)}
+.grouplbl{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);padding:11px 16px 4px;background:var(--panel)}
+.slot{display:flex;align-items:center;gap:11px;padding:10px 16px;border-bottom:1px solid var(--line)}.slot:last-child{border-bottom:0}
+.slot .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--line-2);flex:none;display:grid;place-items:center;color:#fff;font-size:13px;transition:.15s}
+.slot.done .box{background:var(--ok);border-color:var(--ok)}.slot.off{opacity:.45}
+.slot .nm{font-weight:550;font-size:13px}.slot .qty{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-3)}.slot.done .qty{color:var(--ok);font-weight:600}
+.mini{border:1px solid var(--line-2);background:var(--surface);border-radius:6px;font-size:11px;padding:3px 8px;margin-left:auto}
+.scanbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.scanbtns .btn{padding:7px 11px;font-size:12px}
+
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;font-size:12px;font-weight:550;color:var(--ink-3);padding:5px 10px;border-radius:6px}
+.seg button.on{background:var(--surface);box-shadow:var(--sh);color:var(--ink)}
+.seg button.on[data-sev="bad"]{color:var(--bad)}.seg button.on[data-sev="warn"]{color:var(--warn)}.seg button.on[data-sev="ok"]{color:var(--ok)}
+.toggle{width:38px;height:22px;border-radius:20px;background:var(--line-2);position:relative;border:0;flex:none;transition:.15s}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s;box-shadow:var(--sh)}
+.toggle.on{background:var(--brand)}.toggle.on::after{left:18px}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--line-2);border-radius:20px;padding:4px 10px;color:var(--ink-2)}
+.chk.on{background:var(--brand-wash);border-color:var(--brand);color:var(--brand-ink);font-weight:600}
+.input{border:1px solid var(--line-2);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:13px;width:100%;outline:none}
+.input:focus{border-color:var(--brand)}
+.photo{width:54px;height:54px;border-radius:8px;border:1px dashed var(--line-2);display:grid;place-items:center;color:var(--ink-4);font-size:11px;background:var(--panel)}
+
+.drawer-bg{position:fixed;inset:0;background:rgba(16,18,29,.4);z-index:60;display:none}.drawer-bg.show{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:540px;max-width:94vw;background:var(--surface);z-index:61;transform:translateX(100%);transition:.22s cubic-bezier(.4,0,.2,1);overflow:auto;box-shadow:var(--sh-lg)}
+.drawer.show{transform:none}
+.drawer .dh{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);padding:18px 22px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;z-index:1}
+.drawer .db{padding:20px 22px}
+.x{border:0;background:var(--panel);width:30px;height:30px;border-radius:8px;color:var(--ink-3);font-size:16px}.x:hover{background:var(--panel-2)}
+
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.fact{background:var(--panel);border-radius:10px;padding:12px 14px}.fact .k{font-size:11px;color:var(--ink-4);font-weight:500}
+.fact .v{font-family:var(--disp);font-size:17px;font-weight:600;margin-top:3px}.fact .v.mono{font-family:var(--mono);font-size:15px}
+.cols{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.barchart{display:flex;align-items:flex-end;gap:8px;height:140px;padding-top:10px}
+.barchart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.barchart .col .b{width:100%;max-width:34px;background:var(--brand);border-radius:5px 5px 0 0}.barchart .col .b.alt{background:var(--brand-wash);border:1px solid var(--line-2)}
+.barchart .col small{font-size:10.5px;color:var(--ink-4);font-family:var(--mono)}
+.catcard{border:1px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;transition:.12s}
+.catcard:hover{border-color:var(--line-2);background:var(--panel)}.catcard.on{border-color:var(--brand);background:var(--brand-wash)}
+.catcard b{font-family:var(--disp);font-size:15px}.catcard p{margin:6px 0 0;font-size:12px;color:var(--ink-3)}
+.flagrow{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}.flagrow:last-child{border-bottom:0}
+.empty{text-align:center;padding:50px 20px;color:var(--ink-4)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:10px;box-shadow:var(--sh-lg);opacity:0;transition:.2s;z-index:80;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:1000px){.cols,.cols3{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.scanwrap{grid-template-columns:1fr}}
+@media(max-width:680px){.kpis{grid-template-columns:1fr}.side{display:none}.main{padding:18px 16px 50px}}
+</style>
+</head>
+<body>
+
+<div class="appbar">
+  <div class="brand"><span class="logo"><i></i></span> RentalOS <small>prototype</small></div>
+  <div class="spacer"></div>
+  <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search…"></label>
+  <div class="roleswitch" id="roleswitch">
+    <button data-role="admin" class="on">Admin</button>
+    <button data-role="staff">Staff</button>
+    <button data-role="client">Client</button>
+    <button data-role="investor">Investor</button>
+  </div>
+  <div class="who"><div class="avatar" id="avatar">A</div><div><b id="whoName">Aamir</b><span id="whoRole">Admin</span></div></div>
+</div>
+
+<div class="layout"><aside class="side" id="side"></aside><main class="main" id="main"></main></div>
+<div class="drawer-bg" id="drawerbg" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const inr=n=>"₹"+Number(n).toLocaleString("en-IN");
+const lakh=n=>"₹"+(n/100000).toFixed(2)+"L";
+const $=s=>document.querySelector(s);
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove("show"),2200);}
+
+/* ============================ MOCK DATA ============================ */
+const DATA={
+  revenueMonths:[{m:"Jan",v:62},{m:"Feb",v:71},{m:"Mar",v:88},{m:"Apr",v:79},{m:"May",v:94},{m:"Jun",v:108}],
+  bookings:[
+    {id:"BK-2406-118",client:"Touchstone Films",tier:"vip",stage:"open",items:4,terminal:3,start:"24 Jun",end:"28 Jun",amount:148000,gear:"FX3 ×2, A7M4, RS4 Pro",overdue:false,proxy:"Imran Q. (+91 98xxx 4410)"},
+    {id:"BK-2406-117",client:"Rahul Mehta",tier:"normal",stage:"dispatched",items:2,terminal:0,start:"26 Jun",end:"29 Jun",amount:11800,gear:"A7III kit, FE 24-70 GM",overdue:false,proxy:""},
+    {id:"BK-2406-115",client:"Hazel Eyes Production",tier:"premium",stage:"finalised",items:5,terminal:5,start:"20 Jun",end:"25 Jun",amount:96000,gear:"FX6, 2× wireless mic, lights",overdue:false,proxy:""},
+    {id:"BK-2406-112",client:"Priya Nair",tier:"normal",stage:"open",items:1,terminal:0,start:"19 Jun",end:"22 Jun",amount:5400,gear:"Godox TT520 ×2",overdue:true,proxy:""},
+    {id:"BK-2406-109",client:"Studio Verde",tier:"premium",stage:"tax",items:3,terminal:3,start:"14 Jun",end:"18 Jun",amount:42000,gear:"R6 II, FC500C, tripod",overdue:false,proxy:""},
+    {id:"BK-2406-104",client:"Touchstone Films",tier:"vip",stage:"closed",items:6,terminal:6,start:"06 Jun",end:"12 Jun",amount:214000,gear:"FX3 ×2, FX6, GM trio",overdue:false,proxy:""},
+  ],
+  assets:[
+    {qr:"QR-FX3-001",name:"Sony FX3 #1",type:"Body",rate:2999,owner:"Investor · Vinay",cond:"good",avail:false,buy:256000,date:"15 Nov 24",rentals:18,gross:66237,net:58200,util:72,warranty:"Nov 26"},
+    {qr:"QR-A7M4-002",name:"Sony A7M4 #2",type:"Body",rate:2499,owner:"Business",cond:"good",avail:true,buy:189000,date:"02 Feb 25",rentals:31,gross:74400,net:69100,util:58,warranty:"Feb 27"},
+    {qr:"QR-R6-001",name:"Canon R6 II #1",type:"Body",rate:2299,owner:"Investor · Vinay",cond:"minor",avail:true,buy:175000,date:"20 Mar 25",rentals:12,gross:28800,net:24300,util:41,warranty:"Mar 27"},
+    {qr:"QR-RS4-001",name:"DJI RS4 Pro #1",type:"Gimbal",rate:1499,owner:"Business",cond:"good",avail:false,buy:62000,date:"11 Apr 25",rentals:22,gross:33000,net:31900,util:66,warranty:"Apr 26"},
+    {qr:"QR-GODOX-3",name:"Godox TT520 #3",type:"Flash",rate:599,owner:"Business",cond:"good",avail:true,buy:7800,date:"30 May 25",rentals:9,gross:5400,net:5100,util:34,warranty:"May 26"},
+  ],
+  clients:[
+    {name:"Touchstone Films",tier:"vip",company:"Touchstone Films Pvt Ltd",gst:"24AABCT…1Z5",trust:96,level:"Trusted",rentals:34,spent:2140000,outstanding:148000,flags:[],phone:"+91 98250 11111",phone2:"+91 99250 22222",fav:"Sony FX3, FX6",advance:0},
+    {name:"Hazel Eyes Production",tier:"premium",company:"Hazel Eyes",gst:"24AAECH…2Z1",trust:71,level:"Established",rentals:11,spent:412000,outstanding:0,flags:["watchlist"],phone:"+91 99099 22222",phone2:"",fav:"FX6, wireless mics",advance:40},
+    {name:"Rahul Mehta",tier:"normal",company:"",gst:"",trust:18,level:"Building",rentals:4,spent:38000,outstanding:0,flags:[],phone:"+91 91234 33333",phone2:"",fav:"A7III, 24-70 GM",advance:0},
+    {name:"Dev Khurana",tier:"normal",company:"",gst:"",trust:-12,level:"New",rentals:1,spent:4200,outstanding:8800,flags:["blacklist"],phone:"+91 90000 99999",phone2:"",fav:"—",advance:0},
+  ],
+  investors:[{name:"Vinay Chandnani",assets:9,gross:118400,share:50,due:59200,settled:40000}],
+  maintenance:[
+    {qr:"QR-R6-001",name:"Canon R6 II #1",reason:"Rental count ≥ 40",cat:"Optical",pct:100},
+    {qr:"QR-A7III-04",name:"Sony A7III #4",reason:"180-day cycle",cat:"Electronic",pct:88},
+  ],
+  trustLevels:[
+    {nm:"New",range:"0–2 rentals",items:"1",days:"3",hv:"Blocked",cap:"Admin-set"},
+    {nm:"Building",range:"3–6 rentals",items:"2",days:"5",hv:"1 · approval",cap:"Raised"},
+    {nm:"Established",range:"7–14 rentals",items:"4",days:"10",hv:"Allowed",cap:"Significantly raised"},
+    {nm:"Trusted",range:"15+ rentals",items:"No cap",days:"No cap",hv:"Unrestricted",cap:"No cap"},
+  ],
+  deposits:[
+    {bk:"BK-2406-118",client:"Touchstone Films",amount:50000,status:"held"},
+    {bk:"BK-2406-115",client:"Hazel Eyes Production",amount:25000,status:"refunded"},
+    {bk:"BK-2406-112",client:"Priya Nair",amount:8000,status:"forfeit"},
+  ],
+  tenants:[
+    {nm:"DSLRswala",cat:"Camera / AV",plan:"Self · owner",status:"active"},
+    {nm:"Pune Lens Co.",cat:"Camera / AV",plan:"SaaS · monthly",status:"active"},
+    {nm:"RideOn Rentals",cat:"Car / Bike",plan:"SaaS · annual",status:"trial"},
+  ],
+  categories:[
+    {nm:"Camera / AV",on:true,f:"Kit manifests · serial tracking · QR sub-components · sensor/optical/firmware checks · card compatibility"},
+    {nm:"Car / Bike",on:false,f:"Odometer start/end · fuel level · driving licence verify · condition photos both ends"},
+    {nm:"Gaming",on:false,f:"Controller count · disc/title list · console serial · software licences"},
+    {nm:"Laptop / PC",on:false,f:"Hardware specs · data-wipe confirm · licence list · battery health"},
+    {nm:"Custom",on:false,f:"Admin-defined fields — any category, configurable attributes"},
+  ],
+};
+/* scan kit: mandatory / optional-included (opt-out) / optional-excluded (add) */
+const KIT={
+  mandatory:[{type:"FX3_BODY",nm:"Sony FX3 Body",need:1},{type:"NP_FZ100",nm:"Sony NP-FZ100 Battery",need:3},{type:"CFAST_512",nm:"512GB CFexpress Type-A",need:2},{type:"FX3_BAG",nm:"FX3 Carry Bag",need:1}],
+  optInc:[{type:"LED_LIGHT",nm:"LED Video Light + stand",need:1,included:true}],
+  optExc:[{type:"EXTRA_CARD",nm:"Extra CFexpress 512",need:1,added:false}],
+};
+const RETURN_ITEMS=[{nm:"Sony FX3 #1"},{nm:"Sony FX3 #2"},{nm:"Sony A7M4 #2"},{nm:"DJI RS4 Pro #1"}];
+
+/* ============================ NAV ============================ */
+const NAVS={
+  admin:[
+    {g:"Operate",items:[["dashboard","Dashboard","grid"],["bookings","Bookings","cal"],["scan","Scan & dispatch","scan",2],["returns","Returns & condition","ret"],["inventory","Inventory","box"],["invoices","Invoices","doc"],["deposits","Deposits","coin"]]},
+    {g:"Relationships",items:[["clients","Clients 360","user"],["trust","Trust & guardrails","shield"],["investors","Investors","bank"]]},
+    {g:"Intelligence",items:[["maintenance","Maintenance","wrench",2],["analytics","Analytics","chart"]]},
+    {g:"Growth",items:[["offers","Offers & coupons","tag"],["notifications","Notifications","bell",2]]},
+    {g:"Operations",items:[["audit","Stock audit","scan2"]]},
+    {g:"Platform",items:[["settings","Settings & categories","cog"],["tenants","Tenants · SaaS","layers"]]},
+  ],
+  staff:[
+    {g:"Operate",items:[["dashboard","Dashboard","grid"],["bookings","Bookings","cal"],["scan","Scan & dispatch","scan",2],["returns","Returns & condition","ret"],["inventory","Inventory","box"],["invoices","Invoices","doc"],["deposits","Deposits","coin"]]},
+    {g:"Relationships",items:[["clients","Clients 360","user"]]},
+    {g:"Operations",items:[["audit","Stock audit","scan2"]]},
+  ],
+  client:[{g:"My account",items:[["chome","Home","grid"],["cbookings","My bookings","cal"],["cquotes","Quotes","doc"],["cinvoices","Invoices & TDS","bank"],["cdeposits","Deposits","coin"],["cwishlist","Wishlist","tag"]]}],
+  investor:[{g:"Investor portal",items:[["ihome","My assets","box"],["iearnings","Earnings","chart"],["isettle","Settlements","bank"]]}],
+};
+const ICONS={grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  cal:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',scan:'<path d="M4 7V5a1 1 0 0 1 1-1h2M20 7V5a1 1 0 0 0-1-1h-2M4 17v2a1 1 0 0 0 1 1h2M20 17v2a1 1 0 0 1-1 1h-2M7 12h10"/>',
+  scan2:'<path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M11 8v8M15 8v8"/>',ret:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>',
+  box:'<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/>',doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  coin:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  bank:'<path d="M3 10l9-6 9 6M5 10v8M19 10v8M3 20h18M9 10v8M15 10v8"/>',wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5l-6 6 2.4 2.4 6-6a4 4 0 0 0 5-5.4l-2.5 2.5-2-2 2.5-2.5z"/>',
+  chart:'<path d="M3 3v18h18M7 15l3-4 3 3 5-7"/>',tag:'<path d="M3 3h7l11 11-7 7L3 10V3z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  cog:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 2h-4l-.4 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1z"/>',
+  layers:'<path d="M12 2l9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/>'};
+
+let ROLE="admin",VIEW="dashboard";
+function setRole(r){ROLE=r;
+  document.querySelectorAll("#roleswitch button").forEach(b=>b.classList.toggle("on",b.dataset.role===r));
+  const map={admin:["Aamir","Admin","A"],staff:["Shoaib","Staff","S"],client:["Touchstone Films","VIP client","T"],investor:["Vinay Chandnani","Investor","V"]};
+  $("#whoName").textContent=map[r][0];$("#whoRole").textContent=map[r][1];$("#avatar").textContent=map[r][2];
+  VIEW=NAVS[r][0].items[0][0];renderSide();render();}
+function renderSide(){let h="";NAVS[ROLE].forEach(grp=>{h+=`<div class="grp">${grp.g}</div>`;
+  grp.items.forEach(([k,label,ic,alert])=>{h+=`<button class="nav ${k===VIEW?'on':''}" onclick="go('${k}')">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICONS[ic]}</svg>
+    ${label}${alert?'<span class="tag">'+alert+'</span>':''}</button>`;});});$("#side").innerHTML=h;}
+function go(v){VIEW=v;renderSide();render();window.scrollTo({top:0,behavior:"smooth"});}
+function render(){$("#main").innerHTML=(VIEWS[VIEW]||(()=>'<div class="empty">Coming soon</div>'))();afterRender();}
+
+/* ============================ COMPONENTS ============================ */
+const tier=t=>`<span class="tierbadge tier-${t}">${t.toUpperCase()}</span>`;
+const stageChip=s=>{const m={quote:["pend","Quote"],confirmed:["brand","Confirmed"],dispatched:["brand","Dispatched"],open:["warn","Open"],finalised:["ok","Finalised"],tax:["ok","Tax invoice"],paid:["ok","Paid"],closed:["pend","Closed"]};const[c,l]=m[s]||["pend",s];return `<span class="chip ${c}">${l}</span>`;};
+const ribbon=`<div class="ribbon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Visual prototype — mock data, not wired to the backend. Shows RentalOS at full build across every brief module.</div>`;
+
+const VIEWS={};
+
+/* ---------- DASHBOARD ---------- */
+VIEWS.dashboard=()=>`${ribbon}
+  <div class="head"><div><h1 class="h1">Good evening, ${ROLE==='admin'?'Aamir':'Shoaib'}</h1><p class="sub">Friday, 27 June 2026 · 6 gear items out · 3 overdue</p></div>
+    <button class="btn pri" onclick="go('scan')">Start scan session</button></div>
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi"><div class="lbl">Revenue · this month</div><div class="val">${lakh(1480000)}</div><div class="delta up">▲ 14.9% vs May</div></div>
+    <div class="kpi"><div class="lbl">Fleet utilisation</div><div class="val">64<small>%</small></div><div class="delta up">▲ 6 pts</div></div>
+    <div class="kpi"><div class="lbl">Overdue items</div><div class="val">3</div><div class="delta down">2 past grace</div></div>
+    <div class="kpi"><div class="lbl">Outstanding dues</div><div class="val">${lakh(12600000)}</div><div class="delta flat">25% of H1 revenue</div></div></div>
+  <div class="cols">
+    <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><p class="sectionlabel" style="margin:0">Revenue · last 6 months (₹ lakh)</p><span class="chip ok plain">Trending up</span></div>
+      <div class="barchart">${DATA.revenueMonths.map((d,i)=>`<div class="col"><div class="b ${i===5?'':'alt'}" style="height:${d.v}%"></div><small>${d.m}</small></div>`).join("")}</div></div>
+    <div class="card pad"><p class="sectionlabel">Needs attention</p><ul class="tl">
+      <li><div class="t">past grace · 2 days</div><div class="m"><b>Godox TT520 ×2</b> overdue — Priya Nair</div></li>
+      <li><div class="t">maintenance flag</div><div class="m">Canon R6 II hit 40-rental optical check</div></li>
+      <li class="muted"><div class="t">review queue · 2</div><div class="m">Birthday + re-engagement offers awaiting approval</div></li>
+      <li class="muted"><div class="t">settlement due</div><div class="m">Vinay investor share ${inr(59200)} for June</div></li></ul></div></div>
+  <div class="card" style="margin-top:16px"><div style="padding:16px 18px;border-bottom:1px solid var(--line)"><p class="sectionlabel" style="margin:0">Active bookings</p></div>
+    ${bookingsTable(DATA.bookings.filter(b=>b.stage!=="closed"))}</div>`;
+
+function bookingsTable(rows){return `<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Stage</th><th>Items</th><th>Dates</th><th>Estimate</th></tr></thead><tbody>
+  ${rows.map(b=>`<tr class="clickable" onclick='openBooking("${b.id}")'>
+    <td class="mono">${b.id}${b.overdue?' <span class="chip bad" style="margin-left:4px">overdue</span>':''}</td>
+    <td>${b.client} ${tier(b.tier)}</td><td>${stageChip(b.stage)}</td>
+    <td><span class="mono">${b.terminal}/${b.items}</span> <span class="muted">closed</span></td>
+    <td class="muted">${b.start} – ${b.end}</td><td class="mono">${inr(b.amount)}</td></tr>`).join("")}</tbody></table>`;}
+
+/* ---------- BOOKINGS ---------- */
+VIEWS.bookings=()=>`<div class="head"><div><h1 class="h1">Bookings</h1><p class="sub">Item-level status · a booking stays open until every item is terminal</p></div><button class="btn pri" onclick="toast('Quote builder — prototype')">+ New quote</button></div><div class="card">${bookingsTable(DATA.bookings)}</div>`;
+
+/* ---------- SCAN & DISPATCH ---------- */
+VIEWS.scan=()=>`<div class="head"><div><h1 class="h1">Scan & dispatch</h1><p class="sub">Sony FX3 Kit · BK-2406-118 · every mandatory component must be scanned before OTP</p></div><span class="chip brand plain">Bluetooth scanner ready</span></div>
+  <div class="scanwrap"><div>
+    <div class="viewer"><div class="feed"></div><div class="scanmsg" id="scanmsg"></div><div class="frame"><span></span><span></span><span></span><span></span><div class="scanline"></div></div><div class="hint">Live camera — point at any component, no button between scans</div></div>
+    <div class="scanbtns">${KIT.mandatory.map(k=>`<button class="btn" onclick="scanItem('${k.type}')">Scan ${k.nm.split(' ')[1]||k.nm}</button>`).join("")}
+      <button class="btn" onclick="scanItem('LED_LIGHT')">Scan LED Light</button>
+      <button class="btn" style="border-color:var(--bad);color:var(--bad)" onclick="scanWrong()">Scan wrong item</button>
+      <button class="btn" onclick="resetScan()">Reset</button></div></div>
+    <div class="checklist"><div class="ch-h"><b style="font-family:var(--disp)">Kit checklist</b><div class="muted" style="font-size:12px;margin-top:2px" id="kitstatus"></div></div>
+      <div id="slots"></div>
+      <div style="padding:14px 16px"><button class="btn pri" id="otpbtn" style="width:100%" disabled onclick="toast('Dispatch OTP sent to account holder via WhatsApp')">Send dispatch OTP</button>
+        <p class="muted" style="font-size:11.5px;margin:9px 0 0;text-align:center">Locked until all mandatory + included components are green</p></div></div></div>`;
+
+/* ---------- RETURNS & CONDITION ---------- */
+VIEWS.returns=()=>`<div class="head"><div><h1 class="h1">Returns & condition</h1><p class="sub">BK-2406-118 · partial returns allowed — unresolved items stay open</p></div><span class="chip warn plain">3 of 4 scanned in</span></div>
+  <div class="card" style="margin-bottom:16px"><div style="padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+    <p class="sectionlabel" style="margin:0">Condition check — one row per item</p><span class="muted" style="font-size:12px">Photo required if any damage noted</span></div>
+    <div id="retlist"></div></div>
+  <div class="card pad" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div><b>Item 4 · DJI RS4 Pro</b> <span class="chip pend plain">not handed over</span><div class="muted" style="font-size:12px">Mark non-chargeable at ₹0 with a note — booking stays open only for this item</div></div>
+    <button class="btn pri" onclick="toast('Return OTP sent — items set to terminal status')">Confirm return OTP</button></div>`;
+
+/* ---------- INVENTORY ---------- */
+VIEWS.inventory=()=>`<div class="head"><div><h1 class="h1">Inventory</h1><p class="sub">${DATA.assets.length} sample assets · each carries a full financial biography</p></div><button class="btn pri" onclick="toast('Asset + QR generator — prototype')">+ Add asset</button></div>
+  <div class="card"><table class="tbl"><thead><tr><th>QR / Asset</th><th>Type</th><th>Rate/day</th><th>Owner</th><th>Condition</th><th>Status</th><th>Net rev</th><th>Util</th></tr></thead><tbody>
+  ${DATA.assets.map(a=>`<tr class="clickable" onclick='openAsset("${a.qr}")'>
+    <td><div class="mono" style="font-size:12px">${a.qr}</div><div>${a.name}</div></td><td class="muted">${a.type}</td>
+    <td class="mono">${inr(a.rate)}</td><td class="muted">${a.owner}</td>
+    <td>${a.cond==='good'?'<span class="chip ok">Good</span>':'<span class="chip warn">Minor</span>'}</td>
+    <td>${a.avail?'<span class="chip ok plain">Available</span>':'<span class="chip brand plain">On rent</span>'}</td>
+    <td class="mono">${inr(a.net)}</td>
+    <td style="min-width:90px"><div class="bar-track"><div class="bar-fill" style="width:${a.util}%"></div></div><small class="muted mono">${a.util}%</small></td></tr>`).join("")}</tbody></table></div>`;
+
+/* ---------- INVOICES ---------- */
+VIEWS.invoices=()=>`<div class="head"><div><h1 class="h1">Invoices</h1><p class="sub">A living document until every item is accounted for</p></div></div>
+  <div class="card pad" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <div><div class="mono muted" style="font-size:12px">INV · BK-2406-117</div><b style="font-family:var(--disp);font-size:17px">Rahul Mehta</b> ${tier('normal')}</div>
+      <div style="text-align:right"><div class="muted" style="font-size:12px">Total estimate</div><div class="mono" style="font-size:18px;font-weight:600">${inr(11800)}</div></div></div>
+    <div class="steps">${["Quote","Confirmed","Dispatched","Open","Finalised","Tax Invoice","Paid","Closed"].map((s,i)=>{const cls=i<2?'done':i===2?'now':'';return `<div class="step ${cls}"><span class="dot">${i<2?'✓':i+1}</span><span class="nm">${s}</span></div>${i<7?'<span class="bar"></span>':''}`;}).join("")}</div>
+    <p class="muted" style="font-size:12.5px;margin:14px 0 0">Currently <b>Dispatched</b> — invoice draft created, clock started. Stays mutable through Open; finalises only when every item hits a terminal status.</p></div>
+  <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div><span class="chip brand plain">VIP consolidated</span><b style="font-family:var(--disp);font-size:16px;margin-left:8px">Touchstone Films — June ledger</b></div><span class="muted" style="font-size:12px">Period 01–30 Jun</span></div>
+    <table class="tbl" style="margin:8px 0"><thead><tr><th>Booking</th><th>Gear</th><th>Charge</th></tr></thead><tbody>
+      <tr><td class="mono">BK-2406-104</td><td>FX3 ×2, FX6, GM trio</td><td class="mono">${inr(214000)}</td></tr>
+      <tr><td class="mono">BK-2406-118</td><td>FX3 ×2, A7M4, RS4 Pro</td><td class="mono">${inr(148000)}</td></tr>
+      <tr><td class="mono">BK-2406-121</td><td>Item 4 · transport cancel <span class="chip pend plain">non-chargeable</span></td><td class="mono">${inr(0)}</td></tr></tbody></table>
+    <div class="split" style="margin-top:14px">
+      <div class="fact"><div class="k">Subtotal</div><div class="v mono">${inr(362000)}</div></div>
+      <div class="fact"><div class="k">GST @ 18%</div><div class="v mono">${inr(65160)}</div></div>
+      <div class="fact"><div class="k">TDS @ 2%</div><div class="v mono" style="color:var(--bad)">– ${inr(7240)}</div></div>
+      <div class="fact"><div class="k">Net payable</div><div class="v mono" style="color:var(--brand-ink)">${inr(419920)}</div></div></div>
+    <p class="muted" style="font-size:12px;margin:12px 0 0">Client uploads TDS certificate against this invoice; reconciliation log updates on receipt.</p></div>`;
+
+/* ---------- DEPOSITS ---------- */
+VIEWS.deposits=()=>`<div class="head"><div><h1 class="h1">Security deposits</h1><p class="sub">Separate ledger — reported apart from revenue (§17)</p></div></div>
+  <div class="kpis" style="margin-bottom:16px;grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="lbl">Currently held</div><div class="val">${inr(50000)}</div><div class="delta flat">1 booking</div></div>
+    <div class="kpi"><div class="lbl">Refunded · June</div><div class="val">${inr(25000)}</div><div class="delta up">clean returns</div></div>
+    <div class="kpi"><div class="lbl">Forfeited · June</div><div class="val">${inr(8000)}</div><div class="delta down">offset repairs</div></div></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Deposit</th><th>Status</th><th></th></tr></thead><tbody>
+  ${DATA.deposits.map(d=>{const m={held:["brand","Held"],refunded:["ok","Refund initiated"],forfeit:["bad","Forfeited → repair"]}[d.status];
+    return `<tr><td class="mono">${d.bk}</td><td>${d.client}</td><td class="mono">${inr(d.amount)}</td><td><span class="chip ${m[0]}">${m[1]}</span></td>
+    <td style="text-align:right">${d.status==='held'?'<button class="btn sm" onclick="toast(\'Refund initiated via Cashfree\')">Refund</button>':'<span class="muted">—</span>'}</td></tr>`;}).join("")}</tbody></table></div>`;
+
+/* ---------- CLIENTS ---------- */
+VIEWS.clients=()=>`<div class="head"><div><h1 class="h1">Clients 360</h1><p class="sub">Tier, trust, communication timeline and financials on one screen</p></div></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Client</th><th>Tier</th><th>Trust</th><th>Rentals</th><th>Lifetime</th><th>Outstanding</th><th>Flags</th></tr></thead><tbody>
+  ${DATA.clients.map(c=>`<tr class="clickable" onclick='openClient("${c.name}")'>
+    <td><b>${c.name}</b>${c.company?'<div class="muted" style="font-size:11.5px">'+c.company+'</div>':''}</td><td>${tier(c.tier)}</td>
+    <td><span class="mono">${c.trust}</span> <span class="muted">· ${c.level}</span></td><td class="mono">${c.rentals}</td><td class="mono">${inr(c.spent)}</td>
+    <td class="mono">${c.outstanding?'<span style="color:var(--bad)">'+inr(c.outstanding)+'</span>':'—'}</td>
+    <td>${c.flags.length?'<span class="chip '+(c.flags[0]==='blacklist'?'bad':'warn')+'">'+c.flags[0]+'</span>':'<span class="muted">—</span>'}</td></tr>`).join("")}</tbody></table></div>`;
+
+/* ---------- TRUST & GUARDRAILS ---------- */
+VIEWS.trust=()=>`<div class="head"><div><h1 class="h1">Trust & guardrails</h1><p class="sub">Progressive permissions — constraints relax automatically as clients prove reliable (§9)</p></div><button class="btn" onclick="toast('All thresholds are admin-configurable')">Edit thresholds</button></div>
+  <div class="cols3" style="margin-bottom:16px">${DATA.trustLevels.map((t,i)=>`<div class="card pad">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--disp);font-size:16px">${t.nm}</b><span class="chip ${['pend','brand','brand','ok'][i]} plain">${t.range}</span></div>
+    <div class="split" style="margin-top:12px;grid-template-columns:1fr 1fr">
+      <div class="fact"><div class="k">Items</div><div class="v">${t.items}</div></div>
+      <div class="fact"><div class="k">Max days</div><div class="v">${t.days}</div></div>
+      <div class="fact"><div class="k">Value cap</div><div class="v" style="font-size:13px;font-weight:500">${t.cap}</div></div>
+      <div class="fact"><div class="k">High-value gear</div><div class="v" style="font-size:13px;font-weight:500">${t.hv}</div></div></div></div>`).join("")}</div>
+  <div class="cols">
+    <div class="card pad"><p class="sectionlabel">Score signals</p>
+      ${[["On-time return","+","up"],["Payment on time","+","up"],["Good condition return","+","up"],["Each completed rental","+ base","up"],["Late return","− per day","down"],["Damage caused","− weighted","down"],["Payment delayed/disputed","−","down"],["Item missing","− − significant","down"]].map(([s,v,d])=>`
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px">${s}</span><span class="mono ${d==='up'?'':''}" style="color:var(--${d==='up'?'ok':'bad'});font-weight:600;font-size:12.5px">${v}</span></div>`).join("")}</div>
+    <div class="card pad"><p class="sectionlabel">Overrides & flags</p>
+      <p class="muted" style="font-size:12.5px;margin:0 0 12px">Admin can override any score or limit (logged). A VIP referral grants +1 level instantly.</p>
+      ${DATA.clients.map(c=>`<div class="flagrow"><div><b style="font-size:13px">${c.name}</b> <span class="muted" style="font-size:12px">· ${c.level}</span></div>
+        ${c.flags.includes('blacklist')?'<span class="chip bad">Blacklisted</span>':c.flags.includes('watchlist')?'<span class="chip warn">Watchlisted</span>':'<button class="btn sm" onclick="toast(\'Override panel — prototype\')">Override</button>'}</div>`).join("")}</div></div>`;
+
+/* ---------- INVESTORS (admin) ---------- */
+VIEWS.investors=()=>`<div class="head"><div><h1 class="h1">Investors</h1><p class="sub">Revenue auto-split per asset · settlement marked manually</p></div></div>
+  ${DATA.investors.map(v=>`<div class="card pad"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center">
+    <div><b style="font-family:var(--disp);font-size:18px">${v.name}</b><div class="muted" style="font-size:12.5px">${v.assets} assets · ${v.share}% revenue share</div></div><span class="chip warn">Settlement due</span></div>
+    <div class="split" style="margin-top:16px">
+      <div class="fact"><div class="k">Gross revenue · June</div><div class="v mono">${inr(v.gross)}</div></div>
+      <div class="fact"><div class="k">Investor share</div><div class="v mono">${inr(v.due)}</div></div>
+      <div class="fact"><div class="k">Already settled</div><div class="v mono">${inr(v.settled)}</div></div>
+      <div class="fact"><div class="k">Balance outstanding</div><div class="v mono" style="color:var(--bad)">${inr(v.due-v.settled)}</div></div></div>
+    <p class="muted" style="font-size:12px;margin:14px 0 0">Investor gear is auto-excluded from VIP delayed-payment cycles — the business carries the timing risk, not investor capital.</p>
+    <button class="btn pri sm" style="margin-top:12px" onclick="toast('Settlement marked — sub-ledger updated')">Mark settled</button></div>`).join("")}`;
+
+/* ---------- MAINTENANCE ---------- */
+VIEWS.maintenance=()=>`<div class="head"><div><h1 class="h1">Maintenance</h1><p class="sub">Whichever threshold trips first flags the asset — by rental count or by time</p></div></div>
+  <div class="card" style="margin-bottom:16px"><table class="tbl"><thead><tr><th>Asset</th><th>Trigger</th><th>Category</th><th>Threshold</th><th></th></tr></thead><tbody>
+  ${DATA.maintenance.map(m=>`<tr><td><div class="mono" style="font-size:12px">${m.qr}</div>${m.name}</td><td>${m.reason}</td><td><span class="chip pend">${m.cat}</span></td>
+    <td style="min-width:120px"><div class="bar-track"><div class="bar-fill" style="width:${m.pct}%;background:${m.pct>=100?'var(--bad)':'var(--warn)'}"></div></div></td>
+    <td><button class="btn sm" onclick="toast('Service scheduled · counters reset on completion')">Schedule service</button></td></tr>`).join("")}</tbody></table></div>
+  <div class="card pad"><p class="sectionlabel">Tracked per failure category</p><div class="split">
+    <div class="fact"><div class="k">Electronic</div><div class="v" style="font-size:13px;font-weight:500">Sensor, battery health %, ports, firmware, error codes</div></div>
+    <div class="fact"><div class="k">Optical</div><div class="v" style="font-size:13px;font-weight:500">AF calibration, IS test, dust/fungus/haze, ring smoothness</div></div>
+    <div class="fact"><div class="k">Hardware</div><div class="v" style="font-size:13px;font-weight:500">Mount, latches, buttons, shutter count, threads</div></div>
+    <div class="fact"><div class="k">Software</div><div class="v" style="font-size:13px;font-weight:500">Firmware, menu, codecs, known bugs, compatibility</div></div></div>
+    <p class="muted" style="font-size:12px;margin:12px 0 0">Flagged assets can be auto-blocked from new bookings until cleared. Service cost deducts from the asset's net earnings.</p></div>`;
+
+/* ---------- ANALYTICS ---------- */
+VIEWS.analytics=()=>`<div class="head"><div><h1 class="h1">Analytics</h1><p class="sub">Where the money and the gear actually go</p></div></div>
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi"><div class="lbl">Lifetime revenue</div><div class="val">₹22.4<small>Cr</small></div><div class="delta flat">8,722 orders</div></div>
+    <div class="kpi"><div class="lbl">H1 2026</div><div class="val">₹5.02<small>Cr</small></div><div class="delta up">▲ on plan</div></div>
+    <div class="kpi"><div class="lbl">Top client share</div><div class="val">19<small>%</small></div><div class="delta down">concentration risk</div></div>
+    <div class="kpi"><div class="lbl">Avg payback</div><div class="val">9.1<small>mo</small></div><div class="delta up">under 12mo rule</div></div></div>
+  <div class="cols">
+    <div class="card pad"><p class="sectionlabel">Top earners (net, ₹k)</p>
+      ${[["Sony A7M4 #2",69.1],["Sony FX3 #1",58.2],["DJI RS4 Pro #1",31.9],["Canon R6 II #1",24.3],["Godox TT520 #3",5.1]].map(([n,v])=>`
+        <div style="display:flex;align-items:center;gap:12px;margin:9px 0"><div style="width:130px;font-size:13px">${n}</div>
+        <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${v/69.1*100}%"></div></div><div class="mono" style="width:48px;text-align:right">${v}</div></div>`).join("")}</div>
+    <div class="card pad"><p class="sectionlabel">Buy / sell signals</p><ul class="tl">
+      <li><div class="t">buy</div><div class="m">Godox TT520 ×3 — unmet demand 3×</div></li>
+      <li><div class="t">buy</div><div class="m">DJI RS4 Pro ×1 — 66% utilisation</div></li>
+      <li class="muted"><div class="t">sell</div><div class="m">A7M4 ×2 nearing cycle end</div></li>
+      <li class="muted"><div class="t">sell</div><div class="m">FX3 ×1 — successor rumoured</div></li></ul></div></div>`;
+
+/* ---------- OFFERS & COUPONS ---------- */
+VIEWS.offers=()=>`<div class="head"><div><h1 class="h1">Offers & coupons</h1><p class="sub">Promotions wait for approval; OTP and receipts always auto-send</p></div><button class="btn pri" onclick="toast('Coupon builder — prototype')">+ New coupon</button></div>
+  <div class="cols">
+    <div class="card"><div style="padding:14px 18px;border-bottom:1px solid var(--line)"><p class="sectionlabel" style="margin:0">Offer types</p></div>
+      ${[["Birthday week","7-day window · auto-queued"],["Seasonal campaign","Diwali / New Year · bulk, reviewed"],["Free / discounted trial","Targeted to new-gear segments"],["Advance rental offer","Discount for booking ahead"],["Re-engagement","Dormant X days · personalised with favourite gear"],["Wishlist availability","Wishlisted item frees up for their dates"]].map(([t,d])=>`
+        <div style="padding:11px 18px;border-bottom:1px solid var(--line)"><b style="font-size:13px">${t}</b><div class="muted" style="font-size:12px">${d}</div></div>`).join("")}</div>
+    <div class="card"><div style="padding:14px 18px;border-bottom:1px solid var(--line)"><p class="sectionlabel" style="margin:0">Coupons</p></div>
+      <table class="tbl"><tbody>
+        <tr><td><span class="mono">DIWALI15</span><div class="muted" style="font-size:11.5px">15% · time-limited · ends 5 Nov</div></td><td style="text-align:right"><span class="chip ok plain">live</span></td></tr>
+        <tr><td><span class="mono">FIRST10</span><div class="muted" style="font-size:11.5px">Flat ₹500 · first 10 uses · 6 left</div></td><td style="text-align:right"><span class="chip warn plain">use-limited</span></td></tr>
+        <tr><td><span class="mono">VINAY-FREEDAY</span><div class="muted" style="font-size:11.5px">1 free day · single client · single-use</div></td><td style="text-align:right"><span class="chip pend plain">per-client</span></td></tr></tbody></table></div></div>`;
+
+/* ---------- NOTIFICATIONS ---------- */
+VIEWS.notifications=()=>`<div class="head"><div><h1 class="h1">Notifications</h1><p class="sub">WATI — WhatsApp, SMS & email from one place</p></div></div>
+  <div class="cols">
+    <div class="card"><div style="padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+      <p class="sectionlabel" style="margin:0">Message categories</p><span class="chip pend plain">Review mode on</span></div>
+      ${[["Dispatch OTP","auto","ok"],["Return OTP","auto","ok"],["Booking confirmation","auto","ok"],["Payment receipt","auto","ok"],["Overdue alert","auto","ok"],["Invoice ready","auto","ok"],["Birthday offer","queue","warn"],["Seasonal campaign","queue","warn"],["Re-engagement","queue","warn"],["Wishlist availability","queue","warn"]].map(([t,b,c])=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid var(--line)"><span style="font-size:13px">${t}</span><span class="chip ${c} plain">${b==='auto'?'Always auto-send':'Review queue'}</span></div>`).join("")}
+      <div style="padding:13px 18px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:550">Auto-send promotions</span><button class="toggle" onclick="this.classList.toggle('on');toast('Promotional auto-send '+(this.classList.contains('on')?'on':'off'))"></button></div></div>
+    <div class="card pad"><p class="sectionlabel">Review queue · 2</p>
+      <div style="padding:11px 0;border-bottom:1px solid var(--line)"><b style="font-size:13px">Birthday week</b><div class="muted" style="font-size:12px">Priya Nair · 10% off</div><div style="margin-top:8px"><button class="btn sm">Edit</button> <button class="btn pri sm" onclick="toast('Approved & sent')">Approve & send</button></div></div>
+      <div style="padding:11px 0"><b style="font-size:13px">Re-engagement</b><div class="muted" style="font-size:12px">Studio Verde · dormant 45 days</div><div style="margin-top:8px"><button class="btn sm">Edit</button> <button class="btn pri sm" onclick="toast('Approved & sent')">Approve & send</button></div></div>
+      <div style="margin-top:14px;padding:12px;border:1px dashed var(--line-2);border-radius:10px"><b style="font-size:13px">WhatsApp chatbot</b> <span class="chip purple plain">Phase 2</span><div class="muted" style="font-size:12px;margin-top:4px">Clients check availability, request extensions, confirm OTP and check invoices — all in chat.</div></div>
+      <p class="muted" style="font-size:11.5px;margin:12px 0 0">Blacklisted & watchlisted clients are suppressed from all promotional messages.</p></div></div>`;
+
+/* ---------- STOCK AUDIT ---------- */
+VIEWS.audit=()=>`<div class="head"><div><h1 class="h1">Stock audit</h1><p class="sub">Scan-to-reconcile — system records and physical shelf must agree (§16)</p></div><button class="btn pri" onclick="toast('Audit session started — scan each item')">Start audit</button></div>
+  <div class="kpis" style="margin-bottom:16px;grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="lbl">Expected in stock</div><div class="val">142</div><div class="delta flat">status ≠ dispatched</div></div>
+    <div class="kpi"><div class="lbl">Scanned</div><div class="val">139</div><div class="delta up">98% matched</div></div>
+    <div class="kpi"><div class="lbl">Discrepancies</div><div class="val">3</div><div class="delta down">need resolution</div></div></div>
+  <div class="card"><div style="padding:14px 18px;border-bottom:1px solid var(--line)"><p class="sectionlabel" style="margin:0">Discrepancies</p></div>
+    <table class="tbl"><tbody>
+      <tr><td><b>System out · item here</b><div class="muted" style="font-size:12px">QR-A7III-02 — return likely not logged</div></td><td style="text-align:right"><button class="btn sm" onclick="toast('Return logged · status updated')">Log return</button></td></tr>
+      <tr><td><b>System in · item missing</b><div class="muted" style="font-size:12px">QR-LENS-77 — dispatch not logged / misplaced</div></td><td style="text-align:right"><button class="btn sm" onclick="toast('Flagged for review')">Flag missing</button></td></tr>
+      <tr><td><b>Condition mismatch</b><div class="muted" style="font-size:12px">QR-RS4-001 — shows Good, visibly damaged</div></td><td style="text-align:right"><button class="btn sm" onclick="toast('Damage review opened')">Update condition</button></td></tr></tbody></table></div>`;
+
+/* ---------- SETTINGS & CATEGORIES ---------- */
+VIEWS.settings=()=>`<div class="head"><div><h1 class="h1">Settings & categories</h1><p class="sub">Modular platform — only the active category's fields and workflows render (§18)</p></div></div>
+  <div class="card pad" style="margin-bottom:16px"><p class="sectionlabel">Rental category profile</p>
+    <div class="cols3">${DATA.categories.map(c=>`<div class="catcard ${c.on?'on':''}" onclick="toast('${c.on?'Active category':'Switch category — prototype'}')"><div style="display:flex;justify-content:space-between;align-items:center"><b>${c.nm}</b>${c.on?'<span class="chip brand plain">Active</span>':''}</div><p>${c.f}</p></div>`).join("")}</div>
+    <p class="muted" style="font-size:12px;margin:14px 0 0">Inactive features generate neither database columns nor UI — the system stays lean by design.</p></div>
+  <div class="cols">
+    <div class="card pad"><p class="sectionlabel">Tax & company</p>
+      <div class="split"><div class="fact"><div class="k">GST</div><div class="v mono">18%</div></div><div class="fact"><div class="k">TDS (Pvt Ltd)</div><div class="v mono">2%</div></div>
+      <div class="fact"><div class="k">GSTIN</div><div class="v mono" style="font-size:13px">24AABCD…1Z5</div></div><div class="fact"><div class="k">Currency</div><div class="v mono">INR ₹</div></div></div></div>
+    <div class="card pad"><p class="sectionlabel">Phone & WATI numbers</p>
+      ${[["WATI-linked","all automated messages"],["Office WhatsApp","staff-initiated chats"],["Office call-only","inbound calls, no automation"]].map(([t,d])=>`
+        <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><div><b style="font-size:13px">${t}</b><div class="muted" style="font-size:11.5px">${d}</div></div><span class="mono" style="font-size:12px">+91 9xxxx xxxxx</span></div>`).join("")}
+      <div style="display:flex;gap:8px;margin-top:12px"><span class="chip ok plain">WATI connected</span><span class="chip ok plain">Cashfree connected</span></div></div></div>
+  <div class="card pad" style="margin-top:16px"><p class="sectionlabel">Feature flags</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">${["Kit manifests","Serial tracking","QR sub-components","Optical check","Firmware tracking","Maintenance auto-block","Investor sub-ledger","VIP consolidated billing"].map(f=>`<span class="chk on">${f}</span>`).join("")}</div></div>`;
+
+/* ---------- TENANTS (SaaS) ---------- */
+VIEWS.tenants=()=>`<div class="head"><div><h1 class="h1">Tenants · SaaS</h1><p class="sub">Multi-tenant white-label — super-admin above the tenant level (§19)</p></div><button class="btn pri" onclick="toast('Onboard tenant — prototype')">+ Onboard tenant</button></div>
+  <div class="ribbon" style="background:var(--purple-wash);border-color:#e3d2fb;color:#6b21a8">Phase 3 endgame — each tenant gets isolated data, own branding, category profile, and their own WATI/Cashfree/GST config.</div>
+  <div class="card"><table class="tbl"><thead><tr><th>Tenant</th><th>Category</th><th>Plan</th><th>Status</th><th></th></tr></thead><tbody>
+  ${DATA.tenants.map(t=>`<tr><td><b>${t.nm}</b></td><td class="muted">${t.cat}</td><td class="mono" style="font-size:12px">${t.plan}</td>
+    <td>${t.status==='active'?'<span class="chip ok">Active</span>':'<span class="chip warn">Trial</span>'}</td>
+    <td style="text-align:right"><button class="btn sm" onclick="toast('Tenant settings — prototype')">Manage</button></td></tr>`).join("")}</tbody></table></div>`;
+
+/* ---------- CLIENT PORTAL ---------- */
+VIEWS.chome=()=>`${ribbon}
+  <div class="head"><div><h1 class="h1">Welcome back, Touchstone Films</h1><p class="sub">VIP · consolidated monthly billing · trusted</p></div><button class="btn pri" onclick="toast('New booking — prototype')">+ New booking</button></div>
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi"><div class="lbl">Open ledger · June</div><div class="val">${lakh(362000)}</div><div class="delta flat">closes 30 Jun</div></div>
+    <div class="kpi"><div class="lbl">Active rentals</div><div class="val">2</div><div class="delta flat">4 items out</div></div>
+    <div class="kpi"><div class="lbl">Trust level</div><div class="val" style="font-size:19px">Trusted</div><div class="delta up">no limits</div></div>
+    <div class="kpi"><div class="lbl">Wishlist alerts</div><div class="val">1</div><div class="delta up">FX6 now free</div></div></div>
+  <div class="cols">
+    <div class="card pad"><p class="sectionlabel">Recommended for you</p>
+      ${[["Sony FE 16-35mm GM","pairs with your FX3"],["DJI RS4 Pro","you rent gimbals often"],["Sony FX6","wishlist · available 1 Jul"]].map(([n,w])=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)"><div><b>${n}</b><div class="muted" style="font-size:12px">${w}</div></div><button class="btn sm" onclick="toast('Added to booking')">Add</button></div>`).join("")}</div>
+    <div class="card pad"><p class="sectionlabel">Your gear, your numbers</p>
+      <div class="fact" style="margin-bottom:10px"><div class="k">Lifetime with us</div><div class="v mono">${inr(2140000)}</div></div>
+      <div class="fact"><div class="k">Most rented</div><div class="v" style="font-size:15px">Sony FX3</div></div></div></div>`;
+VIEWS.cbookings=()=>`<div class="head"><div><h1 class="h1">My bookings</h1><p class="sub">Tap a booking for live item status</p></div></div><div class="card">${bookingsTable(DATA.bookings.filter(b=>b.client==='Touchstone Films'))}</div>`;
+VIEWS.cquotes=()=>`<div class="head"><div><h1 class="h1">Quotes</h1><p class="sub">Estimates — not invoices — until you approve</p></div></div>
+  <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><b>QT-2406-44</b><div class="muted" style="font-size:12px">FX6 + 2 lenses · 1–4 Jul · expires in 3 days</div></div>
+    <div style="text-align:right"><div class="mono" style="font-size:17px;font-weight:600">${inr(86000)}</div><button class="btn pri sm" style="margin-top:6px" onclick="toast('Quote approved — booking confirmed')">Approve quote</button></div></div></div>`;
+VIEWS.cinvoices=()=>`<div class="head"><div><h1 class="h1">Invoices & TDS</h1><p class="sub">Your payments, deposits and TDS certificates</p></div></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Invoice</th><th>Period</th><th>Net payable</th><th>Status</th><th></th></tr></thead><tbody>
+    <tr><td class="mono">CINV-JUN-26</td><td>01–30 Jun</td><td class="mono">${inr(419920)}</td><td><span class="chip warn">Awaiting payment</span></td><td style="text-align:right"><button class="btn sm" onclick="toast('TDS certificate uploaded')">Upload TDS cert</button></td></tr>
+    <tr><td class="mono">CINV-MAY-26</td><td>01–31 May</td><td class="mono">${inr(388400)}</td><td><span class="chip ok">Paid · TDS received</span></td><td style="text-align:right"><span class="muted">—</span></td></tr></tbody></table></div>`;
+VIEWS.cdeposits=()=>`<div class="head"><div><h1 class="h1">Deposits</h1><p class="sub">Held against active bookings, refunded on clean return</p></div></div>
+  <div class="card"><table class="tbl"><tbody>
+    <tr><td><b>BK-2406-118</b><div class="muted" style="font-size:12px">held until clean return</div></td><td class="mono">${inr(50000)}</td><td><span class="chip brand">Held</span></td></tr>
+    <tr><td><b>BK-2406-104</b><div class="muted" style="font-size:12px">returned clean</div></td><td class="mono">${inr(50000)}</td><td><span class="chip ok">Refunded</span></td></tr></tbody></table></div>`;
+VIEWS.cwishlist=()=>`<div class="head"><div><h1 class="h1">Wishlist</h1><p class="sub">We'll ping you the moment these free up for your dates</p></div></div>
+  <div class="card"><table class="tbl"><tbody>
+    <tr><td><b>Sony FX6</b><div class="muted" style="font-size:12px">for 1–4 Jul</div></td><td><span class="chip ok">Available now</span></td><td style="text-align:right"><button class="btn pri sm" onclick="toast('Booking started')">Book</button></td></tr>
+    <tr><td><b>Sony FE 16-35mm GM</b><div class="muted" style="font-size:12px">any dates</div></td><td><span class="chip pend">On rent until 29 Jun</span></td><td style="text-align:right"><button class="btn sm" disabled>Notify me</button></td></tr></tbody></table></div>`;
+
+/* ---------- INVESTOR PORTAL ---------- */
+VIEWS.ihome=()=>`${ribbon}
+  <div class="head"><div><h1 class="h1">Your assets, Vinay</h1><p class="sub">Read-only portal — utilisation, earnings & settlement (§14.4)</p></div></div>
+  <div class="kpis" style="margin-bottom:16px">
+    <div class="kpi"><div class="lbl">Assets owned</div><div class="val">9</div><div class="delta flat">in fleet</div></div>
+    <div class="kpi"><div class="lbl">Gross · June</div><div class="val">${lakh(118400)}</div><div class="delta up">▲ vs May</div></div>
+    <div class="kpi"><div class="lbl">Your share (50%)</div><div class="val">${lakh(59200)}</div><div class="delta flat">due</div></div>
+    <div class="kpi"><div class="lbl">Avg utilisation</div><div class="val">61<small>%</small></div><div class="delta up">healthy</div></div></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Asset</th><th>Rentals</th><th>Gross</th><th>Your 50%</th><th>Util</th></tr></thead><tbody>
+  ${DATA.assets.filter(a=>a.owner.includes('Vinay')).map(a=>`<tr><td><div class="mono" style="font-size:12px">${a.qr}</div>${a.name}</td><td class="mono">${a.rentals}</td>
+    <td class="mono">${inr(a.gross)}</td><td class="mono">${inr(Math.round(a.gross/2))}</td>
+    <td style="min-width:90px"><div class="bar-track"><div class="bar-fill" style="width:${a.util}%"></div></div></td></tr>`).join("")}</tbody></table></div>`;
+VIEWS.iearnings=()=>`<div class="head"><div><h1 class="h1">Earnings</h1><p class="sub">Monthly gross on your assets and your share</p></div></div>
+  <div class="card pad"><div class="barchart">${[42,51,58,49,55,68].map((v,i)=>`<div class="col"><div class="b ${i===5?'':'alt'}" style="height:${v}%"></div><small>${["Jan","Feb","Mar","Apr","May","Jun"][i]}</small></div>`).join("")}</div>
+    <p class="muted" style="font-size:12.5px;margin:12px 0 0">Investor gear is auto-excluded from VIP delayed-payment cycles — your capital is never exposed to payment-timing risk.</p></div>`;
+VIEWS.isettle=()=>`<div class="head"><div><h1 class="h1">Settlements</h1><p class="sub">Settlement happens by direct bank transfer; marked here when done</p></div></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Period</th><th>Gross</th><th>Your share</th><th>Settled</th><th>Status</th></tr></thead><tbody>
+    <tr><td>June 2026</td><td class="mono">${inr(118400)}</td><td class="mono">${inr(59200)}</td><td class="mono">${inr(40000)}</td><td><span class="chip warn">Part-settled</span></td></tr>
+    <tr><td>May 2026</td><td class="mono">${inr(110000)}</td><td class="mono">${inr(55000)}</td><td class="mono">${inr(55000)}</td><td><span class="chip ok">Settled</span></td></tr></tbody></table></div>`;
+
+/* ============================ DRAWERS ============================ */
+function openDrawer(h){$("#drawer").innerHTML=h;$("#drawer").classList.add("show");$("#drawerbg").classList.add("show");}
+function closeDrawer(){$("#drawer").classList.remove("show");$("#drawerbg").classList.remove("show");}
+
+function openBooking(id){const b=DATA.bookings.find(x=>x.id===id);if(!b)return;
+  const items=[{nm:"Sony FX3 #1",st:"returned"},{nm:"Sony FX3 #2",st:"returned"},{nm:"Sony A7M4 #2",st:"returned"},{nm:"DJI RS4 Pro #1",st:b.terminal<b.items?"not_returned_non_chargeable":"returned"}].slice(0,b.items);
+  const sm={returned:["ok","Returned"],not_returned_non_chargeable:["pend","Not returned · ₹0"],dispatched:["brand","With client"],pending_dispatch:["pend","Pending"]};
+  openDrawer(`<div class="dh"><div><div class="mono muted" style="font-size:12px">${b.id}</div><b style="font-family:var(--disp);font-size:18px">${b.client}</b> ${tier(b.tier)}</div><button class="x" onclick="closeDrawer()">✕</button></div>
+  <div class="db">
+    <div class="split" style="margin-bottom:18px">
+      <div class="fact"><div class="k">Stage</div><div class="v" style="font-size:14px">${stageChip(b.stage)}</div></div>
+      <div class="fact"><div class="k">Dates</div><div class="v" style="font-size:14px">${b.start}–${b.end}</div></div>
+      <div class="fact"><div class="k">Estimate</div><div class="v mono">${inr(b.amount)}</div></div></div>
+    ${b.proxy?`<div class="card pad" style="margin-bottom:16px;background:var(--panel)"><div class="k muted" style="font-size:11px;font-weight:600">PROXY COLLECTOR</div><div style="margin-top:4px">Booked by <b>${b.client}</b> · collected by <b>${b.proxy}</b></div><div class="muted" style="font-size:12px;margin-top:3px">OTP went to account holder first, fell back to proxy after timeout — both attempts logged.</div></div>`:''}
+    <p class="sectionlabel">Item-level status — booking stays open until all are terminal</p>
+    <div class="card">${items.map(it=>{const[c,l]=sm[it.st];return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)"><span>${it.nm}</span><span class="chip ${c}">${l}</span></div>`;}).join("")}</div>
+    ${b.terminal<b.items?`<p class="muted" style="font-size:12.5px;margin-top:12px">Item 4 couldn't be handed over — non-chargeable at ₹0 with a staff note. The other ${b.terminal} items are fully closed; the booking stays open only for that one. Not a cancellation.</p>`:''}
+    <div style="display:flex;gap:8px;margin-top:16px">${b.stage==='open'||b.stage==='dispatched'?'<button class="btn" onclick="toast(\'Extension — availability checked, days added to live invoice\')">Extend rental</button>':''}<button class="btn" onclick="toast('Opening invoice')">View invoice</button></div>
+    <p class="sectionlabel" style="margin-top:20px">OTP & audit trail</p>
+    <ul class="tl"><li><div class="t">24 Jun 14:02</div><div class="m">Dispatch OTP confirmed by +91 982…111</div></li>
+      <li class="muted"><div class="t">24 Jun 14:01</div><div class="m">4 components QR-scanned out · kit complete</div></li></ul></div>`);}
+
+function openAsset(qr){const a=DATA.assets.find(x=>x.qr===qr);if(!a)return;
+  openDrawer(`<div class="dh"><div><div class="mono muted" style="font-size:12px">${a.qr}</div><b style="font-family:var(--disp);font-size:18px">${a.name}</b></div><button class="x" onclick="closeDrawer()">✕</button></div>
+  <div class="db"><p class="sectionlabel">Unit 360 — lifecycle passport</p>
+    <div class="split" style="margin-bottom:14px">
+      <div class="fact"><div class="k">Purchase</div><div class="v mono">${inr(a.buy)}</div></div>
+      <div class="fact"><div class="k">Acquired</div><div class="v" style="font-size:14px">${a.date}</div></div>
+      <div class="fact"><div class="k">Owner</div><div class="v" style="font-size:13px;font-weight:500">${a.owner}</div></div>
+      <div class="fact"><div class="k">Warranty till</div><div class="v" style="font-size:14px">${a.warranty}</div></div></div>
+    <div class="split" style="margin-bottom:14px">
+      <div class="fact"><div class="k">Gross revenue</div><div class="v mono">${inr(a.gross)}</div></div>
+      <div class="fact"><div class="k">Net revenue</div><div class="v mono" style="color:var(--ok)">${inr(a.net)}</div></div>
+      <div class="fact"><div class="k">Rentals</div><div class="v mono">${a.rentals}</div></div>
+      <div class="fact"><div class="k">Utilisation</div><div class="v mono">${a.util}%</div></div></div>
+    <p class="sectionlabel" style="margin-top:18px">Condition & service history</p>
+    <ul class="tl"><li><div class="t">last return</div><div class="m">Condition: ${a.cond==='good'?'Good':'Minor — rear screen scuff'}</div></li>
+      <li class="muted"><div class="t">service</div><div class="m">Sensor clean · ${a.date}</div></li></ul></div>`);}
+
+function openClient(name){const c=DATA.clients.find(x=>x.name===name);if(!c)return;
+  openDrawer(`<div class="dh"><div><b style="font-family:var(--disp);font-size:18px">${c.name}</b> ${tier(c.tier)}
+    ${c.flags.map(f=>'<span class="chip '+(f==='blacklist'?'bad':'warn')+'" style="margin-left:6px">'+f+'</span>').join("")}
+    <div class="muted" style="font-size:12px;margin-top:2px">${c.company||c.phone}${c.gst?' · '+c.gst:''}</div></div><button class="x" onclick="closeDrawer()">✕</button></div>
+  <div class="db">
+    <div style="display:flex;gap:18px;align-items:center;margin-bottom:18px">
+      <div class="gauge" style="--p:${Math.max(0,c.trust)}"><b>${c.trust}</b></div>
+      <div><div class="muted" style="font-size:12px">Trust level</div><b style="font-family:var(--disp);font-size:18px">${c.level}</b>
+        <div class="muted" style="font-size:12.5px;margin-top:4px">${c.level==='Trusted'?'No value, item or day caps':c.flags.includes('blacklist')?'Blacklisted — cannot book':'Caps relax as reliability builds'}</div>
+        ${c.advance?'<div style="margin-top:6px"><span class="chip warn plain">'+c.advance+'% advance set</span></div>':''}</div></div>
+    <div class="split" style="margin-bottom:18px">
+      <div class="fact"><div class="k">Lifetime spent</div><div class="v mono">${inr(c.spent)}</div></div>
+      <div class="fact"><div class="k">Rentals</div><div class="v mono">${c.rentals}</div></div>
+      <div class="fact"><div class="k">Outstanding</div><div class="v mono" style="${c.outstanding?'color:var(--bad)':''}">${c.outstanding?inr(c.outstanding):'—'}</div></div>
+      <div class="fact"><div class="k">Phones</div><div class="v" style="font-size:12px;font-weight:500">${c.phone}${c.phone2?'<br>'+c.phone2+' (calls)':''}</div></div></div>
+    <p class="sectionlabel">Pinned & favourite gear</p>
+    <div style="margin-bottom:18px"><span class="chk on">★ ${c.fav}</span> <span class="chk" onclick="toast('Pinned to profile')">+ Pin recommendation</span></div>
+    <p class="sectionlabel">Communication hub — WhatsApp & calls</p>
+    <ul class="tl">
+      <li><div class="t">today 11:20 · WhatsApp</div><div class="m">Sent: June consolidated invoice ${inr(419920)}</div></li>
+      <li><div class="t">24 Jun · call (staff)</div><div class="m">Discussed FX6 availability for July shoot</div></li>
+      <li class="muted"><div class="t">20 Jun · WhatsApp</div><div class="m">Return OTP confirmed</div></li></ul></div>`);}
+
+/* ============================ SCAN LOGIC ============================ */
+let scanned={};
+function requiredSlots(){const r=KIT.mandatory.slice();KIT.optInc.forEach(k=>{if(k.included)r.push(k);});KIT.optExc.forEach(k=>{if(k.added)r.push(k);});return r;}
+function renderSlots(){
+  const req=requiredSlots();
+  const total=req.reduce((s,k)=>s+k.need,0);
+  const got=req.reduce((s,k)=>s+Math.min(scanned[k.type]||0,k.need),0);
+  let h=`<div class="grouplbl">Mandatory</div>`+KIT.mandatory.map(slotHTML).join("");
+  h+=`<div class="grouplbl">Optional · included (can opt out)</div>`+KIT.optInc.map(k=>slotHTML(k,!k.included,`<button class="mini" onclick="toggleOptInc('${k.type}')">${k.included?'Opt out':'Include'}</button>`)).join("");
+  h+=`<div class="grouplbl">Optional · excluded (can add)</div>`+KIT.optExc.map(k=>slotHTML(k,!k.added,`<button class="mini" onclick="toggleOptExc('${k.type}')">${k.added?'Remove':'Add'}</button>`)).join("");
+  $("#slots").innerHTML=h;
+  $("#kitstatus").textContent=`${got} of ${total} required scanned`;
+  $("#otpbtn").disabled=got<total;
+}
+function slotHTML(k,off,extra){const n=Math.min(scanned[k.type]||0,k.need),done=!off&&n>=k.need;
+  return `<div class="slot ${done?'done':''} ${off?'off':''}"><div class="box">${done?'✓':''}</div><div class="nm">${k.nm}</div>${extra?'':`<div class="qty">${n}/${k.need}</div>`}${extra||''}</div>`;}
+function toggleOptInc(t){const k=KIT.optInc.find(x=>x.type===t);k.included=!k.included;renderSlots();}
+function toggleOptExc(t){const k=KIT.optExc.find(x=>x.type===t);k.added=!k.added;renderSlots();}
+function flash(type,msg){const el=$("#scanmsg");el.className="scanmsg show "+type;el.innerHTML=msg;clearTimeout(window._ft);window._ft=setTimeout(()=>el.classList.remove("show"),2200);}
+function scanItem(type){const all=KIT.mandatory.concat(KIT.optInc,KIT.optExc);const k=all.find(x=>x.type===type);if(!k)return;
+  scanned[type]=(scanned[type]||0)+1;
+  if(scanned[type]<=k.need)flash("good",`✓ ${k.nm} — ${Math.min(scanned[type],k.need)}/${k.need}`);
+  else{scanned[type]=k.need;flash("err",`Already have ${k.need}× ${k.nm} — extra ignored`);}
+  renderSlots();}
+function scanWrong(){flash("err","Nikon EN-EL15 scanned — this kit requires Sony NP-FZ100 ×3");}
+function resetScan(){scanned={};renderSlots();}
+
+/* ============================ RETURNS LOGIC ============================ */
+function renderReturns(){
+  $("#retlist").innerHTML=RETURN_ITEMS.map((it,i)=>`
+    <div style="padding:14px 18px;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <b style="font-size:13.5px">${it.nm}</b>
+        <div class="seg" data-i="${i}">${["Excellent","Good","Minor","Major","Non-func"].map((s,j)=>`<button data-sev="${j<2?'ok':j<3?'warn':'bad'}" onclick="setCond(${i},${j},this)" class="${j===1?'on':''}">${s}</button>`).join("")}</div></div>
+      <div id="dmg-${i}" style="display:none;margin-top:12px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${["Electronic","Optical","Hardware","Software","Cosmetic"].map(c=>`<span class="chk" onclick="this.classList.toggle('on')">${c}</span>`).join("")}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="photo">+ photo</div>
+          <input class="input" style="max-width:180px" placeholder="Repair cost ₹">
+          <span class="chk" onclick="this.classList.toggle('on')">Charge client</span></div>
+        <input class="input" style="margin-top:10px" placeholder="Damage description…"></div></div>`).join("");
+}
+function setCond(i,j,el){el.parentNode.querySelectorAll("button").forEach(b=>b.classList.remove("on"));el.classList.add("on");
+  $("#dmg-"+i).style.display=j>=2?"block":"none";}
+
+function afterRender(){if(VIEW==="scan")renderSlots();if(VIEW==="returns")renderReturns();}
+
+document.querySelectorAll("#roleswitch button").forEach(b=>b.onclick=()=>setRole(b.dataset.role));
+renderSide();render();
+</script>
+</body>
+</html>
