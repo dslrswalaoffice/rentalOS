@@ -184,7 +184,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 // Paste your deployed Apps Script Web App URL (ends in /exec) between the quotes
 // below. Once set, NO ONE sees the setup prompt — everyone goes straight to login.
 // Admins can also change it later in Settings → Connection (saved to their browser).
-const DEFAULT_API_URL = '';
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbzTlE5XZQXy1oQpYoG-nXJeORUXRuIlTEX0dA556J-VZZqceDdzysZQQN0uxdzaW78e/exec';
 let API_URL = localStorage.getItem('rentalos_api') || DEFAULT_API_URL;
 let SESSION = JSON.parse(localStorage.getItem('rentalos_session') || 'null');
 let CACHE = null, VIEW = 'dashboard';
