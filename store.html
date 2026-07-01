@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSLRswala — Check availability & request a booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16181d;--ink-2:#3c4150;--ink-3:#6b7280;--ink-4:#9aa1ad;
+  --surface:#fff;--panel:#f6f7f9;--panel-2:#eef0f4;--line:#e3e6ec;--line-2:#d3d7e0;
+  --brand:#2d44c7;--brand-ink:#1d2f96;--brand-wash:#eef1ff;
+  --ok:#1f9d57;--ok-wash:#e7f6ed;--warn:#b9791b;--warn-wash:#fbf1df;
+  --bad:#cc3340;--bad-wash:#fbe9eb;--pend:#7a8294;--pend-wash:#eef0f4;
+  --r:10px;--r-lg:14px;--sh:0 1px 2px rgba(16,18,29,.05);--sh-lg:0 8px 30px rgba(16,18,29,.10);
+  --font:"Inter",system-ui,sans-serif;--disp:"Space Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--panel);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:90px}
+button{font-family:inherit;cursor:pointer}.mono{font-family:var(--mono);font-feature-settings:"tnum"}.muted{color:var(--ink-3)}
+.hide{display:none!important}
+.input{width:100%;padding:11px 13px;border:1px solid var(--line-2);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--surface)}
+.input:focus{outline:2px solid var(--brand);outline-offset:-1px}
+.btn{border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);padding:11px 18px;border-radius:10px;font-size:14px;font-weight:600}
+.btn:hover{background:var(--panel)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{background:var(--brand-ink)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh)}
+
+.top{display:flex;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.top .lg{width:26px;height:26px;position:relative;flex:none}
+.top .lg::before{content:"";position:absolute;inset:0;border:2.5px solid var(--brand);border-radius:7px}
+.top .lg::after{content:"";position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;background:var(--brand);border-radius:50%;border:2px solid var(--surface)}
+.top b{font-family:var(--disp);font-size:17px;font-weight:700}
+.top span{font-size:12px;color:var(--ink-3)}
+
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 0}
+.hero{padding:8px 4px 22px}
+.hero h1{font-family:var(--disp);font-size:26px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em}
+.hero p{color:var(--ink-3);font-size:14px;margin:0;line-height:1.55}
+
+.datecard{padding:16px;margin-bottom:18px}
+.daterow{display:flex;gap:10px}
+.daterow .fld{flex:1}
+.fld label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.daysbadge{margin-top:10px;font-size:12.5px;color:var(--brand-ink);font-weight:600}
+
+.catsec{margin:24px 0 10px}
+.catsec h2{font-family:var(--disp);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin:0 0 10px}
+.itemrow{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line)}
+.itemrow:last-child{border-bottom:0}
+.itemrow .nm{flex:1;min-width:0}
+.itemrow .nm b{font-size:14px;display:block}
+.itemrow .nm span{font-size:12px}
+.avail{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.avail.ok{background:var(--ok-wash);color:var(--ok)}
+.avail.low{background:var(--warn-wash);color:var(--warn)}
+.avail.none{background:var(--bad-wash);color:var(--bad)}
+.stepper{display:flex;align-items:center;gap:8px;flex:none}
+.stepper button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);font-size:16px;font-weight:600;display:grid;place-items:center;color:var(--ink-2)}
+.stepper button:disabled{opacity:.3;cursor:not-allowed}
+.stepper .qty{width:22px;text-align:center;font-weight:600;font-family:var(--mono)}
+
+.emptystate{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.emptystate .spin{width:22px;height:22px;border:2.5px solid var(--line-2);border-top-color:var(--brand);border-radius:50%;margin:0 auto 12px;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.cartbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(16,18,29,.08);padding:12px 16px;z-index:40}
+.cartbar-inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.cartbar .ct{flex:1;font-size:13px}
+.cartbar .ct b{font-family:var(--disp);font-size:15px;display:block}
+
+.ov{position:fixed;inset:0;background:rgba(16,18,29,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:640px){.ov{align-items:center}}
+.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:18px 18px 0 0;max-height:88vh;overflow:auto;padding:22px;position:relative}
+@media(min-width:640px){.sheet{border-radius:18px}}
+.sheet h2{font-family:var(--disp);font-size:19px;margin:0 0 4px}
+.sheet p.sub{color:var(--ink-3);font-size:12.5px;margin:0 0 18px}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.x{position:absolute;top:16px;right:16px;border:0;background:var(--panel);width:30px;height:30px;border-radius:50%;font-size:15px;color:var(--ink-3)}
+
+.errbox{background:var(--bad-wash);border:1px solid #f1c4c9;color:#9b232e;font-size:12.5px;padding:10px 13px;border-radius:10px;margin-bottom:14px}
+.okbox{background:var(--ok-wash);border:1px solid #b8e3c9;color:#166534;font-size:12.5px;padding:10px 13px;border-radius:10px;margin-bottom:14px;line-height:1.5}
+
+.success{text-align:center;padding:20px 4px}
+.success .ic{width:52px;height:52px;border-radius:50%;background:var(--ok-wash);color:var(--ok);display:grid;place-items:center;margin:0 auto 16px;font-size:26px}
+.success h2{font-family:var(--disp);font-size:20px;margin:0 0 8px}
+.success p{color:var(--ink-3);font-size:13.5px;line-height:1.6;margin:0 0 4px}
+.success .ref{font-family:var(--mono);font-size:13px;background:var(--panel);padding:8px 14px;border-radius:8px;display:inline-block;margin:12px 0}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="lg"></div><div><b>DSLRswala</b><br><span>Check availability &amp; request a booking</span></div></div>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>What are you shooting?</h1>
+    <p>Pick your dates to see live availability. This sends a request to our team — we'll confirm and share pricing before anything is locked in.</p>
+  </div>
+
+  <div class="card datecard">
+    <div class="daterow">
+      <div class="fld"><label>Start date</label><input id="stStart" class="input" type="date"></div>
+      <div class="fld"><label>End date</label><input id="stEnd" class="input" type="date"></div>
+    </div>
+    <div id="stDays" class="daysbadge hide"></div>
+  </div>
+
+  <div id="stCatalog"></div>
+</div>
+
+<div id="stCartBar" class="cartbar hide">
+  <div class="cartbar-inner">
+    <div class="ct"><b id="stCartCount">0 items</b><span class="muted">selected</span></div>
+    <button class="btn pri" onclick="stOpenRequest()">Request booking</button>
+  </div>
+</div>
+
+<div id="stOverlay"></div>
+
+<script>
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbzTlE5XZQXy1oQpYoG-nXJeORUXRuIlTEX0dA556J-VZZqceDdzysZQQN0uxdzaW78e/exec';
+const API_URL = localStorage.getItem('rentalos_api') || DEFAULT_API_URL;
+
+async function stApi(action, payload){
+  const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(Object.assign({action}, payload||{})) });
+  const j = await res.json();
+  if(!j.ok) throw new Error(j.error || 'Something went wrong');
+  return j.data;
+}
+const $ = s => document.querySelector(s);
+
+let CATALOG=[], AVAIL={}, CART={}, DAYS=0;
+
+function todayStr(off){ return new Date(Date.now()+(off||0)*86400000).toISOString().slice(0,10); }
+$("#stStart").value = todayStr(1);
+$("#stEnd").value = todayStr(2);
+
+async function stLoadCatalog(){
+  $("#stCatalog").innerHTML = '<div class="emptystate"><div class="spin"></div>Loading catalog…</div>';
+  try{ CATALOG = await stApi('store_catalog', {}); await stRefreshAvailability(); }
+  catch(e){ $("#stCatalog").innerHTML = `<div class="emptystate">Couldn't load the catalog.<br><span class="muted">${e.message}</span></div>`; }
+}
+
+async function stRefreshAvailability(){
+  const start=$("#stStart").value, end=$("#stEnd").value;
+  if(!start||!end||end<start){ $("#stDays").classList.add('hide'); return; }
+  $("#stCatalog").innerHTML = '<div class="emptystate"><div class="spin"></div>Checking availability…</div>';
+  try{
+    const typeIds = CATALOG.map(c=>c.type_id);
+    const r = await stApi('store_availability', {type_ids:typeIds, start_date:start, end_date:end});
+    AVAIL = r.availability; DAYS = r.days;
+    $("#stDays").textContent = DAYS+' day'+(DAYS===1?'':'s')+' selected';
+    $("#stDays").classList.remove('hide');
+    stRenderCatalog();
+  }catch(e){ $("#stCatalog").innerHTML = `<div class="emptystate">${e.message}</div>`; }
+}
+$("#stStart").addEventListener('change', stRefreshAvailability);
+$("#stEnd").addEventListener('change', stRefreshAvailability);
+
+function stRenderCatalog(){
+  const byCat={};
+  CATALOG.forEach(c=>{ (byCat[c.category||'Other']=byCat[c.category||'Other']||[]).push(c); });
+  const cats=Object.keys(byCat).sort();
+  $("#stCatalog").innerHTML = cats.map(cat=>`<div class="catsec"><h2>${cat}</h2><div class="card">
+    ${byCat[cat].map(c=>{
+      const free = AVAIL[c.type_id]!=null ? AVAIL[c.type_id] : c.fleet_size;
+      const cls = free===0?'none':free<=2?'low':'ok';
+      const label = free===0?'None free':free+' free';
+      const qty = CART[c.type_id]||0;
+      return `<div class="itemrow">
+        <div class="nm"><b>${c.name}</b><span class="muted">${c.fleet_size} in fleet</span></div>
+        <span class="avail ${cls}">${label}</span>
+        <div class="stepper">
+          <button onclick="stAdjust('${c.type_id}',-1)" ${qty<=0?'disabled':''}>−</button>
+          <span class="qty">${qty}</span>
+          <button onclick="stAdjust('${c.type_id}',1)" ${(qty>=free||free===0)?'disabled':''}>+</button>
+        </div>
+      </div>`;
+    }).join("")}
+  </div></div>`).join("");
+}
+
+function stAdjust(typeId, delta){
+  const free = AVAIL[typeId]!=null ? AVAIL[typeId] : 0;
+  const cur = CART[typeId]||0;
+  const next = Math.max(0, Math.min(free, cur+delta));
+  if(next<=0) delete CART[typeId]; else CART[typeId]=next;
+  stRenderCatalog();
+  stUpdateCartBar();
+}
+
+function stUpdateCartBar(){
+  const total = Object.values(CART).reduce((a,b)=>a+b,0);
+  $("#stCartBar").classList.toggle('hide', total===0);
+  $("#stCartCount").textContent = total+' item'+(total===1?'':'s');
+}
+
+function stOpenRequest(){
+  $("#stOverlay").innerHTML = `<div class="ov" onclick="if(event.target===this)stCloseOverlay()"><div class="sheet">
+    <button class="x" onclick="stCloseOverlay()">✕</button>
+    <h2>A few details</h2>
+    <p class="sub">We'll review your request and confirm availability &amp; pricing.</p>
+    <div id="stFormErr"></div>
+    <div class="fld"><label>Your name *</label><input id="stName" class="input" placeholder="Full name"></div>
+    <div class="fld"><label>Phone *</label><input id="stPhone" class="input" type="tel" placeholder="10-digit mobile"></div>
+    <div class="fld"><label>Email</label><input id="stEmail" class="input" type="email" placeholder="optional"></div>
+    <div class="fld"><label>Company</label><input id="stCompany" class="input" placeholder="optional"></div>
+    <div class="fld"><label>What's the shoot?</label><input id="stShoot" class="input" placeholder="e.g. wedding film, ad shoot"></div>
+    <div class="fld"><label>Location</label><input id="stLoc" class="input" placeholder="optional"></div>
+    <button class="btn pri block" id="stSubmitBtn" onclick="stSubmit()">Send request</button>
+  </div></div>`;
+}
+function stCloseOverlay(){ $("#stOverlay").innerHTML=''; }
+
+async function stSubmit(){
+  const name=$("#stName").value.trim(), phone=$("#stPhone").value.trim();
+  const errEl=$("#stFormErr");
+  if(!name || !phone){ errEl.innerHTML='<div class="errbox">Name and phone are required.</div>'; return; }
+  const btn=$("#stSubmitBtn"); btn.disabled=true; btn.textContent='Sending…';
+  const items=Object.keys(CART).map(type_id=>({type_id, qty:CART[type_id]}));
+  const nameVal=name;
+  try{
+    const r = await stApi('store_request', {
+      name, phone, email:$("#stEmail").value.trim(), company:$("#stCompany").value.trim(),
+      shoot_type:$("#stShoot").value.trim(), location:$("#stLoc").value.trim(),
+      start_date:$("#stStart").value, end_date:$("#stEnd").value, items
+    });
+    stShowSuccess(r, nameVal);
+  }catch(e){
+    errEl.innerHTML=`<div class="errbox">${e.message}</div>`;
+    btn.disabled=false; btn.textContent='Send request';
+  }
+}
+
+function stShowSuccess(r, nameVal){
+  const shortfall = r.shortfalls && r.shortfalls.length
+    ? `<div class="okbox" style="background:var(--warn-wash);border-color:#f0dca6;color:var(--warn)">Heads up — some items had limited availability: ${r.shortfalls.join('; ')}. We'll follow up on alternatives.</div>` : '';
+  $("#stOverlay").innerHTML = `<div class="ov"><div class="sheet">
+    <div class="success">
+      <div class="ic">✓</div>
+      <h2>Request sent</h2>
+      <p>Thanks${nameVal?', '+nameVal:''}! Our team will confirm availability and share pricing shortly.</p>
+      <div class="ref">${r.booking_number}</div>
+      ${shortfall}
+      <button class="btn pri block" onclick="stReset()">Done</button>
+    </div>
+  </div></div>`;
+}
+function stReset(){ CART={}; stCloseOverlay(); stUpdateCartBar(); stRenderCatalog(); }
+
+stLoadCatalog();
+</script>
+</body>
+</html>
