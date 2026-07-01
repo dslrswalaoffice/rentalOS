@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSLRswala — Camera & AV equipment rental in Vadodara</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16181d;--ink-2:#3c4150;--ink-3:#6b7280;--ink-4:#9aa1ad;
+  --surface:#fff;--panel:#f6f7f9;--panel-2:#eef0f4;--line:#e3e6ec;--line-2:#d3d7e0;
+  --brand:#2d44c7;--brand-ink:#1d2f96;--brand-wash:#eef1ff;--brand-deep:#181c4a;
+  --ok:#1f9d57;--ok-wash:#e7f6ed;--warn:#b9791b;--warn-wash:#fbf1df;
+  --bad:#cc3340;--bad-wash:#fbe9eb;--pend:#7a8294;--pend-wash:#eef0f4;
+  --r:10px;--r-lg:14px;--sh:0 1px 2px rgba(16,18,29,.05);--sh-lg:0 8px 30px rgba(16,18,29,.10);
+  --font:"Inter",system-ui,sans-serif;--disp:"Space Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);background:var(--surface);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:88px}
+button{font-family:inherit;cursor:pointer}a{color:inherit;text-decoration:none}
+.mono{font-family:var(--mono);font-feature-settings:"tnum"}.muted{color:var(--ink-3)}
+.hide{display:none!important}
+.input{width:100%;padding:11px 13px;border:1px solid var(--line-2);border-radius:10px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--surface)}
+.input:focus{outline:2px solid var(--brand);outline-offset:-1px}
+.btn{border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);padding:11px 18px;border-radius:10px;font-size:14px;font-weight:600;transition:.15s}
+.btn:hover{background:var(--panel)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{background:var(--brand-ink);transform:translateY(-1px)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;border-color:rgba(255,255,255,.35);color:#fff}
+.btn.ghost:hover{background:rgba(255,255,255,.12)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+/* ── Announcement bar ── */
+.abar{background:var(--brand-deep);color:rgba(255,255,255,.82);font-size:12px;text-align:center;padding:7px 16px}
+.abar a{color:#fff;font-weight:600}
+
+/* ── Header ── */
+.hdr{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);transition:box-shadow .2s}
+.hdr.scrolled{box-shadow:0 2px 16px rgba(16,18,29,.06)}
+.hdr-inner{max-width:1040px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:20px}
+.brandmark{display:flex;align-items:center;gap:9px;flex:none}
+.brandmark .lg{width:30px;height:30px;position:relative;flex:none}
+.brandmark .lg::before{content:"";position:absolute;inset:0;border:2.5px solid var(--brand);border-radius:8px}
+.brandmark .lg::after{content:"";position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;background:var(--brand);border-radius:50%;border:2px solid #fff}
+.brandmark b{font-family:var(--disp);font-size:18px;font-weight:700;letter-spacing:-.01em}
+.navlinks{display:flex;gap:22px;flex:1}
+.navlinks a{font-size:13.5px;font-weight:600;color:var(--ink-2);padding:6px 0;border-bottom:2px solid transparent;transition:.15s}
+.navlinks a:hover{color:var(--brand-ink);border-bottom-color:var(--brand)}
+.hdr-cta{display:flex;align-items:center;gap:10px;flex:none}
+.hdr-phone{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-2)}
+@media(max-width:760px){.navlinks{display:none}.hdr-phone span{display:none}}
+
+/* ── Hero ── */
+.hero{background:linear-gradient(160deg,var(--brand-deep) 0%,var(--brand-ink) 55%,var(--brand) 100%);color:#fff;padding:56px 0 74px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 15% 25%,rgba(255,255,255,.08),transparent 40%),radial-gradient(circle at 85% 75%,rgba(255,255,255,.06),transparent 45%)}
+.hero-inner{position:relative;text-align:center;max-width:680px;margin:0 auto;padding:0 20px}
+.hero-kicker{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:5px 14px;margin-bottom:18px}
+.hero h1{font-family:var(--disp);font-size:38px;font-weight:700;line-height:1.12;letter-spacing:-.02em;margin:0 0 14px}
+.hero p{font-size:15px;color:rgba(255,255,255,.78);line-height:1.6;margin:0 0 28px}
+.hero-ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@media(max-width:600px){.hero h1{font-size:29px}}
+
+.statstrip{max-width:1040px;margin:-38px auto 0;padding:0 20px;position:relative;z-index:2}
+.statgrid{background:var(--surface);border-radius:16px;box-shadow:var(--sh-lg);display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));padding:22px 10px}
+.statgrid .st{text-align:center;padding:10px}
+.statgrid .st b{display:block;font-family:var(--disp);font-size:24px;color:var(--brand-ink)}
+.statgrid .st span{font-size:11.5px;color:var(--ink-3);font-weight:600}
+
+/* ── Section shell ── */
+.sec{padding:56px 0 8px}
+.sec-kicker{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand-ink);text-align:center;margin:0 0 8px}
+.sec h2{font-family:var(--disp);font-size:26px;font-weight:700;text-align:center;margin:0 0 12px;letter-spacing:-.01em}
+.sec > p.lead{text-align:center;color:var(--ink-3);max-width:520px;margin:0 auto 34px;font-size:13.5px;line-height:1.6}
+
+/* ── How it works ── */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:48px}
+.step{text-align:center;padding:8px}
+.step .num{width:42px;height:42px;border-radius:50%;background:var(--brand-wash);color:var(--brand-ink);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:16px;margin:0 auto 14px}
+.step b{display:block;font-size:14.5px;margin-bottom:5px}
+.step p{color:var(--ink-3);font-size:12.5px;margin:0;line-height:1.55}
+@media(max-width:700px){.steps{grid-template-columns:1fr}}
+
+/* ── Booking / catalog ── */
+.datecard{padding:18px;margin-bottom:22px}
+.daterow{display:flex;gap:10px}
+.daterow .fld{flex:1}
+.fld label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.daysbadge{margin-top:10px;font-size:12.5px;color:var(--brand-ink);font-weight:600}
+.catfilters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.catchip{border:1px solid var(--line-2);background:var(--surface);border-radius:20px;padding:7px 15px;font-size:12.5px;font-weight:600;color:var(--ink-2);transition:.12s}
+.catchip:hover{border-color:var(--brand)}
+.catchip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.catsec{margin:0 0 28px;scroll-margin-top:90px}
+.catsec h3{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-size:15px;font-weight:700;margin:0 0 10px}
+.catsec h3 svg{color:var(--brand)}
+.itemrow{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line)}
+.itemrow:last-child{border-bottom:0}
+.itemrow .nm{flex:1;min-width:0}
+.itemrow .nm b{font-size:14px;display:block}
+.itemrow .nm span{font-size:12px}
+.avail{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.avail.ok{background:var(--ok-wash);color:var(--ok)}
+.avail.low{background:var(--warn-wash);color:var(--warn)}
+.avail.none{background:var(--bad-wash);color:var(--bad)}
+.stepper{display:flex;align-items:center;gap:8px;flex:none}
+.stepper button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);font-size:16px;font-weight:600;display:grid;place-items:center;color:var(--ink-2)}
+.stepper button:disabled{opacity:.3;cursor:not-allowed}
+.stepper .qty{width:22px;text-align:center;font-weight:600;font-family:var(--mono)}
+.emptystate{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+.emptystate .spin{width:22px;height:22px;border:2.5px solid var(--line-2);border-top-color:var(--brand);border-radius:50%;margin:0 auto 12px;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── Offers ── */
+.offergrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:48px}
+.offercard{border:1px solid var(--line);border-radius:14px;padding:20px;background:linear-gradient(160deg,var(--brand-wash),var(--surface) 60%)}
+.offercard .tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-ink);background:#fff;border:1px solid var(--brand);border-radius:20px;padding:3px 10px;margin-bottom:10px}
+.offercard b{display:block;font-family:var(--disp);font-size:16px;margin-bottom:4px}
+.offercard span{font-size:12px;color:var(--ink-3)}
+
+/* ── Promo banner ── */
+.promo{background:var(--brand-deep);color:#fff;border-radius:18px;padding:30px 28px;margin-bottom:52px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.promo h3{font-family:var(--disp);font-size:19px;margin:0 0 6px}
+.promo p{margin:0;color:rgba(255,255,255,.75);font-size:12.5px}
+.promo-tiers{display:flex;gap:22px;flex-wrap:wrap}
+.promo-tiers .t{text-align:center}
+.promo-tiers .t b{display:block;font-family:var(--disp);font-size:20px}
+.promo-tiers .t span{font-size:11px;color:rgba(255,255,255,.65)}
+
+/* ── About ── */
+.aboutwrap{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-bottom:56px}
+.aboutwrap h2{text-align:left;margin-bottom:14px}
+.aboutwrap p.lead{text-align:left;margin:0 0 20px;max-width:none}
+.aboutcard{background:var(--panel);border-radius:16px;padding:26px}
+.aboutcard .row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-2)}
+.aboutcard .row:last-child{border-bottom:0}
+.aboutcard .row svg{flex:none;color:var(--brand-ink);margin-top:2px}
+.aboutcard .row b{display:block;font-size:13px}
+.aboutcard .row span{font-size:12px;color:var(--ink-3)}
+@media(max-width:760px){.aboutwrap{grid-template-columns:1fr}.aboutwrap h2,.aboutwrap p.lead{text-align:center}}
+
+/* ── Footer ── */
+.ftr{background:var(--panel);border-top:1px solid var(--line);padding:40px 0 24px;margin-top:20px}
+.ftr-top{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:30px}
+.ftr-brand b{font-family:var(--disp);font-size:17px;display:block;margin-bottom:6px}
+.ftr-brand p{color:var(--ink-3);font-size:12.5px;max-width:280px;line-height:1.6;margin:0}
+.ftr-cats{display:flex;gap:36px;flex-wrap:wrap}
+.ftr-cats .col b{display:block;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-4);margin-bottom:10px}
+.ftr-cats .col span{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:7px}
+.ftr-bottom{border-top:1px solid var(--line-2);padding-top:18px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11.5px;color:var(--ink-4)}
+
+.cartbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(16,18,29,.08);padding:12px 16px;z-index:55}
+.cartbar-inner{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:14px}
+.cartbar .ct{flex:1;font-size:13px}
+.cartbar .ct b{font-family:var(--disp);font-size:15px;display:block}
+
+.ov{position:fixed;inset:0;background:rgba(16,18,29,.45);z-index:70;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:640px){.ov{align-items:center}}
+.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:18px 18px 0 0;max-height:88vh;overflow:auto;padding:22px;position:relative}
+@media(min-width:640px){.sheet{border-radius:18px}}
+.sheet h2{font-family:var(--disp);font-size:19px;margin:0 0 4px}
+.sheet p.sub{color:var(--ink-3);font-size:12.5px;margin:0 0 18px}
+.fld{margin-bottom:14px}
+.x{position:absolute;top:16px;right:16px;border:0;background:var(--panel);width:30px;height:30px;border-radius:50%;font-size:15px;color:var(--ink-3)}
+.errbox{background:var(--bad-wash);border:1px solid #f1c4c9;color:#9b232e;font-size:12.5px;padding:10px 13px;border-radius:10px;margin-bottom:14px}
+.okbox{background:var(--ok-wash);border:1px solid #b8e3c9;color:#166534;font-size:12.5px;padding:10px 13px;border-radius:10px;margin-bottom:14px;line-height:1.5}
+.success{text-align:center;padding:20px 4px}
+.success .ic{width:52px;height:52px;border-radius:50%;background:var(--ok-wash);color:var(--ok);display:grid;place-items:center;margin:0 auto 16px;font-size:26px}
+.success h2{font-family:var(--disp);font-size:20px;margin:0 0 8px}
+.success p{color:var(--ink-3);font-size:13.5px;line-height:1.6;margin:0 0 4px}
+.success .ref{font-family:var(--mono);font-size:13px;background:var(--panel);padding:8px 14px;border-radius:8px;display:inline-block;margin:12px 0}
+</style>
+</head>
+<body>
+
+<div class="abar">📞 Call or WhatsApp <a id="abarPhone" href="#">us</a> for same-day availability · Vadodara</div>
+
+<header class="hdr" id="hdr">
+  <div class="hdr-inner">
+    <div class="brandmark"><span class="lg"></span><b id="brandName">DSLRswala</b></div>
+    <nav class="navlinks">
+      <a href="#catalog">Rent Gear</a>
+      <a href="#offers">Offers</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="hdr-cta">
+      <a class="hdr-phone" id="hdrPhone" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>Call now</span></a>
+      <a class="btn pri" href="#catalog">Book Now</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-kicker">Vadodara · Camera & AV Rental</span>
+    <h1 id="heroTitle">Professional gear,<br>ready when you are</h1>
+    <p id="heroSub">Pick your dates, see what's free right now, and send a request — our team confirms availability and pricing before anything is locked in.</p>
+    <div class="hero-ctas">
+      <a class="btn pri" href="#catalog" style="background:#fff;color:var(--brand-ink);border-color:#fff">Browse & check availability</a>
+      <a class="btn ghost" id="heroWa" href="#" target="_blank" rel="noopener">WhatsApp us</a>
+    </div>
+  </div>
+</section>
+
+<div class="statstrip"><div class="statgrid" id="statGrid"></div></div>
+
+<div class="wrap">
+  <section class="sec" id="how">
+    <div class="sec-kicker">Simple, no surprises</div>
+    <h2>How renting works</h2>
+    <p class="lead">Three steps, same as walking into the store — just from your phone.</p>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><b>Pick your dates</b><p>See live availability for every category the moment you set a date range.</p></div>
+      <div class="step"><div class="num">2</div><b>Select what you need</b><p>Add items to your request — bodies, lenses, lighting, audio, whatever the shoot calls for.</p></div>
+      <div class="step"><div class="num">3</div><b>We confirm & you shoot</b><p>Our team reviews your request, confirms pricing, and locks in your booking.</p></div>
+    </div>
+  </section>
+
+  <section class="sec" id="catalog">
+    <div class="sec-kicker">Live availability</div>
+    <h2>What are you shooting?</h2>
+    <p class="lead">Set your dates below — every category updates with real availability.</p>
+
+    <div class="card datecard">
+      <div class="daterow">
+        <div class="fld"><label>Start date</label><input id="stStart" class="input" type="date"></div>
+        <div class="fld"><label>End date</label><input id="stEnd" class="input" type="date"></div>
+      </div>
+      <div id="stDays" class="daysbadge hide"></div>
+    </div>
+
+    <div id="stCatFilters" class="catfilters"></div>
+    <div id="stCatalog"></div>
+  </section>
+
+  <section class="sec" id="offers">
+    <div class="sec-kicker">Current deals</div>
+    <h2>Offers & discounts</h2>
+    <p class="lead">Live from our system — no expired promos, no fine print you can't see.</p>
+    <div id="offerGrid" class="offergrid"></div>
+    <div id="promoBanner"></div>
+  </section>
+
+  <section class="sec" id="about">
+    <div class="aboutwrap">
+      <div>
+        <h2 style="text-align:left">About us</h2>
+        <p class="lead" id="aboutCopy">We're a Vadodara-based camera and AV equipment rental business, working with photographers, filmmakers, and production teams who need reliable gear without the overhead of owning it.</p>
+        <a class="btn pri" id="aboutWa" href="#" target="_blank" rel="noopener">Talk to us on WhatsApp</a>
+      </div>
+      <div class="aboutcard" id="contact">
+        <div class="row"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><div><b id="cardPhone">—</b><span>Call or WhatsApp</span></div></div>
+        <div class="row" id="emailRow"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"/><path d="M22 6 12 13 2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg><div><b id="cardEmail">—</b><span>Email</span></div></div>
+        <div class="row" id="addrRow"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><div><b id="cardAddr">—</b><span>Where we are</span></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-top">
+      <div class="ftr-brand"><b id="ftrBrand">DSLRswala</b><p>Camera and AV equipment rental in Vadodara — bodies, lenses, lighting, audio, and the rigging that holds it all together.</p></div>
+      <div class="ftr-cats" id="ftrCats"></div>
+    </div>
+    <div class="ftr-bottom"><span id="ftrCopy">© DSLRswala</span><span>Built on RentalOS</span></div>
+  </div>
+</footer>
+
+<div id="stCartBar" class="cartbar hide">
+  <div class="cartbar-inner">
+    <div class="ct"><b id="stCartCount">0 items</b><span class="muted">selected</span></div>
+    <button class="btn pri" onclick="stOpenRequest()">Request booking</button>
+  </div>
+</div>
+
+<div id="stOverlay"></div>
+
+<script>
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbzTlE5XZQXy1oQpYoG-nXJeORUXRuIlTEX0dA556J-VZZqceDdzysZQQN0uxdzaW78e/exec';
+const API_URL = localStorage.getItem('rentalos_api') || DEFAULT_API_URL;
+
+async function stApi(action, payload){
+  const res = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify(Object.assign({action}, payload||{})) });
+  const j = await res.json();
+  if(!j.ok) throw new Error(j.error || 'Something went wrong');
+  return j.data;
+}
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug = s => String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const waLink = (phone,msg) => 'https://wa.me/'+String(phone||'').replace(/[^0-9]/g,'')+(msg?'?text='+encodeURIComponent(msg):'');
+
+let CATALOG=[], AVAIL={}, CART={}, DAYS=0, INFO=null;
+
+/* ── Category icons — matched by keyword, generic camera-body fallback.
+   No product photos exist in the system yet, so the visual language leans
+   on icons + typography rather than pretending there are images. ── */
+const CAT_ICONS=[
+  [/lens/i,'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>'],
+  [/light|led|flash|softbox/i,'<circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'],
+  [/audio|mic|sound|record/i,'<path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/>'],
+  [/drone/i,'<circle cx="12" cy="12" r="2.5"/><path d="M5 5l3.5 3.5M19 5l-3.5 3.5M5 19l3.5-3.5M19 19l-3.5-3.5"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>'],
+  [/gimbal|stabil|tripod|slider/i,'<path d="M12 2v14M8 22l4-6 4 6M6 8l6-4 6 4"/>'],
+  [/batter|charger|power/i,'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10v4"/><path d="M7 11v2M11 11v2"/>'],
+  [/monitor|screen|display/i,'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'],
+  [/laptop|computer/i,'<rect x="4" y="4" width="16" height="11" rx="1"/><path d="M2 19h20"/>'],
+  [/bundle|combo|kit/i,'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 11h18M9 3h6l2 4H7z"/>'],
+  [/bag|case|backdrop|accessor/i,'<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>'],
+];
+function catIcon(name){
+  const hit=CAT_ICONS.find(c=>c[0].test(name||''));
+  return hit?hit[1]:'<rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>';
+}
+
+function todayStr(off){ return new Date(Date.now()+(off||0)*86400000).toISOString().slice(0,10); }
+$("#stStart").value = todayStr(1);
+$("#stEnd").value = todayStr(2);
+
+/* ── Sticky header shadow on scroll ── */
+window.addEventListener('scroll', ()=>{ $("#hdr").classList.toggle('scrolled', window.scrollY>8); }, {passive:true});
+
+async function stLoadInfo(){
+  try{
+    INFO = await stApi('store_info', {});
+    const name = INFO.business_name || 'DSLRswala';
+    document.title = name+' — Camera & AV equipment rental';
+    $("#brandName").textContent = name;
+    if(INFO.logo_url){ $(".brandmark").innerHTML=`<img src="${INFO.logo_url}" style="height:30px;max-width:120px;object-fit:contain">`; }
+    $("#ftrBrand").textContent = name;
+    $("#ftrCopy").textContent = '© '+new Date().getFullYear()+' '+name;
+    if(INFO.phone){
+      const tel='tel:'+INFO.phone;
+      $("#abarPhone").href=tel; $("#abarPhone").textContent=INFO.phone;
+      $("#hdrPhone").href=tel; $("#hdrPhone").querySelector('span').textContent=INFO.phone;
+      $("#cardPhone").textContent=INFO.phone;
+      const wa=waLink(INFO.phone,"Hi "+name+", I'd like to check equipment availability.");
+      $("#heroWa").href=wa; $("#aboutWa").href=wa;
+    }
+    if(INFO.email){ $("#cardEmail").textContent=INFO.email; } else { $("#emailRow").classList.add('hide'); }
+    if(INFO.address){ $("#cardAddr").textContent=INFO.address; } else { $("#addrRow").classList.add('hide'); }
+
+    renderOffers(INFO.offers||[]);
+    renderPromoBanner(INFO.multiday||[]);
+    maybeHideOffersSection();
+  }catch(e){ /* storefront still works without this — booking flow doesn't depend on it */ }
+}
+
+function renderOffers(offers){
+  const grid=$("#offerGrid");
+  if(!offers.length){ grid.classList.add('hide'); return; }
+  grid.classList.remove('hide');
+  grid.innerHTML=offers.map(o=>{
+    const val = o.discount_type==='percent' ? o.discount_value+'% off'
+      : o.discount_type==='flat' ? '₹'+o.discount_value.toLocaleString('en-IN')+' off'
+      : o.discount_value+' free day'+(o.discount_value===1?'':'s');
+    return `<div class="offercard"><span class="tag">Limited offer</span><b>${esc(o.title)}</b><span>${val} — mention it when you request your booking</span></div>`;
+  }).join("");
+}
+function renderPromoBanner(tiers){
+  const el=$("#promoBanner");
+  if(!tiers||!tiers.length){ el.innerHTML=''; return; }
+  const sorted=tiers.slice().sort((a,b)=>a.minDays-b.minDays);
+  el.innerHTML=`<div class="promo"><div><h3>Rent longer, save more</h3><p>Discounts apply automatically once your dates are confirmed — no code needed.</p></div>
+    <div class="promo-tiers">${sorted.map(t=>`<div class="t"><b>${t.pct}%</b><span>${t.minDays}+ days</span></div>`).join("")}</div></div>`;
+}
+function maybeHideOffersSection(){
+  const noOffers=$("#offerGrid").classList.contains('hide');
+  const noPromo=!$("#promoBanner").innerHTML.trim();
+  $("#offers").classList.toggle('hide', noOffers && noPromo);
+}
+
+async function stLoadCatalog(){
+  $("#stCatalog").innerHTML = '<div class="emptystate"><div class="spin"></div>Loading catalog…</div>';
+  try{ CATALOG = await stApi('store_catalog', {}); renderCatFilters(); await stRefreshAvailability(); }
+  catch(e){ $("#stCatalog").innerHTML = `<div class="emptystate">Couldn't load the catalog.<br><span class="muted">${e.message}</span></div>`; }
+}
+function renderCatFilters(){
+  const cats=[...new Set(CATALOG.map(c=>c.category||'Other'))].sort();
+  $("#stCatFilters").innerHTML = cats.map(c=>`<button class="catchip" onclick="document.getElementById('cat-${slug(c)}').scrollIntoView({behavior:'smooth',block:'start'})">${esc(c)}</button>`).join("");
+}
+
+async function stRefreshAvailability(){
+  const start=$("#stStart").value, end=$("#stEnd").value;
+  if(!start||!end||end<start){ $("#stDays").classList.add('hide'); return; }
+  $("#stCatalog").innerHTML = '<div class="emptystate"><div class="spin"></div>Checking availability…</div>';
+  try{
+    const typeIds = CATALOG.map(c=>c.type_id);
+    const r = await stApi('store_availability', {type_ids:typeIds, start_date:start, end_date:end});
+    AVAIL = r.availability; DAYS = r.days;
+    $("#stDays").textContent = DAYS+' day'+(DAYS===1?'':'s')+' selected';
+    $("#stDays").classList.remove('hide');
+    stRenderCatalog();
+  }catch(e){ $("#stCatalog").innerHTML = `<div class="emptystate">${e.message}</div>`; }
+}
+$("#stStart").addEventListener('change', stRefreshAvailability);
+$("#stEnd").addEventListener('change', stRefreshAvailability);
+
+function stRenderCatalog(){
+  const byCat={};
+  CATALOG.forEach(c=>{ (byCat[c.category||'Other']=byCat[c.category||'Other']||[]).push(c); });
+  const cats=Object.keys(byCat).sort();
+  $("#stCatalog").innerHTML = cats.map(cat=>`<div class="catsec" id="cat-${slug(cat)}">
+    <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${catIcon(cat)}</svg>${esc(cat)}</h3>
+    <div class="card">
+    ${byCat[cat].map(c=>{
+      const free = AVAIL[c.type_id]!=null ? AVAIL[c.type_id] : c.fleet_size;
+      const cls = free===0?'none':free<=2?'low':'ok';
+      const label = free===0?'None free':free+' free';
+      const qty = CART[c.type_id]||0;
+      return `<div class="itemrow">
+        ${c.image_url?`<img src="${c.image_url}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex:none" loading="lazy">`:''}
+        <div class="nm"><b>${esc(c.name)}</b><span class="muted">${c.fleet_size} in fleet</span></div>
+        <span class="avail ${cls}">${label}</span>
+        <div class="stepper">
+          <button onclick="stAdjust('${c.type_id}',-1)" ${qty<=0?'disabled':''}>−</button>
+          <span class="qty">${qty}</span>
+          <button onclick="stAdjust('${c.type_id}',1)" ${(qty>=free||free===0)?'disabled':''}>+</button>
+        </div>
+      </div>`;
+    }).join("")}
+  </div></div>`).join("");
+}
+
+function stAdjust(typeId, delta){
+  const free = AVAIL[typeId]!=null ? AVAIL[typeId] : 0;
+  const cur = CART[typeId]||0;
+  const next = Math.max(0, Math.min(free, cur+delta));
+  if(next<=0) delete CART[typeId]; else CART[typeId]=next;
+  stRenderCatalog();
+  stUpdateCartBar();
+}
+
+function stUpdateCartBar(){
+  const total = Object.values(CART).reduce((a,b)=>a+b,0);
+  $("#stCartBar").classList.toggle('hide', total===0);
+  $("#stCartCount").textContent = total+' item'+(total===1?'':'s');
+}
+
+function stOpenRequest(){
+  $("#stOverlay").innerHTML = `<div class="ov" onclick="if(event.target===this)stCloseOverlay()"><div class="sheet">
+    <button class="x" onclick="stCloseOverlay()">✕</button>
+    <h2>A few details</h2>
+    <p class="sub">We'll review your request and confirm availability &amp; pricing.</p>
+    <div id="stFormErr"></div>
+    <div class="fld"><label>Your name *</label><input id="stName" class="input" placeholder="Full name"></div>
+    <div class="fld"><label>Phone *</label><input id="stPhone" class="input" type="tel" placeholder="10-digit mobile"></div>
+    <div class="fld"><label>Email</label><input id="stEmail" class="input" type="email" placeholder="optional"></div>
+    <div class="fld"><label>Company</label><input id="stCompany" class="input" placeholder="optional"></div>
+    <div class="fld"><label>What's the shoot?</label><input id="stShoot" class="input" placeholder="e.g. wedding film, ad shoot"></div>
+    <div class="fld"><label>Location</label><input id="stLoc" class="input" placeholder="optional"></div>
+    <button class="btn pri block" id="stSubmitBtn" onclick="stSubmit()">Send request</button>
+  </div></div>`;
+}
+function stCloseOverlay(){ $("#stOverlay").innerHTML=''; }
+
+async function stSubmit(){
+  const name=$("#stName").value.trim(), phone=$("#stPhone").value.trim();
+  const errEl=$("#stFormErr");
+  if(!name || !phone){ errEl.innerHTML='<div class="errbox">Name and phone are required.</div>'; return; }
+  const btn=$("#stSubmitBtn"); btn.disabled=true; btn.textContent='Sending…';
+  const items=Object.keys(CART).map(type_id=>({type_id, qty:CART[type_id]}));
+  const nameVal=name;
+  try{
+    const r = await stApi('store_request', {
+      name, phone, email:$("#stEmail").value.trim(), company:$("#stCompany").value.trim(),
+      shoot_type:$("#stShoot").value.trim(), location:$("#stLoc").value.trim(),
+      start_date:$("#stStart").value, end_date:$("#stEnd").value, items
+    });
+    stShowSuccess(r, nameVal);
+  }catch(e){
+    errEl.innerHTML=`<div class="errbox">${esc(e.message)}</div>`;
+    btn.disabled=false; btn.textContent='Send request';
+  }
+}
+
+function stShowSuccess(r, nameVal){
+  const shortfall = r.shortfalls && r.shortfalls.length
+    ? `<div class="okbox" style="background:var(--warn-wash);border-color:#f0dca6;color:var(--warn)">Heads up — some items had limited availability: ${esc(r.shortfalls.join('; '))}. We'll follow up on alternatives.</div>` : '';
+  $("#stOverlay").innerHTML = `<div class="ov"><div class="sheet">
+    <div class="success">
+      <div class="ic">✓</div>
+      <h2>Request sent</h2>
+      <p>Thanks${nameVal?', '+esc(nameVal):''}! Our team will confirm availability and share pricing shortly.</p>
+      <div class="ref">${esc(r.booking_number)}</div>
+      ${shortfall}
+      <button class="btn pri block" onclick="stReset()">Done</button>
+    </div>
+  </div></div>`;
+}
+function stReset(){ CART={}; stCloseOverlay(); stUpdateCartBar(); stRenderCatalog(); }
+
+/* ── Stats + footer categories, built from the real catalog once loaded ── */
+function renderStatsAndFooter(){
+  const types=CATALOG.length;
+  const units=CATALOG.reduce((s,c)=>s+c.fleet_size,0);
+  const cats=new Set(CATALOG.map(c=>c.category||'Other')).size;
+  $("#statGrid").innerHTML=[
+    [units+'+','Items in our fleet'],
+    [types,'Equipment types'],
+    [cats,'Categories'],
+    ['Vadodara','Based & operating'],
+  ].map(s=>`<div class="st"><b>${s[0]}</b><span>${esc(s[1])}</span></div>`).join("");
+
+  const byCat={};
+  CATALOG.forEach(c=>{ (byCat[c.category||'Other']=byCat[c.category||'Other']||[]).push(c.name); });
+  const cols=Object.keys(byCat).sort().slice(0,4);
+  $("#ftrCats").innerHTML=cols.map(cat=>`<div class="col"><b>${esc(cat)}</b>${byCat[cat].slice(0,5).map(n=>`<span>${esc(n)}</span>`).join("")}</div>`).join("");
+}
+
+(async function init(){
+  await stLoadInfo();
+  await stLoadCatalog();
+  renderStatsAndFooter();
+})();
+</script>
+</body>
+</html>
