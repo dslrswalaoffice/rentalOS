@@ -136,6 +136,7 @@ async function stApi(action, payload){
   return j.data;
 }
 const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let CATALOG=[], AVAIL={}, CART={}, DAYS=0;
 
@@ -176,7 +177,7 @@ function stRenderCatalog(){
       const label = free===0?'None free':free+' free';
       const qty = CART[c.type_id]||0;
       return `<div class="itemrow">
-        <div class="nm"><b>${c.name}</b><span class="muted">${c.fleet_size} in fleet</span></div>
+        <div class="nm"><b>${esc(c.name)}</b><span class="muted">${c.fleet_size} in fleet</span></div>
         <span class="avail ${cls}">${label}</span>
         <div class="stepper">
           <button onclick="stAdjust('${c.type_id}',-1)" ${qty<=0?'disabled':''}>−</button>
@@ -242,12 +243,12 @@ async function stSubmit(){
 
 function stShowSuccess(r, nameVal){
   const shortfall = r.shortfalls && r.shortfalls.length
-    ? `<div class="okbox" style="background:var(--warn-wash);border-color:#f0dca6;color:var(--warn)">Heads up — some items had limited availability: ${r.shortfalls.join('; ')}. We'll follow up on alternatives.</div>` : '';
+    ? `<div class="okbox" style="background:var(--warn-wash);border-color:#f0dca6;color:var(--warn)">Heads up — some items had limited availability: ${esc(r.shortfalls.join('; '))}. We'll follow up on alternatives.</div>` : '';
   $("#stOverlay").innerHTML = `<div class="ov"><div class="sheet">
     <div class="success">
       <div class="ic">✓</div>
       <h2>Request sent</h2>
-      <p>Thanks${nameVal?', '+nameVal:''}! Our team will confirm availability and share pricing shortly.</p>
+      <p>Thanks${nameVal?', '+esc(nameVal):''}! Our team will confirm availability and share pricing shortly.</p>
       <div class="ref">${r.booking_number}</div>
       ${shortfall}
       <button class="btn pri block" onclick="stReset()">Done</button>
