@@ -791,25 +791,32 @@ async function go(v){
 }
 function hubTabsHtml(v){
   const info=HUB_MAP[v]; if(!info) return '';
-  const siblings=Object.keys(HUB_MAP).filter(k=>HUB_MAP[k].hub===info.hub);
+  const siblings=Object.keys(HUB_MAP).filter(k=>HUB_MAP[k].hub===info.hub && moduleEnabled_(k));
   if(siblings.length<=1) return '';
   return `<div class="hubtabs">${siblings.map(k=>`<button class="${k===v?'on':''}" onclick="go('${k}')">${HUB_MAP[k].label}</button>`).join("")}</div>`;
+}
+/** Leaf → module mapping — only a few leaves are gated, most aren't optional. */
+const LEAF_MODULE={investors:'investors'};
+function moduleEnabled_(leafKey){
+  const mod=LEAF_MODULE[leafKey];
+  if(!mod) return true;   // not a gated leaf — always shows
+  return !CACHE.modules || CACHE.modules[mod]!==false;
 }
 function render(){ $("#main").innerHTML=hubTabsHtml(VIEW)+(VIEWS[VIEW]||(()=>'<div class="empty">—</div>'))(); renderDemoBanner(); }
 
 /* ── Global search: instant, client-side, across bookings/clients/assets/
    invoices/pages. Everything searched already lives in CACHE — no network
    round trip, so results appear the moment you type. */
-const GS_PAGES=(()=>{
+function gsPages_(){
   const pages=[['dashboard','Dashboard','']];
-  Object.keys(HUB_MAP).forEach(k=>pages.push([k,HUB_MAP[k].label,HUBS[HUB_MAP[k].hub].label]));
+  Object.keys(HUB_MAP).forEach(k=>{ if(moduleEnabled_(k)) pages.push([k,HUB_MAP[k].label,HUBS[HUB_MAP[k].hub].label]); });
   return pages;
-})();
+}
 let GS_SEL=-1, GS_FLAT=[];
 function gsSearch(q){
   q=q.trim().toLowerCase(); if(!q) return null;
   const out={};
-  out.Pages=GS_PAGES.filter(p=>p[1].toLowerCase().includes(q)).slice(0,5)
+  out.Pages=gsPages_().filter(p=>p[1].toLowerCase().includes(q)).slice(0,5)
     .map(p=>({icon:'page',label:p[1],sub:p[2],type:'page',id:p[0]}));
   out.Bookings=(CACHE.bookings||[]).filter(b=>((b.booking_number||'')+' '+clientName(b.client_id)).toLowerCase().includes(q)).slice(0,5)
     .map(b=>({icon:'booking',label:b.booking_number||b.id.slice(0,8),sub:clientName(b.client_id)+' · '+fmtDate(b.start_date),type:'booking',id:b.id}));
@@ -1515,7 +1522,7 @@ VIEWS.bookings=()=>`<div class="head"><div><h1 class="h1">Bookings</h1><p class=
   <div style="display:flex;gap:10px;align-items:center">
     ${BK_STATUS?`<button class="btn sm" onclick="BK_STATUS=null;go('bookings')">Clear filter</button>`:''}
     <input class="input" style="max-width:230px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">
-    <button class="btn" onclick="quickBookingModal()">${ICON_BOLT}Quick booking</button> <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
+    <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
   <div class="card" id="bkList">${bookingsListHtml()}</div>`;
 
 let INV_FILTER='', IVQ='', INV_TYPE='', INV_OWNER='', INV_COND='', INV_PAGE=1;
@@ -2788,7 +2795,7 @@ function loading(t){ return `<div class="head"><div><h1 class="h1">${t}</h1></di
 let OFFERS=null;
 function offersBodyHtml(){
   const admin=SESSION.user.role==='admin';
-  return `${admin?`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px"><button class="btn" onclick="go('couponreport')">Coupon report</button><button class="btn pri" onclick="offerModal()">+ New offer</button></div>`:''}
+  return `${admin?`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">${(!CACHE.modules||CACHE.modules.coupons!==false)?`<button class="btn" onclick="go('couponreport')">Coupon report</button>`:''}<button class="btn pri" onclick="offerModal()">+ New offer</button></div>`:''}
   ${OFFERS.length?`<table class="tbl"><thead><tr><th>Title</th><th>Code</th><th>Type</th><th>Discount</th><th>Valid</th><th>Status</th>${admin?'<th></th>':''}</tr></thead><tbody>
     ${OFFERS.map(o=>`<tr><td><b>${esc(o.title)}</b></td><td>${o.code?`<span class="chip brand plain mono">${esc(o.code)}</span>`:'<span class="muted">—</span>'}</td><td>${o.type}</td><td class="mono">${o.discount_type==='percent'?o.discount_value+'%':o.discount_type==='flat'?inr(o.discount_value):o.discount_value+' days'}</td>
       <td class="muted">${o.valid_from?fmtDate(o.valid_from):'—'}${o.valid_to?' – '+fmtDate(o.valid_to):''}</td>
@@ -2813,8 +2820,8 @@ function offerModal(offerId){
       <label class="fld" style="flex:1"><span>Use limit (0=none)</span><input id="ofLimit" class="input mono" inputmode="numeric" value="${o.use_limit||0}"></label></div>
     <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Valid from</span><input id="ofFrom" class="input" type="date" value="${o.valid_from||''}"></label>
       <label class="fld" style="flex:1"><span>Valid to</span><input id="ofTo" class="input" type="date" value="${o.valid_to||''}"></label></div>
-    <label class="fld"><span>Coupon code <span class="muted" style="font-weight:400">(optional — set this to let anyone redeem it by typing the code, at checkout or in-store, instead of staff picking it from a list)</span></span>
-      <input id="ofCode" class="input mono" style="text-transform:uppercase" placeholder="SPECIAL20" value="${esc(o.code)||''}"></label>
+    ${(!CACHE.modules||CACHE.modules.coupons!==false)?`<label class="fld"><span>Coupon code <span class="muted" style="font-weight:400">(optional — set this to let anyone redeem it by typing the code, at checkout or in-store, instead of staff picking it from a list)</span></span>
+      <input id="ofCode" class="input mono" style="text-transform:uppercase" placeholder="SPECIAL20" value="${esc(o.code)||''}"></label>`:''}
     <label class="fld"><span>Tags <span class="muted" style="font-weight:400">(optional, comma-separated — for organizing campaigns)</span></span>
       <input id="ofTags" class="input" placeholder="diwali, email-campaign" value="${esc(o.tags)||''}"></label>
     <button class="btn pri block" id="ofBtn" onclick="submitOffer('${offerId||''}')">${edit?'Save changes':'Create offer'}</button>
@@ -2907,12 +2914,13 @@ async function wizardFinish(){
 }
 function wizardHtml(){
   const p=(SETTINGS&&SETTINGS.profile)||{};
-  const steps=['Welcome','Business info','Tax & booking','Quick inventory','Done'];
+  const steps=['Welcome','Business info','Features','Tax & booking','Quick inventory','Done'];
+  const m=(SETTINGS&&SETTINGS.config&&SETTINGS.config.modules)||{investors:true,coupons:true,website_builder:true};
   return `<div class="card pad">
     <div style="display:flex;gap:6px;margin-bottom:18px">${steps.map((s,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i+1<=WIZ_STEP?'var(--brand)':'var(--line)'}"></div>`).join("")}</div>
     ${WIZ_STEP===1?`
       <b style="font-family:var(--disp);font-size:18px">Let's get RentalOS set up</b>
-      <p class="muted" style="font-size:13px;margin:8px 0 18px;line-height:1.6">A few quick steps — business details, tax settings, and a starting inventory so you're bookable today, not staring at an empty screen. About 5 minutes. Skip anything you'd rather do later.</p>
+      <p class="muted" style="font-size:13px;margin:8px 0 18px;line-height:1.6">A few quick steps — business details, which features you need, tax settings, and a starting inventory so you're bookable today, not staring at an empty screen. About 5 minutes. Skip anything you'd rather do later.</p>
       <button class="btn pri block" onclick="WIZ_STEP=2;render()">Get started</button>
       <button class="btn block" style="margin-top:8px" onclick="wizardFinish()">Skip setup entirely</button>`
     :WIZ_STEP===2?`
@@ -2927,14 +2935,22 @@ function wizardHtml(){
       <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=1;render()">Back</button>
         <button class="btn pri" style="flex:2" id="wzBiz" onclick="wizStep2Save()">Continue</button></div>`
     :WIZ_STEP===3?`
+      <b style="font-family:var(--disp);font-size:16px">Which features do you need?</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Turn off what doesn't apply to your business — you can always switch it back on later in Settings. A leaner portal is a lot easier for your team to learn.</p>
+      <label class="pickrow" style="align-items:flex-start"><input type="checkbox" id="wzModInvestors" ${m.investors!==false?'checked':''}><div><b style="font-size:13px">Investors</b><div class="muted" style="font-size:11.5px">Only if outside investors fund part of your equipment.</div></div></label>
+      <label class="pickrow" style="align-items:flex-start"><input type="checkbox" id="wzModCoupons" ${m.coupons!==false?'checked':''}><div><b style="font-size:13px">Coupon codes</b><div class="muted" style="font-size:11.5px">Customer-typed discount codes at checkout, not just staff-applied offers.</div></div></label>
+      <label class="pickrow" style="align-items:flex-start"><input type="checkbox" id="wzModWeb" ${m.website_builder!==false?'checked':''}><div><b style="font-size:13px">Website builder</b><div class="muted" style="font-size:11.5px">The custom storefront builder, beyond the simple booking page.</div></div></label>
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" style="flex:1" onclick="WIZ_STEP=2;render()">Back</button>
+        <button class="btn pri" style="flex:2" id="wzMod" onclick="wizStep3ModulesSave()">Continue</button></div>`
+    :WIZ_STEP===4?`
       <b style="font-family:var(--disp);font-size:16px">Tax &amp; booking numbering</b>
       <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Defaults are fine for most — change if your accountant needs otherwise.</p>
       <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>GST %</span><input id="wzGst" class="input mono" value="${(SETTINGS.config&&SETTINGS.config.tax.gst_pct)||18}"></label>
         <label class="fld" style="flex:1"><span>TDS %</span><input id="wzTds" class="input mono" value="${(SETTINGS.config&&SETTINGS.config.tax.tds_pct)||2}"></label></div>
       <label class="fld"><span>Booking reference prefix</span><input id="wzPrefix" class="input mono" style="text-transform:uppercase;max-width:160px" maxlength="8" value="${(SETTINGS.config&&SETTINGS.config.numbering.booking_prefix)||'BK'}"></label>
-      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=2;render()">Back</button>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=3;render()">Back</button>
         <button class="btn pri" style="flex:2" id="wzTax" onclick="wizStep3Save()">Continue</button></div>`
-    :WIZ_STEP===4?`
+    :WIZ_STEP===5?`
       <b style="font-family:var(--disp);font-size:16px">Quick inventory</b>
       <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Common gear, pre-filled — tick what you actually have, edit the rate, skip the rest. You can add more anytime from Inventory.</p>
       <div style="max-height:340px;overflow:auto">
@@ -2945,14 +2961,23 @@ function wizardHtml(){
           <input class="input mono" id="wzGearRate${i}" value="${g.rate}" style="width:80px;font-size:12.5px;padding:6px 8px" inputmode="numeric"></label>`).join("")}
         </div>`).join("");})()}
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=3;render()">Back</button>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=4;render()">Back</button>
         <button class="btn pri" style="flex:2" id="wzInv" onclick="wizStep4Save()">Add selected &amp; continue</button></div>
-      <button class="btn block" style="margin-top:8px" onclick="WIZ_STEP=5;render()">Skip this step</button>`
+      <button class="btn block" style="margin-top:8px" onclick="WIZ_STEP=6;render()">Skip this step</button>`
     :`
       <b style="font-family:var(--disp);font-size:18px">All set 🎉</b>
-      <p class="muted" style="font-size:13px;margin:8px 0 18px;line-height:1.6">RentalOS is ready. You can revisit any of this anytime in Settings, and add the rest of your inventory whenever — this was just enough to get moving.</p>
+      <p class="muted" style="font-size:13px;margin:8px 0 18px;line-height:1.6">RentalOS is ready — set up the way <i>you</i> need it, not a one-size-fits-all default. You can revisit any of this anytime in Settings.</p>
       <button class="btn pri block" onclick="wizardFinish()">Go to dashboard</button>`}
   </div>`;
+}
+async function wizStep3ModulesSave(){
+  const btn=$("#wzMod"); if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    const modules={investors:($("#wzModInvestors")||{}).checked!==false, coupons:($("#wzModCoupons")||{}).checked!==false, website_builder:($("#wzModWeb")||{}).checked!==false};
+    await api('config_save',{modules:modules});
+    CACHE.modules=modules; if(SETTINGS&&SETTINGS.config) SETTINGS.config.modules=modules;
+    WIZ_STEP=4; render();
+  }catch(e){ toast(e.message,true); if(btn){btn.disabled=false;btn.textContent='Continue';} }
 }
 async function wizStep2Save(){
   const btn=$("#wzBiz"); if(btn){btn.disabled=true;btn.textContent='Saving…';}
@@ -2968,12 +2993,12 @@ async function wizStep3Save(){
   try{
     await api('config_save',{tax:{gst_pct:Number(($("#wzGst")||{}).value||18), tds_pct:Number(($("#wzTds")||{}).value||2)},
       numbering:{booking_prefix:($("#wzPrefix")||{}).value||'BK'}});
-    SETTINGS=null; await loadSettings(); WIZ_STEP=4; render();
+    SETTINGS=null; await loadSettings(); WIZ_STEP=5; render();
   }catch(e){ toast(e.message,true); if(btn){btn.disabled=false;btn.textContent='Continue';} }
 }
 async function wizStep4Save(){
   const picked=Object.keys(WIZ_PICKED).filter(i=>WIZ_PICKED[i]);
-  if(!picked.length){ WIZ_STEP=5; render(); return; }
+  if(!picked.length){ WIZ_STEP=6; render(); return; }
   const btn=$("#wzInv"); btn.disabled=true; btn.textContent='Adding…';
   try{
     for(const i of picked){
@@ -2982,8 +3007,16 @@ async function wizStep4Save(){
       const t=await api('asset_type_create',{name:g.cat, category:'camera_av'});
       await api('asset_create',{name:name, asset_type_id:t.id, daily_rate:rate});
     }
-    toast(picked.length+' item(s) added to inventory'); await reloadData(); WIZ_STEP=5; render();
+    toast(picked.length+' item(s) added to inventory'); await reloadData(); WIZ_STEP=6; render();
   }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Add selected & continue'; }
+}
+async function toggleModule(key,on){
+  try{
+    await api('config_save',{modules:{[key]:on}});
+    if(SETTINGS&&SETTINGS.config) SETTINGS.config.modules=Object.assign({},SETTINGS.config.modules,{[key]:on});
+    CACHE.modules=Object.assign({},CACHE.modules,{[key]:on});
+    toast(on?'Module turned on':'Module turned off'); renderSide(); render();
+  }catch(e){ toast(e.message,true); }
 }
 let NOTIFS=null;
 const NOTIF_STATUS_LBL={queued:["warn","Queued · needs review"],sent:["ok","Sent"],suppressed:["bad","Rejected"],approved:["ok","Approved"],failed:["bad","Failed"]};
@@ -3117,12 +3150,14 @@ const SETNAV=[
   ['Documents',[['numbering','Numbering'],['templates','Message templates']]],
   ['Integrations',[['payment','Payment gateway'],['whatsapp','WhatsApp']]],
   ['Access',[['users','Users'],['roles','Roles & access']]],
-  ['System',[['features','Features'],['demo','Demo data'],['setup','Setup wizard'],['connection','Connection'],['about','System info']]],
+  ['System',[['features','Features'],['modules','Modules'],['demo','Demo data'],['setup','Setup wizard'],['connection','Connection'],['about','System info']]],
 ];
 VIEWS.settings=()=>{
   if(SESSION.user.role!=='admin') return `<div class="head"><div><h1 class="h1">Settings</h1></div></div><div class="empty">Settings are admin-only. You're signed in as ${SESSION.user.role}.</div>`;
   if(!SETTINGS){ loadSettings(); return loading('Settings'); }
-  const nav=SETNAV.map(g=>`<div class="grp">${g[0]}</div>`+g[1].map(it=>`<button class="${SETTAB===it[0]?'on':''}" onclick="setGo('${it[0]}')">${it[1]}</button>`).join("")).join("");
+  const wbOn=!CACHE.modules||CACHE.modules.website_builder!==false;
+  const navData=wbOn?SETNAV:SETNAV.map(g=>[g[0], g[1].filter(it=>it[0]!=='webbuilder')]).filter(g=>g[1].length);
+  const nav=navData.map(g=>`<div class="grp">${g[0]}</div>`+g[1].map(it=>`<button class="${SETTAB===it[0]?'on':''}" onclick="setGo('${it[0]}')">${it[1]}</button>`).join("")).join("");
   const body=(SETSECTIONS[SETTAB]||SETSECTIONS.general)();
   return `<div class="head"><div><h1 class="h1">Settings</h1><p class="sub">Back office configuration</p></div></div>
   <div class="setwrap"><nav class="setnav">${nav}</nav><div class="setbody">${body}</div></div>`;
@@ -3255,6 +3290,19 @@ const SETSECTIONS={
       ? `<div class="fact" style="margin-bottom:10px"><div class="k">Demo rows loaded</div><div class="v mono">${CACHE.demo.count}</div></div><button class="btn block" onclick="purgeDemo()">Purge demo data</button>`
       : `<button class="btn pri block" onclick="seedDemo()">Load demo data</button>`}</div>`,
   setup:()=>wizardHtml(),
+  modules:()=>{ const m=SETTINGS.config.modules||{};
+    const MOD_INFO=[
+      ['investors','Investors','Capital & equipment sub-ledger, ROI payouts, statements. Turn off if you don\'t take outside investor capital.'],
+      ['coupons','Coupon codes','Customer-typed discount codes and the coupon performance report. Turn off if you only ever apply discounts as staff-selected offers.'],
+      ['website_builder','Website builder','The custom storefront builder preview in Settings → Online bookings. Turn off to keep just the simple booking page.'],
+    ];
+    return `<div class="card pad"><b style="font-family:var(--disp)">Modules</b>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 16px">Turn off what you don't need — a leaner portal is easier to learn and use. Nothing is deleted when you switch a module off, it's just hidden; flip it back on anytime and everything's still there.</p>
+    ${MOD_INFO.map(([key,label,desc])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)">
+      <div style="flex:1;padding-right:16px"><b style="font-size:13.5px">${label}</b><div class="muted" style="font-size:12px;margin-top:2px">${desc}</div></div>
+      <button class="btn sm ${m[key]!==false?'pri':''}" onclick="toggleModule('${key}',${m[key]===false})">${m[key]!==false?'On':'Off'}</button>
+    </div>`).join("")}
+  </div>`; },
   users:()=>{ const all=SETTINGS.users||[]; const q=(USR_Q||'').trim().toLowerCase();
     const us=q?all.filter(u=>((u.name||'')+' '+(u.email||'')).toLowerCase().includes(q)):all;
     return `<div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--disp)">Users</b><button class="btn sm pri" onclick="userModal()">+ Add user</button></div>
