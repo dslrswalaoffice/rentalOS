@@ -466,7 +466,7 @@ function stOpenRequest(){
     <p class="sub">We'll review your request and confirm availability &amp; pricing.</p>
     <div id="stFormErr"></div>
     <div class="fld"><label>Your name *</label><input id="stName" class="input" placeholder="Full name"></div>
-    <div class="fld"><label>Phone *</label><input id="stPhone" class="input" type="tel" placeholder="10-digit mobile"></div>
+    <div class="fld"><label>Phone *</label><input id="stPhone" class="input" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile" oninput="this.value=this.value.replace(/\D/g,'').slice(-10)"></div>
     <div class="fld"><label>Email</label><input id="stEmail" class="input" type="email" placeholder="optional"></div>
     <div class="fld"><label>Company</label><input id="stCompany" class="input" placeholder="optional"></div>
     <div class="fld"><label>What's the shoot?</label><input id="stShoot" class="input" placeholder="e.g. wedding film, ad shoot"></div>

@@ -448,7 +448,7 @@ body.demo-active .whatsnew{bottom:76px}
       <p>No password needed — we'll text you a code.</p>
       <div id="portalErr" class="err hide"></div>
       <div id="portalPhoneStep">
-        <label class="fld"><span>Phone number</span><input id="portalPhone" class="input" type="tel" inputmode="numeric" placeholder="98XXXXXXXX" onkeydown="if(event.key==='Enter')portalSendCode()"></label>
+        <label class="fld"><span>Phone number</span><input id="portalPhone" class="input" type="tel" inputmode="numeric" maxlength="10" placeholder="98XXXXXXXX" oninput="phoneInputHandler(this)" onkeydown="if(event.key==='Enter')portalSendCode()"></label>
         <button class="btn pri block" id="portalSendBtn" onclick="portalSendCode()">Send code</button>
       </div>
       <div id="portalCodeStep" class="hide">
@@ -791,7 +791,7 @@ const HUB_MAP={
   invoices:{hub:'billing',label:'Invoices'}, deposits:{hub:'billing',label:'Deposits'},
   inventory:{hub:'inventory',label:'Assets'}, maintenance:{hub:'inventory',label:'Maintenance'}, stockaudit:{hub:'inventory',label:'Stock audit'},
   clients:{hub:'people',label:'Clients'}, trust:{hub:'people',label:'Trust & guardrails'}, investors:{hub:'people',label:'Investors'},
-  analytics:{hub:'insights',label:'Analytics'}, reports:{hub:'insights',label:'Reports'},
+  analytics:{hub:'insights',label:'Analytics'}, reports:{hub:'insights',label:'Reports'}, moneyledger:{hub:'insights',label:'Money ledger'},
   settings:{hub:'system',label:'Settings'}, activitylog:{hub:'system',label:'Activity log'}, roadmap:{hub:'system',label:'Roadmap'},
 };
 const HUBS={
@@ -1108,8 +1108,10 @@ const PORTAL_BOOKING_LBL={draft:['pend','Quote'],quote:['pend','Quote'],confirme
   dispatched:['warn','With you'],open:['warn','With you'],finalised:['ok','Completed'],cancelled:['bad','Cancelled']};
 function portalBookingChip(status){ const l=PORTAL_BOOKING_LBL[status]||['pend',status]; return `<span class="chip ${l[0]}">${l[1]}</span>`; }
 function portalInvoiceLine(v){
+  const s=paymentState(v.net_payable,v.paid_amount);
   const due=Math.max(0,Number(v.net_payable||0)-Number(v.paid_amount||0));
-  if(due<=0) return `<span class="chip ok">Paid</span>`;
+  if(s.state==='paid') return `<span class="chip ok">Paid</span>`;
+  if(s.state==='partial') return `<span class="chip warn">${inr(due)} remaining</span>`;
   return `<span class="chip bad">${inr(due)} due</span>`;
 }
 /** unpaid -> due shows the full total; partial -> due shows what's left;
@@ -1117,7 +1119,12 @@ function portalInvoiceLine(v){
  *  shown honestly rather than guessing a number that might not be real. */
 function portalBookingPayment(p){
   if(!p) return '';
-  if(p.mode==='invoice') return p.due<=0?`<span class="chip ok">Paid</span>`:`<span class="chip bad">${inr(p.due)} due</span>`;
+  if(p.mode==='invoice'){
+    const s=paymentState(p.total,p.paid);
+    if(s.state==='paid') return `<span class="chip ok">Paid</span>`;
+    if(s.state==='partial') return `<span class="chip warn">${inr(p.due)} remaining</span>`;
+    return `<span class="chip bad">${inr(p.due)} due</span>`;
+  }
   if(p.mode==='consolidated') return `<span class="muted" style="font-size:11px">Billed with other bookings — see Invoices</span>`;
   if(p.mode==='estimate') return `<span class="muted" style="font-size:11px">Est. ${inr(p.total)}</span>`;
   return '';
@@ -1440,6 +1447,47 @@ function repCard(icon,title,desc,btnId,onclick){
   return `<div class="card repcard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${REPORT_ICON[icon]}</svg>
     <div class="rc-body"><b>${title}</b><p>${desc}</p><button class="btn" id="${btnId}" onclick="${onclick}">Download CSV</button></div></div>`;
 }
+/* ===================== MONEY LEDGER ===================== */
+let LEDGER=null, LG_PARTY='', LG_KIND='', LG_FROM='', LG_TO='';
+const LEDGER_KIND_LBL={advance:'Rental payment',balance:'Rental payment',damage_recovery:'Damage recovery',
+  deposit:'Deposit collected',deposit_refund:'Deposit refunded',deposit_forfeit:'Deposit forfeited',investor_payout:'Investor payout'};
+async function loadLedger(){
+  try{ LEDGER=await api('money_ledger',{party_type:LG_PARTY, kind:LG_KIND, date_from:LG_FROM, date_to:LG_TO}); if(VIEW==='moneyledger') render(); }
+  catch(e){ toast(e.message,true); }
+}
+function lgFilter(k,v){ if(k==='party')LG_PARTY=v; if(k==='kind')LG_KIND=v; if(k==='from')LG_FROM=v; if(k==='to')LG_TO=v; LEDGER=null; loadLedger(); render(); }
+VIEWS.moneyledger=()=>{
+  if(!LEDGER){ loadLedger(); return loading('Money ledger'); }
+  const rows=LEDGER.rows, s=LEDGER.summary;
+  const dirChip=d=>({'in':['ok','In'],'out':['bad','Out'],'reclass':['warn','Reclassified']}[d]||['pend',d]);
+  return `<div class="head"><div><h1 class="h1">Money ledger</h1><p class="sub">Every rupee that moved, client and investor side, in one place</p></div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">
+    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Real revenue in</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--ok)">${inr(s.revenue_in)}</div><div class="muted" style="font-size:11px;margin-top:2px">Rental payments + damage recovery + forfeited deposits</div></div>
+    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Deposits held (net)</div><div class="mono" style="font-size:20px;font-weight:700">${inr(s.deposits_held_net)}</div><div class="muted" style="font-size:11px;margin-top:2px">In trust — not revenue until forfeited</div></div>
+    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Paid to investors</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--bad)">${inr(s.investor_paid_out)}</div><div class="muted" style="font-size:11px;margin-top:2px">Revenue share payouts, all time</div></div>
+  </div>
+  <div class="card pad" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <label class="fld" style="min-width:140px"><span>Party</span><select class="input" onchange="lgFilter('party',this.value)">
+        <option value="">All</option><option value="client" ${LG_PARTY==='client'?'selected':''}>Client</option><option value="investor" ${LG_PARTY==='investor'?'selected':''}>Investor</option></select></label>
+      <label class="fld" style="min-width:180px"><span>Type</span><select class="input" onchange="lgFilter('kind',this.value)">
+        <option value="">All types</option>${Object.keys(LEDGER_KIND_LBL).map(k=>`<option value="${k}" ${LG_KIND===k?'selected':''}>${LEDGER_KIND_LBL[k]}</option>`).join("")}</select></label>
+      <label class="fld"><span>From</span><input class="input" type="date" value="${LG_FROM}" onchange="lgFilter('from',this.value)"></label>
+      <label class="fld"><span>To</span><input class="input" type="date" value="${LG_TO}" onchange="lgFilter('to',this.value)"></label>
+    </div>
+  </div>
+  <div class="card">
+    ${rows.length?`<table class="tbl"><thead><tr><th>Date</th><th>Type</th><th>Party</th><th>Reference</th><th>Method</th><th></th><th>Amount</th></tr></thead><tbody>
+    ${rows.map(r=>{const dc=dirChip(r.direction); return `<tr><td class="muted" style="font-size:12px">${fmtDate(r.at)}</td>
+      <td>${esc(r.label)}</td>
+      <td><span class="chip pend plain" style="font-size:10px;text-transform:uppercase">${r.party_type}</span> ${esc(r.party_name)}</td>
+      <td class="mono muted" style="font-size:11.5px">${esc(r.reference)||'—'}</td>
+      <td class="muted" style="font-size:12px;text-transform:capitalize">${esc(r.method)||'—'}</td>
+      <td><span class="chip ${dc[0]}" style="font-size:10px">${dc[1]}</span></td>
+      <td class="mono" style="text-align:right">${inr(r.amount)}</td></tr>`;}).join("")}
+    </tbody></table>`:'<div class="empty">No transactions match these filters.</div>'}
+  </div>`;
+};
 VIEWS.reports=()=>{
   if(SESSION.user.role!=='admin') return `<div class="head"><div><h1 class="h1">Reports</h1></div></div><div class="empty">Reports are admin-only. You're signed in as ${SESSION.user.role}.</div>`;
   return `<div class="head"><div><h1 class="h1">Reports</h1><p class="sub">Download data for any period — opens as a CSV you can pull into Excel/Sheets or send to your accountant.</p></div></div>
@@ -1908,7 +1956,7 @@ function client360Html(d){
           <td style="font-size:12px">${esc(h.items.join(', '))||'—'}</td>
           <td>${stageChip(h.status)}</td>
           ${h.consolidated?`<td class="mono">${inr(h.total)}</td><td colspan="2" class="muted" style="font-size:11.5px;padding-right:16px">Billed together with other bookings — see Invoices</td>`
-            :`<td class="mono">${inr(h.total)}</td><td class="mono">${inr(h.paid)}</td><td style="padding-right:16px">${due(h.outstanding)}</td>`}</tr>`).join('')}
+            :`<td class="mono">${inr(h.total)}</td><td class="mono">${inr(h.paid)}</td><td style="padding-right:16px">${paymentChip(h.total,h.paid)} ${h.outstanding>0?due(h.outstanding):''}</td>`}</tr>`).join('')}
         </tbody></table>`:'<p class="muted" style="font-size:12.5px;margin:8px 0 0">No bookings yet.</p>'}
       </div>
 
@@ -2149,13 +2197,26 @@ function parseJson(x){ if(!x)return[]; if(typeof x==='object')return x; try{retu
 
 let INV_Q='';
 const INV_CAP=60;
+/* Shared payment-state classification — used everywhere an invoice's payment
+   status is shown, so "unpaid" vs "partially paid" vs "paid" is always an
+   explicit label, not something the reader has to infer by comparing two
+   numbers themselves. */
+function paymentState(net,paid){
+  net=Number(net||0); paid=Number(paid||0);
+  const due=Math.max(0,net-paid);
+  if(due<=0) return {state:'paid',label:'Paid',cls:'ok'};
+  if(paid>0) return {state:'partial',label:'Partially paid',cls:'warn'};
+  return {state:'unpaid',label:'Unpaid',cls:'bad'};
+}
+function paymentChip(net,paid){ const s=paymentState(net,paid); return `<span class="chip ${s.cls}">${s.label}</span>`; }
 function invoiceRow(v){
   const bk=(bookingById(v.booking_id)||{});
   const ref=v.type==='consolidated'?'Consolidated':(bk.booking_number||v.id.slice(0,8));
   const refHtml=v.type==='consolidated'?ref:`<span class="hc-trigger" data-hb="${v.booking_id}">${ref}</span>`;
   return `<tr class="clickable" onclick="openInvoice('${v.id}')"><td class="mono">${refHtml}</td><td><span class="hc-trigger" data-hc="${v.client_id}">${clientName(v.client_id)}</span></td>
     <td>${v.type==='consolidated'?'<span class="chip brand plain">VIP</span>':'Standard'}</td><td>${stageChip(v.status)}</td>
-    <td class="mono">${inr(v.net_payable)}</td></tr>`;
+    <td>${paymentChip(v.net_payable,v.paid_amount)}</td>
+    <td class="mono">${inr(v.net_payable)}</td><td class="mono muted" style="font-size:12px">${inr(v.paid_amount)}</td></tr>`;
 }
 function invoicesFiltered(){
   const all=(CACHE.invoices||[]).slice().reverse();
@@ -2169,7 +2230,7 @@ function invoicesListHtml(){
   const filt=invoicesFiltered();
   if(!filt.length) return '<div class="empty">No invoices match your search.</div>';
   const shown=filt.slice(0,INV_CAP);
-  return `<table class="tbl"><thead><tr><th>Reference</th><th>Client</th><th>Type</th><th>Status</th><th>Net payable</th></tr></thead><tbody>
+  return `<table class="tbl"><thead><tr><th>Reference</th><th>Client</th><th>Type</th><th>Status</th><th>Payment</th><th>Net payable</th><th>Paid</th></tr></thead><tbody>
     ${shown.map(invoiceRow).join("")}</tbody></table>`+
     (filt.length>INV_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${INV_CAP} of ${filt.length} — refine your search to narrow.</div>`:'');
 }
@@ -2205,7 +2266,7 @@ async function openInvoiceDoc(invId){
   const c=clientObjById(v.client_id)||{};
   await generateAndArchive('invoice','invoices',invId,(v.type==='consolidated'?'Consolidated invoice':'Invoice')+' — '+(v.id.slice(0,8)),
     async()=>{ const biz=await api('store_info',{}); return invoiceDocHtml(v,biz); }, 'invoices',
-    {phone:c.phone_primary, clientName:c.name, amountLine:inr(v.net_payable)});
+    {phone:c.whatsapp_number||c.phone_primary, clientName:c.name, amountLine:inr(v.net_payable)});
   loadInvoiceDocs(invId);
 }
 function invoiceDocHtml(v,biz){
@@ -2359,10 +2420,11 @@ async function sendPaymentLink(invId){
     if(el) el.innerHTML=`<div class="card pad" style="background:var(--brand-wash);border-color:var(--brand)">
       <div class="mono" style="font-size:11.5px;word-break:break-all;margin-bottom:8px">${esc(r.url)}</div>
       <div style="display:flex;gap:8px"><button class="btn sm" onclick="navigator.clipboard.writeText('${r.url}');toast('Copied')">Copy link</button>
-      <a class="btn sm" href="${c&&c.phone_primary?('https://wa.me/'+c.phone_primary.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(msg)):'#'}" target="_blank" rel="noopener">Share on WhatsApp</a></div></div>`;
+      <a class="btn sm" href="${c&&(c.whatsapp_number||c.phone_primary)?('https://wa.me/'+(c.whatsapp_number||c.phone_primary).replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(msg)):'#'}" target="_blank" rel="noopener">Share on WhatsApp</a></div></div>`;
   }catch(e){ if(el) el.innerHTML=`<p style="font-size:12px;color:var(--bad);margin:0">${esc(e.message)}</p>`; }
 }
 function paymentModal(invId, bookingId, clientId, suggested){
+  const today=new Date().toISOString().slice(0,10);
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Record payment</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
     <label class="fld"><span>Amount ₹</span><input id="pAmt" class="input mono" inputmode="numeric" value="${suggested||''}"></label>
@@ -2370,6 +2432,7 @@ function paymentModal(invId, bookingId, clientId, suggested){
       <label class="fld" style="flex:1"><span>Type</span><select id="pType" class="input"><option value="balance">Balance</option><option value="advance">Advance</option><option value="damage_recovery">Damage recovery</option></select></label>
       <label class="fld" style="flex:1"><span>Method</span><select id="pMethod" class="input"><option value="upi">UPI</option><option value="cash">Cash</option><option value="neft">NEFT</option><option value="cheque">Cheque</option><option value="razorpay">Razorpay</option><option value="cashfree">Cashfree</option></select></label>
     </div>
+    <label class="fld"><span>Date</span><input id="pDate" class="input" type="date" value="${today}"></label>
     <label class="fld"><span>Notes (UPI ref, etc.)</span><input id="pNotes" class="input" placeholder="optional"></label>
     <button class="btn pri block" id="pBtn" onclick="submitPayment('${invId}','${bookingId}','${clientId}')">Record payment</button>
   </div>`;
@@ -2380,7 +2443,8 @@ async function submitPayment(invId, bookingId, clientId){
   if(!amt||amt<=0){ toast('Enter an amount',true); return; }
   const btn=$("#pBtn"); btn.disabled=true; btn.textContent='Recording…';
   try{ await api('payment_record',{invoice_id:invId, booking_id:bookingId, client_id:clientId,
-      amount:amt, type:$("#pType").value, method:$("#pMethod").value, notes:($("#pNotes")||{}).value||''});
+      amount:amt, type:$("#pType").value, method:$("#pMethod").value, notes:($("#pNotes")||{}).value||'',
+      paid_at:($("#pDate")||{}).value||''});
     toast('Payment recorded'); closeOverlays(); await reloadData(); openInvoice(invId);
   }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Record payment'; }
 }
@@ -2490,10 +2554,12 @@ function depositDetailHtml(s){
 function depositAction(kind, bookingId, suggested, reasonHint){
   const titles={collect:'Collect deposit',refund:'Refund deposit',forfeit:'Forfeit deposit'};
   const needMethod=(kind==='collect'||kind==='refund');
+  const today=new Date().toISOString().slice(0,10);
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${titles[kind]}</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
     <label class="fld"><span>Amount ₹</span><input id="dAmt" class="input mono" inputmode="numeric" value="${suggested||''}"></label>
     ${needMethod?`<label class="fld"><span>Method</span><select id="dMethod" class="input"><option value="upi">UPI</option><option value="cash">Cash</option><option value="neft">NEFT</option><option value="cheque">Cheque</option><option value="razorpay">Razorpay</option><option value="cashfree">Cashfree</option></select></label>`:''}
+    <label class="fld"><span>Date</span><input id="dDate" class="input" type="date" value="${today}"></label>
     ${kind==='forfeit'?`<label class="fld"><span>Reason</span><input id="dReason" class="input" value="${reasonHint==='damage'?'damage cover':''}" placeholder="why"></label>`:''}
     <label class="fld"><span>Notes</span><input id="dNotes" class="input" placeholder="optional"></label>
     <button class="btn pri block" id="dBtn" onclick="submitDeposit('${kind}','${bookingId}')">${titles[kind]}</button>
@@ -2504,7 +2570,7 @@ async function submitDeposit(kind, bookingId){
   const amt=Number(($("#dAmt")||{}).value||0);
   if(!amt||amt<=0){ toast('Enter an amount',true); return; }
   const btn=$("#dBtn"); btn.disabled=true; btn.textContent='Working…';
-  const payload={booking_id:bookingId, amount:amt, notes:($("#dNotes")||{}).value||''};
+  const payload={booking_id:bookingId, amount:amt, notes:($("#dNotes")||{}).value||'', paid_at:($("#dDate")||{}).value||''};
   if($("#dMethod"))payload.method=$("#dMethod").value;
   if($("#dReason"))payload.reason=$("#dReason").value;
   const action={collect:'deposit_collect',refund:'deposit_refund',forfeit:'deposit_forfeit'}[kind];
@@ -2727,6 +2793,41 @@ let _quoteReturn=false;
 function addClientFromQuote(){ _quoteReturn=true; clientFormModal(); }
 const DATE_FORMAT_OPTS=['DD-MM-YYYY','YYYY-MM-DD','MM-DD-YYYY','DD/MM/YYYY'];
 const INDIA_STATES=['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Andaman and Nicobar Islands','Chandigarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Jammu and Kashmir','Ladakh','Lakshadweep','Puducherry'];
+/* ===================== PHONE / WHATSAPP — shared everywhere a phone number
+   is collected. Strips +91, spaces, dashes on paste; keeps the last 10
+   digits; "same on WhatsApp" defaults on, with a separate field only when
+   it's genuinely different. ===================== */
+function cleanPhone10_(v){
+  let d=String(v||'').replace(/\D/g,'');
+  if(d.length>10) d=d.slice(-10);
+  return d;
+}
+function phoneInputHandler(el){ el.value=cleanPhone10_(el.value); }
+function phoneWaFieldHtml(idPrefix,label,phone,whatsapp){
+  const same=!whatsapp||whatsapp===phone;
+  return `<label class="fld"><span>${label}</span><input id="${idPrefix}Phone" class="input mono" type="tel" inputmode="numeric" maxlength="10" value="${esc(phone)||''}" placeholder="98XXXXXXXX" oninput="phoneInputHandler(this)"></label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:-6px 0 12px;cursor:pointer">
+      <input type="checkbox" id="${idPrefix}SameWa" ${same?'checked':''} onchange="toggleWaField_('${idPrefix}')"> Same number on WhatsApp
+    </label>
+    <div id="${idPrefix}WaWrap" style="display:${same?'none':'block'}">
+      <label class="fld"><span>WhatsApp number</span><input id="${idPrefix}Wa" class="input mono" type="tel" inputmode="numeric" maxlength="10" value="${same?'':esc(whatsapp)||''}" placeholder="98XXXXXXXX" oninput="phoneInputHandler(this)"></label>
+    </div>`;
+}
+function toggleWaField_(idPrefix){
+  const same=($('#'+idPrefix+'SameWa')||{}).checked;
+  const wrap=$('#'+idPrefix+'WaWrap'); if(wrap) wrap.style.display=same?'none':'block';
+}
+/** Reads {phone, whatsapp} back from a phoneWaFieldHtml instance, validating
+ *  exactly 10 digits (empty is allowed — phone stays optional). */
+function readPhoneWa_(idPrefix,label){
+  const phone=cleanPhone10_(($('#'+idPrefix+'Phone')||{}).value||'');
+  if(phone && phone.length!==10) throw new Error((label||'Phone number')+' must be exactly 10 digits.');
+  const same=($('#'+idPrefix+'SameWa')||{}).checked;
+  let wa=same?phone:cleanPhone10_(($('#'+idPrefix+'Wa')||{}).value||'');
+  if(!same && wa && wa.length!==10) throw new Error('WhatsApp number must be exactly 10 digits.');
+  if(!wa) wa=phone;
+  return {phone:phone, whatsapp:wa};
+}
 function clientFormModal(clientId){
   const c=clientId?((CACHE.clients||[]).find(x=>x.id===clientId)||{}):{};
   const edit=!!clientId;
@@ -2735,7 +2836,7 @@ function clientFormModal(clientId){
   <div class="db">
     <label class="fld"><span>Name</span><input id="clName" class="input" value="${c.name||''}" placeholder="Full name"></label>
     <div style="display:flex;gap:10px">
-      <label class="fld" style="flex:1"><span>Phone</span><input id="clPhone" class="input mono" value="${c.phone_primary||''}" placeholder="+9198..."></label>
+      <div style="flex:1">${phoneWaFieldHtml('cl','Phone',c.phone_primary,c.whatsapp_number)}</div>
       <label class="fld" style="flex:1"><span>Tier</span><select id="clTier" class="input"><option value="normal" ${c.tier==='normal'||!c.tier?'selected':''}>Normal</option><option value="premium" ${c.tier==='premium'?'selected':''}>Premium</option><option value="vip" ${c.tier==='vip'?'selected':''}>VIP</option></select></label></div>
     <label class="fld"><span>Email</span><input id="clEmail" class="input" value="${c.email||''}" placeholder="optional"></label>
     <div style="display:flex;gap:10px">
@@ -2746,12 +2847,29 @@ function clientFormModal(clientId){
   </div>`;
   openOverlay($("#modal"));
 }
-async function submitClient(clientId){
+/** A styled stand-in for browser confirm() — used anywhere the system needs
+ *  to stop someone and say "this looks wrong, are you sure" (duplicate
+ *  records, irreversible actions). Deliberately loud: red border, red wash
+ *  background, warning icon — a plain confirm() dialog doesn't look
+ *  different from any other "are you sure" prompt, and this needs to. */
+function confirmWarn(title, message, onConfirm, confirmLabel){
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px;color:var(--bad)">⚠ ${esc(title)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    <div style="background:var(--bad-wash);border:1px solid #f1c4c9;border-left:3px solid var(--bad);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;line-height:1.5;color:var(--ink-2)">${message}</div>
+    <div style="display:flex;gap:8px"><button class="btn" style="flex:1" onclick="closeOverlays()">Cancel</button>
+      <button class="btn" style="flex:1;background:var(--bad);border-color:var(--bad);color:#fff" id="cwBtn">${confirmLabel||'Continue anyway'}</button></div>
+  </div>`;
+  openOverlay($("#modal"));
+  $("#cwBtn").onclick=function(){ closeOverlays(); onConfirm(); };
+}
+async function submitClient(clientId,force){
   const name=($("#clName")||{}).value||'';
   if(!name){ toast('Name required',true); return; }
-  const p={ name:name, phone_primary:($("#clPhone")||{}).value||'', email:($("#clEmail")||{}).value||'',
+  let ph;
+  try{ ph=readPhoneWa_('cl','Phone'); }catch(e){ toast(e.message,true); return; }
+  const p={ name:name, phone_primary:ph.phone, whatsapp_number:ph.whatsapp, email:($("#clEmail")||{}).value||'',
     company:($("#clCompany")||{}).value||'', gst_number:($("#clGst")||{}).value||'', tier:$("#clTier").value,
-    state:($("#clState")||{}).value||'' };
+    state:($("#clState")||{}).value||'', force:!!force };
   const btn=$("#clBtn"); btn.disabled=true; btn.textContent='Saving…';
   try{
     const res = clientId ? await api('client_update',Object.assign({client_id:clientId},p)) : await api('client_create',p);
@@ -2759,7 +2877,16 @@ async function submitClient(clientId){
     if(!clientId && _quoteReturn){ _quoteReturn=false; closeOverlays(); newQuote();
       setTimeout(()=>{ const sel=$("#qClient"); if(sel && res && res.id){ sel.value=res.id; pick.client=res.id; } },60);
     } else { closeOverlays(); if(VIEW==='client360'&&clientId){ openClient360(clientId); } else { render(); } }
-  }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent=clientId?'Save changes':'Add client'; }
+  }catch(e){
+    const m=String(e.message||''), dup=m.match(/^DUPLICATE_CLIENT:([^:]+):(.+)$/);
+    if(dup){
+      btn.disabled=false; btn.textContent=clientId?'Save changes':'Add client';
+      confirmWarn('Possible duplicate client', 'A client with this phone number already exists: <b>'+esc(dup[2])+'</b>. Create a separate client anyway?',
+        ()=>submitClient(clientId,true), 'Create anyway');
+      return;
+    }
+    toast(e.message,true); btn.disabled=false; btn.textContent=clientId?'Save changes':'Add client';
+  }
 }
 function ownershipModal(assetId, current, curInv){
   const invs=CACHE.investors||[];
@@ -2799,7 +2926,7 @@ function investorModal(){
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Add investor</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
     <label class="fld"><span>Name</span><input id="ivName" class="input" placeholder="Full name"></label>
-    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Phone</span><input id="ivPhone" class="input"></label>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Phone</span><input id="ivPhone" class="input mono" type="tel" inputmode="numeric" maxlength="10" placeholder="98XXXXXXXX" oninput="phoneInputHandler(this)"></label>
       <label class="fld" style="flex:1"><span>Email</span><input id="ivEmail" class="input" type="email"></label></div>
     <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Revenue share %</span><input id="ivPct" class="input mono" inputmode="decimal" placeholder="e.g. 15"></label>
       <label class="fld" style="flex:1"><span>Settlement period</span><select id="ivPeriod" class="input"><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option></select></label></div>
@@ -2932,9 +3059,14 @@ function statementDocHtml(investorName, r, biz){
     </div>`;
 }
 function payoutModal(investorId, suggested){
+  const today=new Date().toISOString().slice(0,10);
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Record payout</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
     <label class="fld"><span>Amount ₹</span><input id="poAmt" class="input mono" inputmode="numeric" value="${suggested||''}"></label>
+    <div style="display:flex;gap:10px">
+      <label class="fld" style="flex:1"><span>Method</span><select id="poMethod" class="input"><option value="upi">UPI</option><option value="cash">Cash</option><option value="neft">NEFT</option><option value="cheque">Cheque</option></select></label>
+      <label class="fld" style="flex:1"><span>Date</span><input id="poDate" class="input" type="date" value="${today}"></label>
+    </div>
     <label class="fld"><span>Notes</span><input id="poNotes" class="input" placeholder="UPI ref, period covered, etc."></label>
     <button class="btn pri block" id="poBtn" onclick="submitPayout('${investorId}')">Record payout</button>
   </div>`;
@@ -2944,7 +3076,8 @@ async function submitPayout(investorId){
   const amt=Number(($("#poAmt")||{}).value||0);
   if(!amt||amt<=0){ toast('Enter an amount',true); return; }
   const btn=$("#poBtn"); btn.disabled=true; btn.textContent='Recording…';
-  try{ await api('investor_payout',{investor_id:investorId, amount:amt, notes:($("#poNotes")||{}).value||''});
+  try{ await api('investor_payout',{investor_id:investorId, amount:amt, method:($("#poMethod")||{}).value||'cash',
+      notes:($("#poNotes")||{}).value||'', paid_at:($("#poDate")||{}).value||''});
     toast('Payout recorded'); closeOverlays(); await reloadData(); openInvestor(investorId);
   }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Record payout'; }
 }
@@ -3124,7 +3257,7 @@ function wizardHtml(){
       <label class="fld"><span>Business name</span><input id="wzName" class="input" value="${esc(p.business_name)||''}"></label>
       <label class="fld"><span>GSTIN</span><input id="wzGstin" class="input" value="${esc(p.gstin)||''}"></label>
       <label class="fld"><span>Address</span><input id="wzAddr" class="input" value="${esc(p.address)||''}"></label>
-      <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Phone</span><input id="wzPhone" class="input" value="${esc(p.phone)||''}"></label>
+      <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Phone</span><input id="wzPhone" class="input mono" type="tel" inputmode="numeric" maxlength="10" value="${esc(p.phone)||''}" oninput="phoneInputHandler(this)"></label>
         <label class="fld" style="flex:1"><span>Email</span><input id="wzEmail" class="input" value="${esc(p.email)||''}"></label></div>
       <label class="fld"><span>State</span><select id="wzState" class="input">${INDIA_STATES.map(s=>`<option value="${s}" ${(p.state||'Gujarat')===s?'selected':''}>${s}</option>`).join("")}</select></label>
       <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=1;render()">Back</button>
@@ -3465,7 +3598,7 @@ const SETSECTIONS={
     <label class="fld"><span>Business name</span><input id="seName" class="input" value="${p.business_name||''}"></label>
     <label class="fld"><span>GSTIN</span><input id="seGstin" class="input" value="${p.gstin||''}"></label>
     <label class="fld"><span>Address</span><input id="seAddr" class="input" value="${p.address||''}"></label>
-    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Phone</span><input id="sePhone" class="input" value="${p.phone||''}"></label>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Phone</span><input id="sePhone" class="input mono" type="tel" inputmode="numeric" maxlength="10" value="${p.phone||''}" oninput="phoneInputHandler(this)"></label>
       <label class="fld" style="flex:1"><span>Email</span><input id="seEmail" class="input" value="${p.email||''}"></label></div>
     <label class="fld"><span>State <span class="muted" style="font-weight:400">(decides CGST+SGST vs IGST on client invoices)</span></span>
       <select id="seState" class="input">${INDIA_STATES.map(s=>`<option value="${s}" ${(p.state||'Gujarat')===s?'selected':''}>${s}</option>`).join("")}</select></label>
@@ -3878,7 +4011,7 @@ async function openAgreement(bookingId){
   const c=clientObjById(b.client_id)||{};
   await generateAndArchive('rental_agreement','bookings',bookingId,'Rental agreement — '+(b.booking_number||bookingId.slice(0,8)),
     async()=>{ const biz=await api('store_info',{}); return agreementHtml(b,biz); }, 'bookings',
-    {phone:c.phone_primary, clientName:c.name, amountLine:inr(b.total_estimated)});
+    {phone:c.whatsapp_number||c.phone_primary, clientName:c.name, amountLine:inr(b.total_estimated)});
 }
 async function openQuoteDoc(bookingId){
   const b=(CUR_BOOKING&&CUR_BOOKING.id===bookingId)?CUR_BOOKING:await api('booking',{booking_id:bookingId}).catch(e=>{toast(e.message,true);return null;});
@@ -3886,7 +4019,7 @@ async function openQuoteDoc(bookingId){
   const c=clientObjById(b.client_id)||{};
   await generateAndArchive('quote','bookings',bookingId,'Quote — '+(b.booking_number||bookingId.slice(0,8)),
     async()=>{ const biz=await api('store_info',{}); return quoteDocHtml(b,biz); }, 'bookings',
-    {phone:c.phone_primary, clientName:c.name, amountLine:inr(b.total_estimated)});
+    {phone:c.whatsapp_number||c.phone_primary, clientName:c.name, amountLine:inr(b.total_estimated)});
 }
 function quoteDocHtml(b,biz){
   const items=b.item_detail||b.items||[];
@@ -4082,6 +4215,7 @@ function bookingDetailHtml(b){
           <div class="bkhead">Invoice</div>
           ${inv&&inv.id?`<div class="split" style="margin-bottom:10px">
               <div class="fact"><div class="k">Status</div><div class="v" style="font-size:12px">${stageChip(inv.status)}</div></div>
+              <div class="fact"><div class="k">Payment</div><div class="v" style="font-size:12px">${paymentChip(inv.net_payable,inv.paid_amount)}</div></div>
               <div class="fact"><div class="k">Due</div><div class="v mono" style="color:${(inv.net_payable-inv.paid_amount)>0?'var(--bad)':'var(--ok)'}">${inr(Math.max(0,inv.net_payable-inv.paid_amount))}</div></div>
             </div>`:inv&&inv.consolidated?'<p class="muted" style="font-size:12px;margin:0 0 10px">Billed together with this client\'s other bookings on a consolidated invoice — check Billing → Invoices for the combined figure.</p>':b.status==='cancelled'?'<p class="muted" style="font-size:12px;margin:0 0 10px">Cancelled — nothing to invoice.</p>':'<p class="muted" style="font-size:12px;margin:0 0 10px">Not yet invoiced — happens once returns are finalised.</p>'}
           ${['dispatched','open','finalised','tax_invoice','paid','closed'].indexOf(b.status)>=0?`<button class="btn sm block" onclick="openInvoiceForBooking('${b.id}')">View full invoice</button>`:''}
