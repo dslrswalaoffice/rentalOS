@@ -467,7 +467,7 @@ body.demo-active .whatsnew{bottom:76px}
         oninput="gsOnInput(this.value)" onfocus="gsOnInput(this.value)" onkeydown="gsKeydown(event)">
       <div id="gsResults" class="gsresults hide"></div>
     </div>
-    <button class="btn sm" style="margin-left:8px" title="Scan a QR code to look something up" onclick="openUniversalScan()">📷 Scan</button>
+    <button class="btn sm" style="flex:none" onclick="quickBookingModal()">⚡ Quick booking</button>
     <div class="spacer"></div>
     <div class="bellwrap" id="bellWrap">
       <button class="bellbtn" onclick="bellOpen()" title="Needs your attention">
@@ -2683,8 +2683,8 @@ async function submitSettle(investorId){
     const biz=await api('store_info',{}).catch(()=>({}));
     const html=statementDocHtml(name, r, biz);
     const title='Statement — '+fmtDate(r.period_start)+' to '+fmtDate(r.period_end);
-    await api('document_save',{doc_type:'investor_statement', entity_type:'investors', entity_id:investorId, title:title, html:html});
-    CUR_DOC={html:html, title:title, meta:{}, backView:'investors', archived:false, phone:inv&&inv.phone, clientName:name, amountLine:inr(r.share)};
+    const saved=await api('document_save',{doc_type:'investor_statement', entity_type:'investors', entity_id:investorId, title:title, html:html});
+    CUR_DOC={html:html, title:title, meta:{}, backView:'investors', archived:false, phone:inv&&inv.phone, clientName:name, amountLine:inr(r.share), driveUrl:(saved&&saved.drive_url)||''};
     VIEW='docview'; renderSide(); render();
   }catch(e){ toast(e.message,true); }
 }
@@ -3539,26 +3539,28 @@ const PICKUP_LBL={self:'Self pickup',proxy:'Proxy pickup',delivery:'Delivery'};
 let CUR_DOC=null;
 VIEWS.docview=()=> CUR_DOC?docViewHtml(CUR_DOC):loading('Document');
 function docViewHtml(d){
-  const waMsg=`Hi${d.clientName?' '+d.clientName:''}, here's your ${d.title.toLowerCase()} from ${(SETTINGS&&SETTINGS.profile&&SETTINGS.profile.business_name)||'us'}. Total: ${d.amountLine||''} Please find the full document attached/printed — reply here if you have any questions.`;
+  const waMsg=`Hi${d.clientName?' '+d.clientName:''}, here's your ${d.title.toLowerCase()} from ${(SETTINGS&&SETTINGS.profile&&SETTINGS.profile.business_name)||'us'}. Total: ${d.amountLine||''}${d.driveUrl?(' View/download: '+d.driveUrl):' Please find the full document attached/printed'} — reply here if you have any questions.`;
   const waHref=d.phone?('https://wa.me/'+String(d.phone).replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(waMsg))
     :('https://api.whatsapp.com/send?text='+encodeURIComponent(waMsg));
   return `<div class="head noprint"><div><button class="btn sm" onclick="go('${d.backView}')" style="margin-bottom:8px">← Back</button>
-    <h1 class="h1">${esc(d.title)}</h1><p class="sub">${d.archived?('Generated '+fmtDate(d.meta.created_at)+' by '+esc(d.meta.generated_by_name)+' — a saved record, not live data.'):'Print this page (Ctrl/Cmd+P) and choose "Save as PDF" — or print directly for a signature copy.'}</p></div>
-    <div style="display:flex;gap:8px"><a class="btn" style="background:#25D366;color:#fff;border-color:#25D366" href="${waHref}" target="_blank" rel="noopener">📤 Notify on WhatsApp</a>
+    <h1 class="h1">${esc(d.title)}</h1><p class="sub">${d.archived?('Generated '+fmtDate(d.meta.created_at)+' by '+esc(d.meta.generated_by_name)+' — a saved record, not live data.'):'Print this page (Ctrl/Cmd+P) and choose "Save as PDF" — or print directly for a signature copy.'}${d.driveUrl?' A PDF copy is also saved to Drive — use that to attach the actual file.':''}</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${d.driveUrl?`<a class="btn" href="${d.driveUrl}" target="_blank" rel="noopener">📄 Open PDF in Drive</a>`:''}
+    <a class="btn" style="background:#25D366;color:#fff;border-color:#25D366" href="${waHref}" target="_blank" rel="noopener">📤 ${d.driveUrl?'Send link on':'Notify on'} WhatsApp</a>
     <button class="btn pri" onclick="window.print()">🖨 Print / Save as PDF</button></div></div>
   <div class="docsheet">${d.html}</div>`;
 }
 /** Builds a document via buildFn, archives it server-side, then shows it. buildFn returns
  *  the inner HTML that goes inside .docsheet (letterhead through signature lines).
- *  phone/clientName/amountLine are optional — power the one-tap WhatsApp notify button;
- *  the document itself still needs Print/Save as PDF to actually attach a file, WhatsApp
- *  links can only pre-fill a text message, not attach a file automatically. */
+ *  phone/clientName/amountLine are optional — power the one-tap WhatsApp notify button.
+ *  The backend also generates a real PDF in Drive (if the Drive API advanced service is
+ *  enabled) — when that succeeds, the WhatsApp message carries an actual link instead of
+ *  just a text summary, since WhatsApp links can't attach a file automatically. */
 async function generateAndArchive(docType, entityType, entityId, title, buildFn, backView, extra){
   extra=extra||{};
   try{
     const html=await buildFn();
-    await api('document_save',{doc_type:docType, entity_type:entityType, entity_id:entityId, title:title, html:html});
-    CUR_DOC={html:html, title:title, meta:{}, backView:backView, archived:false, phone:extra.phone||'', clientName:extra.clientName||'', amountLine:extra.amountLine||''};
+    const saved=await api('document_save',{doc_type:docType, entity_type:entityType, entity_id:entityId, title:title, html:html});
+    CUR_DOC={html:html, title:title, meta:{}, backView:backView, archived:false, phone:extra.phone||'', clientName:extra.clientName||'', amountLine:extra.amountLine||'', driveUrl:(saved&&saved.drive_url)||''};
     VIEW='docview'; renderSide(); render();
     toast('Generated and saved to Documents');
     if(entityType==='bookings'&&CUR_BOOKING&&CUR_BOOKING.id===entityId) loadBookingDocs(entityId);
@@ -3568,7 +3570,7 @@ async function viewArchivedDoc(id, backView){
   CUR_DOC=null; VIEW='docview'; renderSide(); render();
   try{
     const d=await api('document_get',{id:id});
-    CUR_DOC={html:d.html, title:d.title, meta:{created_at:d.created_at, generated_by_name:d.generated_by_name}, backView:backView, archived:true, phone:'', clientName:'', amountLine:''};
+    CUR_DOC={html:d.html, title:d.title, meta:{created_at:d.created_at, generated_by_name:d.generated_by_name}, backView:backView, archived:true, phone:'', clientName:'', amountLine:'', driveUrl:d.drive_url||''};
     render();
   }catch(e){ toast(e.message,true); }
 }
@@ -3578,7 +3580,7 @@ function docArchiveCard(docs, backView){
     <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${docs?docs.length:''}</span></div>
     ${!docs?'<p class="muted" style="font-size:12.5px;margin:0">Loading…</p>'
       :docs.length?`<div class="doc-archlist">${docs.map(d=>`<div class="doc-archrow clickable" onclick="viewArchivedDoc('${d.id}','${backView}')">
-        <span style="font-size:12.5px">${esc(d.title)}</span><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span></div>`).join("")}</div>`
+        <span style="font-size:12.5px">${esc(d.title)}</span><span style="display:flex;align-items:center;gap:6px"><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span>${d.drive_url?`<a href="${d.drive_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open PDF in Google Drive">📄</a>`:''}</span></div>`).join("")}</div>`
       :'<p class="muted" style="font-size:12.5px;margin:0">Nothing generated yet — use the buttons above.</p>'}
   </div>`;
 }
