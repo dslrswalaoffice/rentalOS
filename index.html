@@ -1899,31 +1899,36 @@ VIEWS.inventory=()=>{
   </div>`;
 };
 
-let CL_Q='', CL_FILTER='';
+let CL_Q='', CL_FILTER='', CL_TIER='';
 const CL_FILTER_LABEL={new:'New',building:'Building',established:'Established',trusted:'Trusted',watchlist:'Watchlisted',blacklist:'Blacklisted'};
 function goClients(filter){ CL_FILTER=filter; CL_Q=''; go('clients'); }
+function clFilter(k,v){ if(k==='level')CL_FILTER=v; if(k==='tier')CL_TIER=v; render(); }
 function clientsFiltered(){
   let all=CACHE.clients;
   if(CL_FILTER==='watchlist') all=all.filter(c=>truthy(c.is_watchlisted));
   else if(CL_FILTER==='blacklist') all=all.filter(c=>truthy(c.is_blacklisted));
   else if(CL_FILTER) all=all.filter(c=>(c.trust_level||'new')===CL_FILTER);
+  if(CL_TIER) all=all.filter(c=>(c.tier||'normal')===CL_TIER);
   const q=CL_Q.trim().toLowerCase();
   if(!q) return all;
   return all.filter(c=>((c.name||'')+' '+(c.company||'')+' '+(c.phone_primary||'')).toLowerCase().includes(q));
 }
 VIEWS.clients=()=>{
   const filtered=clientsFiltered();
-  return `<div class="head"><div><h1 class="h1">Clients</h1><p class="sub">${filtered.length} shown${CL_FILTER?' · '+CL_FILTER_LABEL[CL_FILTER]:''} of ${CACHE.clients.length} total</p></div>
-  <div style="display:flex;gap:10px;align-items:center">
-    ${CL_FILTER?`<button class="btn sm" onclick="CL_FILTER='';go('clients')">Clear filter</button>`:''}
-    <input class="input" style="max-width:220px" placeholder="Search clients…" value="${CL_Q.replace(/"/g,'&quot;')}" oninput="CL_Q=this.value;render()">
+  const anyFilter=CL_FILTER||CL_TIER;
+  return `<div class="head"><div><h1 class="h1">Clients</h1><p class="sub">${filtered.length} shown${anyFilter?' (filtered)':''} of ${CACHE.clients.length} total</p></div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <input class="input" style="max-width:200px" placeholder="Search clients…" value="${CL_Q.replace(/"/g,'&quot;')}" oninput="CL_Q=this.value;render()">
+    <select class="input" style="max-width:150px" onchange="clFilter('level',this.value)"><option value="">All levels/flags</option>${Object.keys(CL_FILTER_LABEL).map(k=>`<option value="${k}" ${CL_FILTER===k?'selected':''}>${CL_FILTER_LABEL[k]}</option>`).join("")}</select>
+    <select class="input" style="max-width:130px" onchange="clFilter('tier',this.value)"><option value="">All tiers</option><option value="normal" ${CL_TIER==='normal'?'selected':''}>Normal</option><option value="premium" ${CL_TIER==='premium'?'selected':''}>Premium</option><option value="vip" ${CL_TIER==='vip'?'selected':''}>VIP</option></select>
+    ${anyFilter?`<button class="btn sm" onclick="CL_FILTER='';CL_TIER='';render()">Clear filters</button>`:''}
     <button class="btn pri" onclick="clientFormModal()">+ Add client</button></div></div>
   <div class="card">${filtered.length?`<table class="tbl"><thead><tr><th>Client</th><th>Tier</th><th>Trust</th><th>Phone</th><th>Flags</th></tr></thead><tbody>
   ${filtered.map(c=>`<tr class="clickable" onclick="openClient360('${c.id}')"><td><b>${esc(c.name)}</b>${c.company?'<div class="muted" style="font-size:11.5px">'+esc(c.company)+'</div>':''}</td>
     <td>${tier(c.tier)}</td><td><span class="mono">${c.trust_score||0}</span> <span class="muted">· ${c.trust_level||'new'}</span></td>
     <td class="mono" style="font-size:12px">${esc(c.phone_primary)||'—'}</td>
     <td>${truthy(c.is_blacklisted)?'<span class="chip bad">blacklist</span>':truthy(c.is_watchlisted)?'<span class="chip warn">watchlist</span>':'<span class="muted">—</span>'}</td></tr>`).join("")}
-  </tbody></table>`:'<div class="empty">No clients match.</div>'}</div>`;
+  </tbody></table>`:'<div class="empty">No clients match these filters.</div>'}</div>`;
 };
 
 let C360=null;
@@ -2210,7 +2215,7 @@ async function doConfirmReturn(){
 /* ===================== INVOICES ===================== */
 function parseJson(x){ if(!x)return[]; if(typeof x==='object')return x; try{return JSON.parse(x)}catch(e){return[]} }
 
-let INV_Q='';
+let INV_Q='', INV_STATUS='', INV_PAYSTATE='', INV_TYPE_F='';
 const INV_CAP=60;
 /* Shared payment-state classification — used everywhere an invoice's payment
    status is shown, so "unpaid" vs "partially paid" vs "paid" is always an
@@ -2234,28 +2239,46 @@ function invoiceRow(v){
     <td class="mono">${inr(v.net_payable)}</td><td class="mono muted" style="font-size:12px">${inr(v.paid_amount)}</td></tr>`;
 }
 function invoicesFiltered(){
-  const all=(CACHE.invoices||[]).slice().reverse();
+  let all=(CACHE.invoices||[]).slice().reverse();
+  if(INV_STATUS) all=all.filter(v=>v.status===INV_STATUS);
+  if(INV_TYPE_F) all=all.filter(v=>v.type===INV_TYPE_F);
+  if(INV_PAYSTATE) all=all.filter(v=>paymentState(v.net_payable,v.paid_amount).state===INV_PAYSTATE);
   const q=INV_Q.trim().toLowerCase();
   if(!q) return all;
   return all.filter(v=>{const bk=(bookingById(v.booking_id)||{});
     return ((bk.booking_number||'')+' '+clientName(v.client_id)+' '+(v.type||'')+' '+(v.status||'')).toLowerCase().includes(q);});
 }
+function invFilter(k,v){ if(k==='status')INV_STATUS=v; if(k==='type')INV_TYPE_F=v; if(k==='pay')INV_PAYSTATE=v; render(); }
 function invoicesListHtml(){
   if(!(CACHE.invoices||[]).length) return '<div class="empty">No invoices yet. Open one from a dispatched booking, or generate a VIP consolidated.</div>';
   const filt=invoicesFiltered();
-  if(!filt.length) return '<div class="empty">No invoices match your search.</div>';
+  if(!filt.length) return '<div class="empty">No invoices match these filters.</div>';
   const shown=filt.slice(0,INV_CAP);
   return `<table class="tbl"><thead><tr><th>Reference</th><th>Client</th><th>Type</th><th>Status</th><th>Payment</th><th>Net payable</th><th>Paid</th></tr></thead><tbody>
     ${shown.map(invoiceRow).join("")}</tbody></table>`+
-    (filt.length>INV_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${INV_CAP} of ${filt.length} — refine your search to narrow.</div>`:'');
+    (filt.length>INV_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${INV_CAP} of ${filt.length} — refine your filters to narrow.</div>`:'');
 }
 function renderInvoicesList(){ const el=$("#invList"); if(el) el.innerHTML=invoicesListHtml(); }
 VIEWS.invoices=()=>{
   const inv=CACHE.invoices||[];
-  return `<div class="head"><div><h1 class="h1">Invoices</h1><p class="sub">${inv.length} invoice${inv.length===1?'':'s'} · GST & TDS computed server-side</p></div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <input class="input" style="max-width:230px" placeholder="Search invoices…" value="${INV_Q.replace(/"/g,'&quot;')}" oninput="INV_Q=this.value;renderInvoicesList()">
-      <button class="btn pri" onclick="consolidatedModal()">+ VIP consolidated</button></div></div>
+  const anyFilter=INV_STATUS||INV_TYPE_F||INV_PAYSTATE;
+  return `<div class="head"><div><h1 class="h1">Invoices</h1><p class="sub">${invoicesFiltered().length} shown${anyFilter?' (filtered)':''} of ${inv.length} total · GST & TDS computed server-side</p></div>
+    <button class="btn pri" onclick="consolidatedModal()">+ VIP consolidated</button></div>
+  <div class="card pad" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <input class="input" style="max-width:220px" placeholder="Search invoices…" value="${INV_Q.replace(/"/g,'&quot;')}" oninput="INV_Q=this.value;renderInvoicesList()">
+      <label class="fld" style="min-width:140px"><span>Status</span><select class="input" onchange="invFilter('status',this.value)">
+        <option value="">All</option>${['draft','open','finalised','tax_invoice','paid','closed','cancelled'].map(s=>`<option value="${s}" ${INV_STATUS===s?'selected':''}>${s.replace('_',' ').replace(/^./,c=>c.toUpperCase())}</option>`).join("")}</select></label>
+      <label class="fld" style="min-width:150px"><span>Payment</span><select class="input" onchange="invFilter('pay',this.value)">
+        <option value="">All</option><option value="unpaid" ${INV_PAYSTATE==='unpaid'?'selected':''}>Unpaid</option>
+        <option value="partial" ${INV_PAYSTATE==='partial'?'selected':''}>Partially paid</option>
+        <option value="paid" ${INV_PAYSTATE==='paid'?'selected':''}>Paid</option></select></label>
+      <label class="fld" style="min-width:130px"><span>Type</span><select class="input" onchange="invFilter('type',this.value)">
+        <option value="">All</option><option value="standard" ${INV_TYPE_F==='standard'?'selected':''}>Standard</option>
+        <option value="consolidated" ${INV_TYPE_F==='consolidated'?'selected':''}>Consolidated</option></select></label>
+      ${anyFilter?`<button class="btn sm" onclick="INV_STATUS='';INV_TYPE_F='';INV_PAYSTATE='';render()">Clear filters</button>`:''}
+    </div>
+  </div>
   <div class="card" id="invList">${invoicesListHtml()}</div>`;
 };
 let CUR_INVOICE=null, INVOICE_DOCS=null;
@@ -2486,19 +2509,26 @@ async function closeInv(id){ try{ await api('invoice_close',{invoice_id:id}); to
 /* ===================== TRUST ===================== */
 const LEVEL_CARDS=[["New","< 5 pts","1 item · 3 days"],["Building","5–19 pts","2 items · 5 days"],["Established","20–49 pts","4 items · 10 days · high-value ok"],["Trusted","50+ pts","No caps"]];
 const SIGNALS=[["Completed rental","+2"],["On-time return","+3"],["Late return","−2/day"],["Minor damage","−5"],["Major damage","−12"],["Non-functional","−25"],["Item not returned","−30"],["VIP referral","→ next level"]];
-let TR_Q='';
+let TR_Q='', TR_LEVEL='', TR_FLAG='';
 VIEWS.trust=()=>{
   const admin=SESSION.user.role==='admin';
   const q=TR_Q.trim().toLowerCase();
-  const clients=q?CACHE.clients.filter(c=>((c.name||'')+' '+(c.phone_primary||'')).toLowerCase().includes(q)):CACHE.clients;
-  return `<div class="head"><div><h1 class="h1">Trust & guardrails</h1><p class="sub">Caps relax automatically as clients prove reliable${admin?'':' · staff view is read-only'}</p></div></div>
+  let clients=q?CACHE.clients.filter(c=>((c.name||'')+' '+(c.phone_primary||'')).toLowerCase().includes(q)):CACHE.clients;
+  if(TR_LEVEL) clients=clients.filter(c=>(c.trust_level||'new')===TR_LEVEL);
+  if(TR_FLAG==='blacklist') clients=clients.filter(c=>truthy(c.is_blacklisted));
+  else if(TR_FLAG==='watchlist') clients=clients.filter(c=>truthy(c.is_watchlisted)&&!truthy(c.is_blacklisted));
+  const levelKeys=['new','building','established','trusted'];
+  return `<div class="head"><div><h1 class="h1">Trust & guardrails</h1><p class="sub">Caps relax automatically as clients prove reliable${admin?'':' · staff view is read-only'}</p></div>
+    ${(TR_LEVEL||TR_FLAG)?`<button class="btn sm" onclick="TR_LEVEL='';TR_FLAG='';render()">Clear filter</button>`:''}</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">
-    ${LEVEL_CARDS.map((c,i)=>`<div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--disp);font-size:15px">${c[0]}</b><span class="chip ${['pend','brand','brand','ok'][i]} plain">${c[1]}</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">${c[2]}</p></div>`).join("")}
+    ${LEVEL_CARDS.map((c,i)=>`<div class="card pad clickable" style="${TR_LEVEL===levelKeys[i]?'border-color:var(--brand);background:var(--brand-wash)':''}" onclick="TR_LEVEL=TR_LEVEL==='${levelKeys[i]}'?'':'${levelKeys[i]}';render()"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--disp);font-size:15px">${c[0]}</b><span class="chip ${['pend','brand','brand','ok'][i]} plain">${c[1]}</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">${c[2]}</p></div>`).join("")}
   </div>
   <div class="trustgrid">
     <div class="card pad"><p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 8px">Score signals</p>
       ${SIGNALS.map(s=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px"><span>${s[0]}</span><span class="mono" style="font-weight:600;color:${s[1].charAt(0)==='−'?'var(--bad)':'var(--ok)'}">${s[1]}</span></div>`).join("")}</div>
-    <div class="card"><div style="padding:13px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--disp)">Clients</b><input class="input" style="max-width:200px" placeholder="Search…" value="${TR_Q.replace(/"/g,'&quot;')}" oninput="TR_Q=this.value;render()"></div>
+    <div class="card"><div style="padding:13px 16px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center"><b style="font-family:var(--disp)">Clients</b>
+      <div style="display:flex;gap:8px"><select class="input" style="max-width:140px" onchange="TR_FLAG=this.value;render()"><option value="">All flags</option><option value="watchlist" ${TR_FLAG==='watchlist'?'selected':''}>Watchlisted</option><option value="blacklist" ${TR_FLAG==='blacklist'?'selected':''}>Blacklisted</option></select>
+      <input class="input" style="max-width:200px" placeholder="Search…" value="${TR_Q.replace(/"/g,'&quot;')}" oninput="TR_Q=this.value;render()"></div></div>
       <table class="tbl"><thead><tr><th>Client</th><th>Score</th><th>Level</th><th>Flags</th>${admin?'<th></th>':''}</tr></thead><tbody>
       ${clients.length?clients.map(c=>`<tr><td><span class="hc-trigger" data-hc="${c.id}"><b>${esc(c.name)}</b></span></td><td class="mono">${c.trust_score||0}</td><td>${c.trust_level||'new'}</td>
         <td>${truthy(c.is_blacklisted)?'<span class="chip bad">blacklist</span>':truthy(c.is_watchlisted)?'<span class="chip warn">watchlist</span>':'<span class="muted">—</span>'}</td>
@@ -2538,23 +2568,29 @@ async function toggleClientFlag(cid, flag, on){
 
 /* ===================== DEPOSITS ===================== */
 const DEP_STATUS={agreed:["pend","Agreed"],held:["brand","Held"],refunded:["ok","Refunded"],forfeited:["bad","Forfeited"],closed:["pend","Closed"]};
-let DEP_Q='';
+let DEP_Q='', DEP_STATUS_F='';
 VIEWS.deposits=()=>{
   const dep=CACHE.deposits||[];
   const held=dep.reduce((s,d)=>s+Number(d.held||0),0), refunded=dep.reduce((s,d)=>s+Number(d.refunded||0),0), forfeited=dep.reduce((s,d)=>s+Number(d.forfeited||0),0);
   const q=DEP_Q.trim().toLowerCase();
-  const filtered=q?dep.filter(d=>((d.booking_number||'')+' '+clientName(d.client_id)).toLowerCase().includes(q)):dep;
+  let filtered=DEP_STATUS_F?dep.filter(d=>d.status===DEP_STATUS_F):dep;
+  filtered=q?filtered.filter(d=>((d.booking_number||'')+' '+clientName(d.client_id)).toLowerCase().includes(q)):filtered;
   return `<div class="head"><div><h1 class="h1">Security deposits</h1><p class="sub">Held separately from rental revenue</p></div></div>
   <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
     <div class="kpi"><div class="lbl">Currently held</div><div class="val">${inr(held)}</div></div>
     <div class="kpi"><div class="lbl">Refunded · total</div><div class="val">${inr(refunded)}</div></div>
     <div class="kpi"><div class="lbl">Forfeited · total</div><div class="val">${inr(forfeited)}</div></div></div>
-  ${dep.length?`<div style="margin-top:14px"><input class="input" style="max-width:260px" placeholder="Search booking or client…" value="${DEP_Q.replace(/"/g,'&quot;')}" oninput="DEP_Q=this.value;render()"></div>`:''}
+  ${dep.length?`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+    <input class="input" style="max-width:260px" placeholder="Search booking or client…" value="${DEP_Q.replace(/"/g,'&quot;')}" oninput="DEP_Q=this.value;render()">
+    <select class="input" style="max-width:160px" onchange="DEP_STATUS_F=this.value;render()">
+      <option value="">All statuses</option>${Object.keys(DEP_STATUS).map(k=>`<option value="${k}" ${DEP_STATUS_F===k?'selected':''}>${DEP_STATUS[k][1]}</option>`).join("")}</select>
+    ${DEP_STATUS_F?`<button class="btn sm" onclick="DEP_STATUS_F='';render()">Clear</button>`:''}
+  </div>`:''}
   <div class="card" style="margin-top:12px">${filtered.length?`<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Agreed</th><th>Held</th><th>Status</th></tr></thead><tbody>
     ${filtered.map(d=>{const m=DEP_STATUS[d.status]||["pend",d.status];return `<tr class="clickable" onclick="openDeposit('${d.booking_id}')">
       <td class="mono"><span class="hc-trigger" data-hb="${d.booking_id}">${d.booking_number||d.booking_id.slice(0,8)}</span></td><td><span class="hc-trigger" data-hc="${d.client_id}">${clientName(d.client_id)}</span></td>
       <td class="mono">${inr(d.agreed)}</td><td class="mono">${inr(d.held)}</td><td><span class="chip ${m[0]}">${m[1]}</span></td></tr>`;}).join("")}
-    </tbody></table>`:dep.length?'<div class="empty">No deposits match your search.</div>':'<div class="empty">No deposits yet. Collect one from a booking via Manage deposit.</div>'}</div>`;
+    </tbody></table>`:dep.length?'<div class="empty">No deposits match these filters.</div>':'<div class="empty">No deposits yet. Collect one from a booking via Manage deposit.</div>'}</div>`;
 };
 let CUR_DEPOSIT=null;
 async function openDeposit(bookingId){
@@ -3401,17 +3437,21 @@ async function toggleModule(key,on){
 }
 let NOTIFS=null;
 const NOTIF_STATUS_LBL={queued:["warn","Queued · needs review"],sent:["ok","Sent"],suppressed:["bad","Rejected"],approved:["ok","Approved"],failed:["bad","Failed"]};
+let NOTIF_KIND_F='';
 VIEWS.notifications=()=>{
   if(!NOTIFS){ loadNotifs(); return loading('Notifications'); }
   const n=NOTIFS, kindLbl={payment_due:["bad","Payment due"],quote_followup:["warn","Quote follow-up"],return_reminder:["brand","Return due"]};
+  const nudges=NOTIF_KIND_F?n.nudges.filter(x=>x.kind===NOTIF_KIND_F):n.nudges;
   const queue=n.outbox.filter(o=>o.status==='queued');
   const sent=n.outbox.filter(o=>o.status!=='queued');
-  return `<div class="head"><div><h1 class="h1">Notifications</h1><p class="sub">${n.nudges.length} nudge${n.nudges.length===1?'':'s'} to action${queue.length?` · ${queue.length} awaiting review`:''}</p></div><button class="btn sm" onclick="NOTIFS=null;render()">Refresh</button></div>
-  <div class="card">${n.nudges.length?n.nudges.map(x=>{const k=kindLbl[x.kind]||["pend",x.kind];return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)">
+  return `<div class="head"><div><h1 class="h1">Notifications</h1><p class="sub">${nudges.length} nudge${nudges.length===1?'':'s'} to action${NOTIF_KIND_F?' (filtered)':''}${queue.length?` · ${queue.length} awaiting review`:''}</p></div>
+    <div style="display:flex;gap:8px"><select class="input" style="max-width:170px" onchange="NOTIF_KIND_F=this.value;render()"><option value="">All types</option>${Object.keys(kindLbl).map(k=>`<option value="${k}" ${NOTIF_KIND_F===k?'selected':''}>${kindLbl[k][1]}</option>`).join("")}</select>
+    <button class="btn sm" onclick="NOTIFS=null;render()">Refresh</button></div></div>
+  <div class="card">${nudges.length?nudges.map(x=>{const k=kindLbl[x.kind]||["pend",x.kind];return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)">
     <span class="chip ${k[0]} plain">${k[1]}</span>
     <div style="flex:1;min-width:0"><b style="font-size:13px">${esc(x.client_name)}</b> <span class="muted" style="font-size:12px">· ${esc(x.label)}</span><div class="muted" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.message)}</div></div>
     ${x.wa?`<a class="btn sm" href="${x.wa}" target="_blank" rel="noopener" data-client-id="${esc(x.client_id)}" data-kind="${esc(x.kind)}" data-msg="${esc(x.message)}" onclick="markNudgeFromEl(this)">WhatsApp</a>`:'<span class="muted" style="font-size:11px">no phone</span>'}
-  </div>`;}).join(""):'<div class="empty">Nothing to chase — all clear.</div>'}</div>
+  </div>`;}).join(""):`<div class="empty">${NOTIF_KIND_F?'No nudges of this type right now.':'Nothing to chase — all clear.'}</div>`}</div>
   ${queue.length?`<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--warn);margin:18px 0 6px">Review queue · not sent yet</p>
   <div class="card">${queue.map(o=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)">
     <div style="flex:1;min-width:0"><span style="font-size:12px;font-weight:600">${o.type} · ${o.channel}</span><div class="muted" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.message)}</div></div>
