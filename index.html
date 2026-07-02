@@ -789,9 +789,9 @@ const HUB_MAP={
   timeline:{hub:'rentals',label:'Calendar'}, bookings:{hub:'rentals',label:'Bookings'},
   scan:{hub:'rentals',label:'Scan & dispatch'}, returns:{hub:'rentals',label:'Returns'},
   invoices:{hub:'billing',label:'Invoices'}, deposits:{hub:'billing',label:'Deposits'},
-  inventory:{hub:'inventory',label:'Assets'}, maintenance:{hub:'inventory',label:'Maintenance'}, stockaudit:{hub:'inventory',label:'Stock audit'},
+  inventory:{hub:'inventory',label:'Assets'}, maintenance:{hub:'inventory',label:'Maintenance'}, stockaudit:{hub:'inventory',label:'Stock audit'}, repairs:{hub:'inventory',label:'Repair tickets'},
   clients:{hub:'people',label:'Clients'}, trust:{hub:'people',label:'Trust & guardrails'}, investors:{hub:'people',label:'Investors'},
-  analytics:{hub:'insights',label:'Analytics'}, reports:{hub:'insights',label:'Reports'}, moneyledger:{hub:'insights',label:'Money ledger'},
+  analytics:{hub:'insights',label:'Analytics'}, reports:{hub:'insights',label:'Reports'}, moneyledger:{hub:'insights',label:'Money ledger'}, utilization:{hub:'insights',label:'Utilization'},
   settings:{hub:'system',label:'Settings'}, activitylog:{hub:'system',label:'Activity log'}, roadmap:{hub:'system',label:'Roadmap'},
 };
 const HUBS={
@@ -869,7 +869,29 @@ function moduleEnabled_(leafKey){
   if(!mod) return true;   // not a gated leaf — always shows
   return !CACHE.modules || CACHE.modules[mod]!==false;
 }
-function render(){ $("#main").innerHTML=hubTabsHtml(VIEW)+(VIEWS[VIEW]||(()=>'<div class="empty">—</div>'))(); renderDemoBanner(); }
+/** Wraps any DOM-replacing render call to preserve keyboard focus and
+ *  cursor position across it. The actual bug: every re-render replaces
+ *  the DOM tree wholesale (even just to reflect one typed character),
+ *  destroying the currently-focused <input> and creating a new one with
+ *  the same text but no focus — so a search box would "deactivate" after
+ *  every keystroke, forcing a click back in each time. Fixing this once
+ *  here, wrapped around render() itself, fixes every search/filter input
+ *  in the app at once rather than patching each oninput handler. */
+function _preserveFocus_(fn){
+  const active=document.activeElement;
+  const id=active&&active.id;
+  const isTextInput=active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA')&&id;
+  const selStart=isTextInput?active.selectionStart:null, selEnd=isTextInput?active.selectionEnd:null;
+  fn();
+  if(isTextInput){
+    const el=document.getElementById(id);
+    if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){
+      el.focus();
+      if(selStart!=null){ try{ el.setSelectionRange(selStart,selEnd); }catch(e){} }
+    }
+  }
+}
+function render(){ _preserveFocus_(()=>{ $("#main").innerHTML=hubTabsHtml(VIEW)+(VIEWS[VIEW]||(()=>'<div class="empty">—</div>'))(); renderDemoBanner(); }); }
 
 /* ── Global search: instant, client-side, across bookings/clients/assets/
    invoices/pages. Everything searched already lives in CACHE — no network
@@ -1196,8 +1218,14 @@ VIEWS.investorportal=()=>{
       </div>
       ${s.outstanding>0?`<button class="btn pri block" id="reqPayoutBtn" onclick="portalRequestPayout()">Request a payout</button>`:''}
       <div class="bkcard">
-        <div class="bkhead">Your assets</div>
-        ${s.assets.length?s.assets.map(a=>`<div style="font-size:13px;padding:4px 0">${esc(a.name)}</div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None tagged yet.</p>'}
+        <div class="bkhead">Your assets <span class="muted" style="text-transform:none;font-weight:500">performance</span></div>
+        ${s.assets.length?s.assets.map(a=>`<div style="padding:9px 0;border-bottom:1px solid var(--line)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:550">${esc(a.name)}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span class="muted" style="font-size:10.5px">Utilization (90d)</span><span class="mono" style="font-size:11.5px">${a.utilization_90d_pct}%</span></div>
+          <div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:7px"><div style="height:100%;width:${a.utilization_90d_pct}%;background:${a.utilization_90d_pct===0?'var(--bad)':a.utilization_90d_pct<25?'var(--warn)':'var(--ok)'}"></div></div>
+          ${a.payback_pct!==null?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span class="muted" style="font-size:10.5px">Payback (lifetime)</span><span class="mono" style="font-size:11.5px">${a.payback_pct}% · ${inr(a.lifetime_revenue)} of ${inr(a.purchase_price)}</span></div>
+          <div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden"><div style="height:100%;width:${a.payback_pct}%;background:${a.payback_pct>=100?'var(--ok)':'var(--brand)'}"></div></div>`:''}
+        </div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None tagged yet.</p>'}
       </div>
     </div>
   </div>`;
@@ -1445,10 +1473,47 @@ function repCard(icon,title,desc,btnId,onclick){
   return `<div class="card repcard"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${REPORT_ICON[icon]}</svg>
     <div class="rc-body"><b>${title}</b><p>${desc}</p><button class="btn" id="${btnId}" onclick="${onclick}">Download CSV</button></div></div>`;
 }
+/* ===================== UTILIZATION REPORT ===================== */
+let UTIL=null, UTIL_FROM='', UTIL_TO='', UTIL_CAT='', UTIL_OWNER='';
+function utilDefaultDates(){ if(!UTIL_TO){ const t=new Date(); UTIL_TO=t.toISOString().slice(0,10); const f=new Date(t.getTime()-89*86400000); UTIL_FROM=f.toISOString().slice(0,10); } }
+async function loadUtilization(){
+  utilDefaultDates();
+  try{ UTIL=await api('utilization_report',{date_from:UTIL_FROM, date_to:UTIL_TO, category:UTIL_CAT}); if(VIEW==='utilization') render(); }
+  catch(e){ toast(e.message,true); }
+}
+function utilFilter(k,v){ if(k==='from')UTIL_FROM=v; if(k==='to')UTIL_TO=v; if(k==='cat')UTIL_CAT=v; if(k==='owner')UTIL_OWNER=v; UTIL=null; loadUtilization(); render(); }
+VIEWS.utilization=()=>{
+  if(!UTIL){ loadUtilization(); return loading('Utilization'); }
+  let rows=UTIL.rows;
+  if(UTIL_OWNER==='business') rows=rows.filter(r=>r.owner==='Business');
+  else if(UTIL_OWNER==='investor') rows=rows.filter(r=>r.owner!=='Business');
+  const avgUtil=rows.length?Math.round(rows.reduce((s,r)=>s+r.utilisation_pct,0)/rows.length):0;
+  const idle=rows.filter(r=>r.utilisation_pct===0).length;
+  return `<div class="head"><div><h1 class="h1">Utilization</h1><p class="sub">${UTIL.period_days}-day window · which gear earns its keep, which sits idle</p></div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
+    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Avg. utilization</div><div class="mono" style="font-size:22px;font-weight:700">${avgUtil}%</div></div>
+    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Assets tracked</div><div class="mono" style="font-size:22px;font-weight:700">${rows.length}</div></div>
+    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Never rented this period</div><div class="mono" style="font-size:22px;font-weight:700;color:${idle?'var(--bad)':''}">${idle}</div></div>
+  </div>
+  <div class="card pad" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <label class="fld"><span>From</span><input class="input" type="date" value="${UTIL_FROM}" onchange="utilFilter('from',this.value)"></label>
+      <label class="fld"><span>To</span><input class="input" type="date" value="${UTIL_TO}" onchange="utilFilter('to',this.value)"></label>
+      <label class="fld" style="min-width:150px"><span>Category</span><select class="input" onchange="utilFilter('cat',this.value)"><option value="">All</option>${(UTIL.categories||[]).map(c=>`<option value="${esc(c)}" ${UTIL_CAT===c?'selected':''}>${esc(c)}</option>`).join("")}</select></label>
+      <label class="fld" style="min-width:130px"><span>Owner</span><select class="input" onchange="utilFilter('owner',this.value)"><option value="">All</option><option value="business" ${UTIL_OWNER==='business'?'selected':''}>Business</option><option value="investor" ${UTIL_OWNER==='investor'?'selected':''}>Investor</option></select></label>
+    </div>
+  </div>
+  <div class="card">${rows.length?`<table class="tbl"><thead><tr><th>Asset</th><th>Category</th><th>Owner</th><th>Utilization</th><th>Booked</th><th>Idle</th><th>Revenue (period)</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="clickable" onclick="openAsset('${r.asset_id}')"><td><b>${esc(r.name)}</b></td><td class="muted" style="font-size:12px">${esc(r.category)}</td><td style="font-size:12px">${esc(r.owner)}</td>
+      <td style="min-width:120px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden"><div style="height:100%;width:${r.utilisation_pct}%;background:${r.utilisation_pct===0?'var(--bad)':r.utilisation_pct<25?'var(--warn)':'var(--ok)'}"></div></div><span class="mono" style="font-size:12px;min-width:32px">${r.utilisation_pct}%</span></div></td>
+      <td class="mono" style="font-size:12px">${r.booked_days}d</td><td class="mono muted" style="font-size:12px">${r.idle_days}d</td>
+      <td class="mono">${inr(r.revenue)}</td></tr>`).join("")}
+    </tbody></table>`:'<div class="empty">No assets match these filters.</div>'}</div>`;
+};
 /* ===================== MONEY LEDGER ===================== */
 let LEDGER=null, LG_PARTY='', LG_KIND='', LG_FROM='', LG_TO='';
 const LEDGER_KIND_LBL={advance:'Rental payment',balance:'Rental payment',damage_recovery:'Damage recovery',
-  deposit:'Deposit collected',deposit_refund:'Deposit refunded',deposit_forfeit:'Deposit forfeited',investor_payout:'Investor payout'};
+  deposit:'Deposit collected',deposit_refund:'Deposit refunded',deposit_forfeit:'Deposit forfeited',investor_payout:'Investor payout',repair_cost:'Repair cost'};
 async function loadLedger(){
   try{ LEDGER=await api('money_ledger',{party_type:LG_PARTY, kind:LG_KIND, date_from:LG_FROM, date_to:LG_TO}); if(VIEW==='moneyledger') render(); }
   catch(e){ toast(e.message,true); }
@@ -1463,11 +1528,12 @@ VIEWS.moneyledger=()=>{
     <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Real revenue in</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--ok)">${inr(s.revenue_in)}</div><div class="muted" style="font-size:11px;margin-top:2px">Rental payments + damage recovery + forfeited deposits</div></div>
     <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Deposits held (net)</div><div class="mono" style="font-size:20px;font-weight:700">${inr(s.deposits_held_net)}</div><div class="muted" style="font-size:11px;margin-top:2px">In trust — not revenue until forfeited</div></div>
     <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Paid to investors</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--bad)">${inr(s.investor_paid_out)}</div><div class="muted" style="font-size:11px;margin-top:2px">Revenue share payouts, all time</div></div>
+    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Repair costs</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--bad)">${inr(s.repair_cost_total)}</div><div class="muted" style="font-size:11px;margin-top:2px">Closed repair tickets, all time</div></div>
   </div>
   <div class="card pad" style="margin-bottom:14px">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <label class="fld" style="min-width:140px"><span>Party</span><select class="input" onchange="lgFilter('party',this.value)">
-        <option value="">All</option><option value="client" ${LG_PARTY==='client'?'selected':''}>Client</option><option value="investor" ${LG_PARTY==='investor'?'selected':''}>Investor</option></select></label>
+        <option value="">All</option><option value="client" ${LG_PARTY==='client'?'selected':''}>Client</option><option value="investor" ${LG_PARTY==='investor'?'selected':''}>Investor</option><option value="business" ${LG_PARTY==='business'?'selected':''}>Business (repairs)</option></select></label>
       <label class="fld" style="min-width:180px"><span>Type</span><select class="input" onchange="lgFilter('kind',this.value)">
         <option value="">All types</option>${Object.keys(LEDGER_KIND_LBL).map(k=>`<option value="${k}" ${LG_KIND===k?'selected':''}>${LEDGER_KIND_LBL[k]}</option>`).join("")}</select></label>
       <label class="fld"><span>From</span><input class="input" type="date" value="${LG_FROM}" onchange="lgFilter('from',this.value)"></label>
@@ -1757,7 +1823,7 @@ function bookingsListHtml(){
   const shown=filt.slice(0,BK_CAP);
   return bookingsTable(shown)+(filt.length>BK_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${BK_CAP} of ${filt.length} — refine your search to narrow.</div>`:'');
 }
-function renderBookingsList(){ const el=$("#bkList"); if(el) el.innerHTML=bookingsListHtml(); }
+function renderBookingsList(){ _preserveFocus_(()=>{ const el=$("#bkList"); if(el) el.innerHTML=bookingsListHtml(); }); }
 VIEWS.bookings=()=>`<div class="head"><div><h1 class="h1">Bookings</h1><p class="sub">${bookingsFiltered().length} shown${BK_STATUS?' · '+BK_STATUS.map(s=>BK_STATUS_LABEL[s]||s).join(', '):''} of ${CACHE.bookings.length} total</p></div>
   <div style="display:flex;gap:10px;align-items:center">
     ${BK_STATUS?`<button class="btn sm" onclick="BK_STATUS=null;go('bookings')">Clear filter</button>`:''}
@@ -1859,7 +1925,7 @@ function invBodyHtml(){
     <button ${INV_PAGE>=pages?'disabled':''} onclick="INV_PAGE++;renderInvBody()">›</button>
     <button ${INV_PAGE>=pages?'disabled':''} onclick="INV_PAGE=${pages};renderInvBody()">»</button></div>`:''}`;
 }
-function renderInvBody(){ const el=$("#invBody"); if(el) el.innerHTML=invBodyHtml(); }
+function renderInvBody(){ _preserveFocus_(()=>{ const el=$("#invBody"); if(el) el.innerHTML=invBodyHtml(); }); }
 const ivSearchDebounced=debounce_(v=>{ IVQ=v; INV_PAGE=1; renderInvBody(); }, 80);
 VIEWS.inventory=()=>{
   const typesInUse=[...new Map(CACHE.assets.map(a=>[a.asset_type_id,(CACHE.asset_types.find(t=>t.id===a.asset_type_id)||{}).name||a.asset_type_id])).entries()].sort((a,b)=>a[1].localeCompare(b[1]));
@@ -1917,18 +1983,21 @@ VIEWS.clients=()=>{
   const filtered=clientsFiltered();
   const anyFilter=CL_FILTER||CL_TIER;
   return `<div class="head"><div><h1 class="h1">Clients</h1><p class="sub">${filtered.length} shown${anyFilter?' (filtered)':''} of ${CACHE.clients.length} total</p></div>
-  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-    <input class="input" style="max-width:200px" placeholder="Search clients…" value="${CL_Q.replace(/"/g,'&quot;')}" oninput="CL_Q=this.value;render()">
-    <select class="input" style="max-width:150px" onchange="clFilter('level',this.value)"><option value="">All levels/flags</option>${Object.keys(CL_FILTER_LABEL).map(k=>`<option value="${k}" ${CL_FILTER===k?'selected':''}>${CL_FILTER_LABEL[k]}</option>`).join("")}</select>
-    <select class="input" style="max-width:130px" onchange="clFilter('tier',this.value)"><option value="">All tiers</option><option value="normal" ${CL_TIER==='normal'?'selected':''}>Normal</option><option value="premium" ${CL_TIER==='premium'?'selected':''}>Premium</option><option value="vip" ${CL_TIER==='vip'?'selected':''}>VIP</option></select>
-    ${anyFilter?`<button class="btn sm" onclick="CL_FILTER='';CL_TIER='';render()">Clear filters</button>`:''}
-    <button class="btn pri" onclick="clientFormModal()">+ Add client</button></div></div>
+    <button class="btn pri" onclick="clientFormModal()">+ Add client</button></div>
+  <div class="card pad" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <input class="input" style="max-width:220px" placeholder="Search clients…" value="${CL_Q.replace(/"/g,'&quot;')}" oninput="CL_Q=this.value;render()">
+      <label class="fld" style="min-width:150px"><span>Level / flag</span><select class="input" onchange="clFilter('level',this.value)"><option value="">All</option>${Object.keys(CL_FILTER_LABEL).map(k=>`<option value="${k}" ${CL_FILTER===k?'selected':''}>${CL_FILTER_LABEL[k]}</option>`).join("")}</select></label>
+      <label class="fld" style="min-width:130px"><span>Tier</span><select class="input" onchange="clFilter('tier',this.value)"><option value="">All</option><option value="normal" ${CL_TIER==='normal'?'selected':''}>Normal</option><option value="premium" ${CL_TIER==='premium'?'selected':''}>Premium</option><option value="vip" ${CL_TIER==='vip'?'selected':''}>VIP</option></select></label>
+      ${anyFilter?`<button class="btn sm" onclick="CL_FILTER='';CL_TIER='';render()">Clear filters</button>`:''}
+    </div>
+  </div>
   <div class="card">${filtered.length?`<table class="tbl"><thead><tr><th>Client</th><th>Tier</th><th>Trust</th><th>Phone</th><th>Flags</th></tr></thead><tbody>
-  ${filtered.map(c=>`<tr class="clickable" onclick="openClient360('${c.id}')"><td><b>${esc(c.name)}</b>${c.company?'<div class="muted" style="font-size:11.5px">'+esc(c.company)+'</div>':''}</td>
-    <td>${tier(c.tier)}</td><td><span class="mono">${c.trust_score||0}</span> <span class="muted">· ${c.trust_level||'new'}</span></td>
-    <td class="mono" style="font-size:12px">${esc(c.phone_primary)||'—'}</td>
-    <td>${truthy(c.is_blacklisted)?'<span class="chip bad">blacklist</span>':truthy(c.is_watchlisted)?'<span class="chip warn">watchlist</span>':'<span class="muted">—</span>'}</td></tr>`).join("")}
-  </tbody></table>`:'<div class="empty">No clients match these filters.</div>'}</div>`;
+    ${filtered.map(c=>`<tr class="clickable" onclick="openClient360('${c.id}')"><td><b>${esc(c.name)}</b>${c.company?'<div class="muted" style="font-size:11.5px">'+esc(c.company)+'</div>':''}</td>
+      <td>${tier(c.tier)}</td><td><span class="mono">${c.trust_score||0}</span> <span class="muted">· ${c.trust_level||'new'}</span></td>
+      <td class="mono" style="font-size:12px">${esc(c.phone_primary)||'—'}</td>
+      <td>${truthy(c.is_blacklisted)?'<span class="chip bad">blacklist</span>':truthy(c.is_watchlisted)?'<span class="chip warn">watchlist</span>':'<span class="muted">—</span>'}</td></tr>`).join("")}
+    </tbody></table>`:'<div class="empty">No clients match these filters.</div>'}</div>`;
 };
 
 let C360=null;
@@ -2258,7 +2327,7 @@ function invoicesListHtml(){
     ${shown.map(invoiceRow).join("")}</tbody></table>`+
     (filt.length>INV_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${INV_CAP} of ${filt.length} — refine your filters to narrow.</div>`:'');
 }
-function renderInvoicesList(){ const el=$("#invList"); if(el) el.innerHTML=invoicesListHtml(); }
+function renderInvoicesList(){ _preserveFocus_(()=>{ const el=$("#invList"); if(el) el.innerHTML=invoicesListHtml(); }); }
 VIEWS.invoices=()=>{
   const inv=CACHE.invoices||[];
   const anyFilter=INV_STATUS||INV_TYPE_F||INV_PAYSTATE;
@@ -2617,7 +2686,10 @@ function depositDetailHtml(s){
       ${s.held>0?`<button class="btn" onclick="depositAction('forfeit','${s.booking_id}',0,'')">Forfeit</button>`:''}
     </div>
     <p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px">Ledger</p>
-    ${s.events.length?s.events.map(e=>{const m=evLbl[e.type]||["pend",e.type];return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)"><span><span class="chip ${m[0]} plain" style="margin-right:6px">${m[1]}</span><span class="muted" style="font-size:11px">${e.notes||''}</span></span><span class="mono">${inr(e.amount)}</span></div>`;}).join(""):'<div class="muted" style="font-size:12px">No deposit movements yet.</div>'}
+    ${s.events.length?s.events.map(e=>{const m=evLbl[e.type]||["pend",e.type];return `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="chip ${m[0]} plain">${m[1]}</span><span class="mono">${inr(e.amount)}</span></div>
+      <div class="muted" style="font-size:11px;margin-top:3px;display:flex;gap:8px;flex-wrap:wrap"><span>${fmtDate(e.paid_at)}</span>${e.method?`<span style="text-transform:capitalize">· ${esc(e.method)}</span>`:''}${e.notes?`<span>· ${esc(e.notes)}</span>`:''}</div>
+    </div>`;}).join(""):'<div class="muted" style="font-size:12px">No deposit movements yet.</div>'}
   </div>`;
 }
 function depositAction(kind, bookingId, suggested, reasonHint){
@@ -2652,6 +2724,63 @@ function titles_(k){return {collect:'Collect deposit',refund:'Refund deposit',fo
 const MAINT_RENTAL=25, MAINT_DAYS=180;
 const MAINT_ST={ok:["ok","Healthy"],soon:["warn","Service soon"],overdue:["bad","Overdue"],in_maintenance:["brand","In maintenance"],retired:["pend","Retired"]};
 let MAINT_FILTER='', MNT_Q='';
+/* ===================== REPAIR TICKETS ===================== */
+let REPAIRS=null, REPAIR_STATUS_F='';
+async function loadRepairs(){
+  try{ REPAIRS=await api('repair_list',{status:REPAIR_STATUS_F}); if(VIEW==='repairs') render(); }catch(e){ toast(e.message,true); }
+}
+const REPAIR_ST_LBL={open:['bad','Open'],in_progress:['warn','In progress'],closed:['ok','Closed']};
+VIEWS.repairs=()=>{
+  if(!REPAIRS){ loadRepairs(); return loading('Repair tickets'); }
+  const open=REPAIRS.filter(t=>t.status==='open').length, inProg=REPAIRS.filter(t=>t.status==='in_progress').length, closed=REPAIRS.filter(t=>t.status==='closed').length;
+  return `<div class="head"><div><h1 class="h1">Repair tickets</h1><p class="sub">Auto-opened when a return comes back damaged enough to pull from the fleet</p></div>
+    ${REPAIR_STATUS_F?`<button class="btn sm" onclick="REPAIR_STATUS_F='';REPAIRS=null;loadRepairs();render()">Clear filter</button>`:''}</div>
+  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi" style="${REPAIR_STATUS_F==='open'?'border-color:var(--brand);background:var(--brand-wash)':''}" onclick="REPAIR_STATUS_F=REPAIR_STATUS_F==='open'?'':'open';REPAIRS=null;loadRepairs();render()"><div class="lbl">Open</div><div class="val" style="color:${open?'var(--bad)':''}">${open}</div></div>
+    <div class="kpi" style="${REPAIR_STATUS_F==='in_progress'?'border-color:var(--brand);background:var(--brand-wash)':''}" onclick="REPAIR_STATUS_F=REPAIR_STATUS_F==='in_progress'?'':'in_progress';REPAIRS=null;loadRepairs();render()"><div class="lbl">In progress</div><div class="val">${inProg}</div></div>
+    <div class="kpi" style="${REPAIR_STATUS_F==='closed'?'border-color:var(--brand);background:var(--brand-wash)':''}" onclick="REPAIR_STATUS_F=REPAIR_STATUS_F==='closed'?'':'closed';REPAIRS=null;loadRepairs();render()"><div class="lbl">Closed</div><div class="val">${closed}</div></div>
+  </div>
+  <div class="card" style="margin-top:14px">${REPAIRS.length?`<table class="tbl"><thead><tr><th>Asset</th><th>Booking</th><th>Client</th><th>Status</th><th>Assigned</th><th>Est. cost</th><th></th></tr></thead><tbody>
+    ${REPAIRS.map(t=>{const s=REPAIR_ST_LBL[t.status]||['pend',t.status]; return `<tr>
+      <td><span class="hc-trigger" data-ha="${t.asset_id}">${esc(t.asset_name)}</span><div class="muted" style="font-size:11px">${esc(t.description)||'—'}</div></td>
+      <td class="mono" style="font-size:12px"><span class="hc-trigger" data-hb="${t.booking_id}">${esc(t.booking_number)||'—'}</span></td>
+      <td style="font-size:12.5px">${esc(t.client_name)}</td>
+      <td><span class="chip ${s[0]}">${s[1]}</span></td>
+      <td style="font-size:12.5px">${esc(t.assigned_to)||'<span class="muted">Unassigned</span>'}</td>
+      <td class="mono">${inr(t.estimated_cost)}</td>
+      <td style="text-align:right;white-space:nowrap">${t.status!=='closed'?`<button class="btn sm" onclick="repairTicketModal('${t.id}')">Manage</button>`:`<span class="muted" style="font-size:11px">${fmtDate(t.closed_at)}</span>`}</td>
+      </tr>`;}).join("")}
+    </tbody></table>`:`<div class="empty">${REPAIR_STATUS_F?'No tickets with this status.':'No repair tickets — nothing\'s come back damaged enough to need one.'}</div>`}</div>`;
+};
+function repairTicketModal(ticketId){
+  const t=(REPAIRS||[]).find(x=>x.id===ticketId); if(!t) return;
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Repair ticket</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    <div class="fact" style="margin-bottom:12px"><div class="k">Asset</div><div class="v">${esc(t.asset_name)}</div></div>
+    ${t.description?`<p class="muted" style="font-size:12.5px;margin:0 0 12px">${esc(t.description)}</p>`:''}
+    <label class="fld"><span>Assigned to</span><input id="rtAssign" class="input" value="${esc(t.assigned_to)||''}" placeholder="who's fixing it"></label>
+    <label class="fld"><span>Status</span><select id="rtStatus" class="input"><option value="open" ${t.status==='open'?'selected':''}>Open</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>In progress</option></select></label>
+    <button class="btn block" style="margin-bottom:16px" onclick="submitRepairUpdate('${ticketId}')">Save</button>
+    <div style="border-top:1px solid var(--line);padding-top:14px">
+      <label class="fld"><span>Actual repair cost ₹</span><input id="rtCost" class="input mono" inputmode="numeric" value="${t.estimated_cost||''}"></label>
+      <label class="fld"><span>Closing notes</span><input id="rtNotes" class="input" placeholder="what was done"></label>
+      <button class="btn pri block" onclick="submitRepairClose('${ticketId}')">Mark repaired — restore to fleet</button>
+      <p class="muted" style="font-size:11px;margin:8px 0 0;text-align:center">Immediately makes the asset available and bookable again.</p>
+    </div>
+    <button class="btn block" style="margin-top:12px" onclick="closeOverlays();openBooking('${t.booking_id}')">Go to booking → record recovery from client</button>
+  </div>`;
+  openOverlay($("#modal"));
+}
+async function submitRepairUpdate(ticketId){
+  try{ await api('repair_update',{ticket_id:ticketId, assigned_to:($("#rtAssign")||{}).value||'', status:$("#rtStatus").value});
+    toast('Ticket updated'); closeOverlays(); REPAIRS=null; loadRepairs(); render();
+  }catch(e){ toast(e.message,true); }
+}
+async function submitRepairClose(ticketId){
+  try{ await api('repair_close',{ticket_id:ticketId, actual_cost:Number(($("#rtCost")||{}).value||0), notes:($("#rtNotes")||{}).value||''});
+    toast('Repaired — asset is back in the fleet'); closeOverlays(); await reloadData(); REPAIRS=null; loadRepairs(); render();
+  }catch(e){ toast(e.message,true); }
+}
 VIEWS.maintenance=()=>{
   const all=CACHE.maintenance||[];
   const overdue=all.filter(x=>x.status==='overdue').length, inM=all.filter(x=>x.status==='in_maintenance').length, healthy=all.filter(x=>x.status==='ok'||x.status==='soon').length;
@@ -3523,23 +3652,29 @@ function bellOpen(){
 function bellClose(){ BELL_OPEN=false; const m=$("#bellMenu"); if(m) m.classList.remove('show'); }
 document.addEventListener('click', function(e){ if(!e.target.closest('#bellWrap')) bellClose(); });
 
-let STOCK=null, STOCKAUDIT=null;
+let STOCK=null, STOCKAUDIT=null, STOCK_CAT='';
 VIEWS.stockaudit=()=>{
   if(STOCKAUDIT) return stockUI();
   if(!STOCK){ loadStock(); return loading('Stock audit'); }
   const last=STOCK.last;
-  return `<div class="head"><div><h1 class="h1">Stock audit</h1><p class="sub">Physical stock-take reconciliation</p></div><button class="btn pri" onclick="startStockAudit()">Start audit</button></div>
+  return `<div class="head"><div><h1 class="h1">Stock audit</h1><p class="sub">Physical stock-take reconciliation — scope it to one category for a quick check, or leave blank for the whole fleet</p></div></div>
+  <div class="card pad" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <label class="fld" style="min-width:180px"><span>Scope</span><select class="input" onchange="STOCK_CAT=this.value;STOCK=null;loadStock()"><option value="">Whole fleet</option>${(STOCK.expected.categories||[]).map(c=>`<option value="${esc(c)}" ${STOCK_CAT===c?'selected':''}>${esc(c)}</option>`).join("")}</select></label>
+      <button class="btn pri" onclick="startStockAudit()">Start audit</button>
+    </div>
+  </div>
   ${last?`<div class="card pad"><b style="font-family:var(--disp)">Last audit</b><div class="muted" style="font-size:12px;margin:6px 0 10px">${last.at?fmtDate(last.at):''}</div>
     <div class="split"><div class="fact"><div class="k">Expected</div><div class="v mono">${last.expected||0}</div></div>
     <div class="fact"><div class="k">Found</div><div class="v mono">${last.found||0}</div></div>
     <div class="fact"><div class="k">Missing</div><div class="v mono" style="color:${(last.missing||[]).length?'var(--bad)':'var(--ok)'}">${(last.missing||[]).length}</div></div></div>
     ${(last.missing||[]).length?`<div style="margin-top:10px"><p class="muted" style="font-size:11px;margin:0 0 4px">Missing units</p>${last.missing.map(m=>`<span class="chip bad" style="margin:2px">${m}</span>`).join("")}</div>`:''}</div>`:'<div class="empty">No count run yet. Start one to check what\'s actually on the shelf.</div>'}`;
 };
-async function loadStock(){ try{ const exp=await api('stock_expected'); const last=await api('stock_last'); STOCK={expected:exp, last:last}; if(VIEW==='stockaudit')render(); }catch(e){toast(e.message,true);} }
-async function startStockAudit(){ try{ const exp=await api('stock_expected'); STOCKAUDIT={expected_present:exp.expected_present, on_rent:exp.on_rent, scanned:{}}; render(); setTimeout(()=>{const i=$("#saQr");if(i)i.focus();},50); }catch(e){toast(e.message,true);} }
+async function loadStock(){ try{ const exp=await api('stock_expected',{category:STOCK_CAT}); const last=await api('stock_last'); STOCK={expected:exp, last:last}; if(VIEW==='stockaudit')render(); }catch(e){toast(e.message,true);} }
+async function startStockAudit(){ try{ const exp=await api('stock_expected',{category:STOCK_CAT}); STOCKAUDIT={expected_present:exp.expected_present, on_rent:exp.on_rent, scanned:{}}; render(); setTimeout(()=>{const i=$("#saQr");if(i)i.focus();},50); }catch(e){toast(e.message,true);} }
 function stockUI(){
   const d=STOCKAUDIT, total=d.expected_present.length, got=d.expected_present.filter(a=>d.scanned[a.asset_id]).length;
-  return `<div class="head"><div><h1 class="h1">Stock check in progress</h1><p class="sub">${got} of ${total} items checked</p></div><button class="btn sm" onclick="STOCKAUDIT=null;render()">Cancel</button></div>
+  return `<div class="head"><div><h1 class="h1">Stock check in progress</h1><p class="sub">${STOCK_CAT?esc(STOCK_CAT)+' · ':''}${got} of ${total} items checked</p></div><button class="btn sm" onclick="STOCKAUDIT=null;render()">Cancel</button></div>
   <div class="dispgrid">
     <div><div style="display:flex;gap:8px;margin-bottom:12px"><input class="input" id="saQr" placeholder="Scan or type QR, then Enter" onkeydown="if(event.key==='Enter'){stockScan(this.value);this.value='';}"><button class="btn" onclick="var i=document.getElementById('saQr');stockScan(i.value);i.value='';i.focus();">Check</button></div>
       <button class="btn" style="margin-bottom:12px" onclick="openQrScanner(function(t){stockScan(t);var i=document.getElementById('saQr');if(i)i.focus();},'Scan item for stock audit')">${ICON_CAMERA}Use camera</button>
@@ -3556,7 +3691,7 @@ function stockScan(qr){ qr=String(qr||'').trim(); if(!qr)return;
 }
 async function submitStock(){
   const ids=Object.keys(STOCKAUDIT.scanned);
-  try{ const r=await api('stock_submit',{present_ids:ids});
+  try{ const r=await api('stock_submit',{present_ids:ids, category:STOCK_CAT});
     toast(r.found+'/'+r.expected+' found · '+r.missing.length+' missing'); STOCKAUDIT=null; STOCK=null; render();
   }catch(e){ toast(e.message,true); }
 }
