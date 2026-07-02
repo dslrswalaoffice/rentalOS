@@ -1421,7 +1421,7 @@ VIEWS.dashboard=()=>{
     <div style="display:flex;gap:8px;flex:none"><button class="btn sm" onclick="wizardDismiss()">Not now</button><button class="btn sm pri" onclick="WIZ_STEP=1;go('settings');setGo('setup')">Start setup</button></div>
   </div>`:''}
   <div class="head"><div><h1 class="h1">${_greeting_()}</h1><p class="sub">${a.length} assets · ${CACHE.clients.length} clients · here's what's on for today</p></div>
-    <button class="btn pri" onclick="newQuote()">+ New quote</button></div>
+    <button class="btn" onclick="quickBookingModal()">⚡ Quick booking</button> <button class="btn pri" onclick="newQuote()">+ New quote</button></div>
 
   <div class="bkgrid">
     <div>
@@ -1505,7 +1505,7 @@ VIEWS.bookings=()=>`<div class="head"><div><h1 class="h1">Bookings</h1><p class=
   <div style="display:flex;gap:10px;align-items:center">
     ${BK_STATUS?`<button class="btn sm" onclick="BK_STATUS=null;go('bookings')">Clear filter</button>`:''}
     <input class="input" style="max-width:230px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">
-    <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
+    <button class="btn" onclick="quickBookingModal()">⚡ Quick booking</button> <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
   <div class="card" id="bkList">${bookingsListHtml()}</div>`;
 
 let INV_FILTER='', IVQ='', INV_TYPE='', INV_OWNER='', INV_COND='', INV_PAGE=1;
@@ -1791,9 +1791,9 @@ function dispatchUI(){
   const d=DISPATCH, total=d.items.length;
   const got=d.items.filter(i=>d.scanned[i.item_id]).length, complete=got===total && total>0;
   const kw=d.kit_warnings||[];
-  return `<div class="head"><div><h1 class="h1">Dispatch · ${d.booking_number}</h1><p class="sub">${esc(d.client_name)} · scan every item to enable OTP</p></div>
+  return `<div class="head"><div><h1 class="h1">Dispatch · ${d.booking_number}</h1><p class="sub">${esc(d.client_name)} · scan every item, then we'll text a code to the customer</p></div>
     <button class="btn sm" onclick="exitDispatch()">← Back</button></div>
-  ${kw.length?`<div class="kitwarn">⚠ ${kw.map(k=>`<b>${k.kit_name}</b> looks incomplete — missing ${k.missing.join(', ')}`).join('; ')}. Not a block — confirm this is intentional before dispatching.</div>`:''}
+  ${kw.length?`<div class="kitwarn">⚠ ${kw.map(k=>`<b>${k.kit_name}</b> is missing ${k.missing.join(', ')}`).join('; ')} — check that\'s meant to go out without it, then carry on.</div>`:''}
   <div class="dispgrid">
     <div>
       <div class="viewer"><div class="feed"></div><div class="scanmsg" id="scanmsg"></div>
@@ -1812,9 +1812,9 @@ function dispatchUI(){
           ${done?'<span class="qty">in</span>':`<button class="btn sm" style="margin-left:auto" data-qr="${esc(it.qr_code)}" onclick="scanQr(this.dataset.qr)">Simulate</button>`}</div>`;}).join("")}
       <div style="padding:13px 14px">
         ${!d.otp_sent
-          ? `<button class="btn pri block" ${complete?'':'disabled'} onclick="doSendOtp()">Send dispatch OTP</button>
-             <p class="muted" style="font-size:11px;margin:8px 0 0;text-align:center">${complete?'Kit complete':'Scan all items to enable'}</p>`
-          : `<div style="font-size:12px;color:var(--ok);font-weight:600;margin-bottom:8px">OTP logged for ${d.account_phone||'account holder'}</div>
+          ? `<button class="btn pri block" ${complete?'':'disabled'} onclick="doSendOtp()">Send verification code</button>
+             <p class="muted" style="font-size:11px;margin:8px 0 0;text-align:center">${complete?'Everything\'s scanned — ready to go':'Scan every item first'}</p>`
+          : `<div style="font-size:12px;color:var(--ok);font-weight:600;margin-bottom:8px">Code sent to ${d.account_phone||'the customer'}</div>
              ${d.dev_otp?`<div class="muted" style="font-size:11px;margin-bottom:8px">Dev OTP (logged-only): <span class="mono" style="color:var(--ink)">${d.dev_otp}</span></div>`:''}
              <input class="input mono" id="otpIn" placeholder="Enter OTP" value="${d.dev_otp||''}" style="margin-bottom:8px">
              <button class="btn pri block" onclick="doConfirmDispatch()">Confirm &amp; dispatch</button>`}
@@ -1840,7 +1840,7 @@ function scanQr(qr){
 }
 async function doSendOtp(){
   try{ const r=await api('dispatch_send_otp',{booking_id:DISPATCH.booking_id});
-    DISPATCH.otp_sent=true; DISPATCH.dev_otp=r.dev_otp||''; render(); toast('OTP logged for '+(r.sent_to||'account holder')); }
+    DISPATCH.otp_sent=true; DISPATCH.dev_otp=r.dev_otp||''; render(); toast('Code sent to '+(r.sent_to||'the customer')); }
   catch(e){ toast(e.message,true); }
 }
 async function doConfirmDispatch(){
@@ -1870,7 +1870,7 @@ function returnUI(){
   const d=RETURN;
   const open=d.items.filter(i=>!i.terminal);
   const checked=open.filter(i=>(d.lines[i.item_id]||{}).checked).length;
-  return `<div class="head"><div><h1 class="h1">Returns · ${d.booking_number}</h1><p class="sub">${esc(d.client_name)} · ${open.length} still out · select what's coming back</p></div>
+  return `<div class="head"><div><h1 class="h1">Returns · ${d.booking_number}</h1><p class="sub">${esc(d.client_name)} · ${open.length} still with the customer · tick what's coming back today</p></div>
     <button class="btn sm" onclick="exitReturn()">← Back</button></div>
   <div class="card" style="max-width:700px">
     ${d.items.map(it=>{
@@ -1891,9 +1891,9 @@ function returnUI(){
       </div>`;}).join("")}
     <div style="padding:14px">
       ${!d.otp_sent
-        ? `<button class="btn pri block" ${checked?'':'disabled'} onclick="doSendReturnOtp()">Send return OTP (${checked} item${checked===1?'':'s'})</button>
+        ? `<button class="btn pri block" ${checked?'':'disabled'} onclick="doSendReturnOtp()">Send verification code (${checked} item${checked===1?'':'s'})</button>
            <p class="muted" style="font-size:11px;margin:8px 0 0;text-align:center">${checked?'Damaged items log a repair cost; money recovery comes later':'Select at least one item'}</p>`
-        : `<div style="font-size:12px;color:var(--ok);font-weight:600;margin-bottom:8px">Return OTP logged for ${d.account_phone||'account holder'}</div>
+        : `<div style="font-size:12px;color:var(--ok);font-weight:600;margin-bottom:8px">Code sent to ${d.account_phone||'the customer'}</div>
            ${d.dev_otp?`<div class="muted" style="font-size:11px;margin-bottom:8px">Dev OTP: <span class="mono" style="color:var(--ink)">${d.dev_otp}</span></div>`:''}
            <input class="input mono" id="otpIn" placeholder="Enter OTP" value="${d.dev_otp||''}" style="margin-bottom:8px">
            <button class="btn pri block" onclick="doConfirmReturn()">Confirm return</button>`}
@@ -1915,7 +1915,7 @@ async function uploadReturnPhoto(itemId, inputEl){
 }
 async function doSendReturnOtp(){
   try{ const r=await api('return_send_otp',{booking_id:RETURN.booking_id});
-    RETURN.otp_sent=true; RETURN.dev_otp=r.dev_otp||''; render(); toast('Return OTP logged'); }
+    RETURN.otp_sent=true; RETURN.dev_otp=r.dev_otp||''; render(); toast('Code sent to the customer'); }
   catch(e){ toast(e.message,true); }
 }
 async function doConfirmReturn(){
@@ -1990,8 +1990,10 @@ async function openInvoiceForBooking(id){
 async function openInvoiceDoc(invId){
   const v=(CACHE.invoices||[]).find(x=>x.id===invId)||(CUR_INVOICE&&CUR_INVOICE.id===invId?CUR_INVOICE:null);
   if(!v){ toast('Invoice not found',true); return; }
+  const c=clientObjById(v.client_id)||{};
   await generateAndArchive('invoice','invoices',invId,(v.type==='consolidated'?'Consolidated invoice':'Invoice')+' — '+(v.id.slice(0,8)),
-    async()=>{ const biz=await api('store_info',{}); return invoiceDocHtml(v,biz); }, 'invoices');
+    async()=>{ const biz=await api('store_info',{}); return invoiceDocHtml(v,biz); }, 'invoices',
+    {phone:c.phone_primary, clientName:c.name, amountLine:inr(v.net_payable)});
   loadInvoiceDocs(invId);
 }
 function invoiceDocHtml(v,biz){
@@ -2680,9 +2682,10 @@ async function submitSettle(investorId){
     const name=(inv&&inv.name)||'Investor';
     const biz=await api('store_info',{}).catch(()=>({}));
     const html=statementDocHtml(name, r, biz);
-    await api('document_save',{doc_type:'investor_statement', entity_type:'investors', entity_id:investorId,
-      title:'Statement — '+fmtDate(r.period_start)+' to '+fmtDate(r.period_end), html:html});
-    openInvestor(investorId);
+    const title='Statement — '+fmtDate(r.period_start)+' to '+fmtDate(r.period_end);
+    await api('document_save',{doc_type:'investor_statement', entity_type:'investors', entity_id:investorId, title:title, html:html});
+    CUR_DOC={html:html, title:title, meta:{}, backView:'investors', archived:false, phone:inv&&inv.phone, clientName:name, amountLine:inr(r.share)};
+    VIEW='docview'; renderSide(); render();
   }catch(e){ toast(e.message,true); }
 }
 function statementDocHtml(investorName, r, biz){
@@ -3065,17 +3068,17 @@ VIEWS.stockaudit=()=>{
     <div class="split"><div class="fact"><div class="k">Expected</div><div class="v mono">${last.expected||0}</div></div>
     <div class="fact"><div class="k">Found</div><div class="v mono">${last.found||0}</div></div>
     <div class="fact"><div class="k">Missing</div><div class="v mono" style="color:${(last.missing||[]).length?'var(--bad)':'var(--ok)'}">${(last.missing||[]).length}</div></div></div>
-    ${(last.missing||[]).length?`<div style="margin-top:10px"><p class="muted" style="font-size:11px;margin:0 0 4px">Missing units</p>${last.missing.map(m=>`<span class="chip bad" style="margin:2px">${m}</span>`).join("")}</div>`:''}</div>`:'<div class="empty">No audit run yet. Start one to reconcile your shelf.</div>'}`;
+    ${(last.missing||[]).length?`<div style="margin-top:10px"><p class="muted" style="font-size:11px;margin:0 0 4px">Missing units</p>${last.missing.map(m=>`<span class="chip bad" style="margin:2px">${m}</span>`).join("")}</div>`:''}</div>`:'<div class="empty">No count run yet. Start one to check what\'s actually on the shelf.</div>'}`;
 };
 async function loadStock(){ try{ const exp=await api('stock_expected'); const last=await api('stock_last'); STOCK={expected:exp, last:last}; if(VIEW==='stockaudit')render(); }catch(e){toast(e.message,true);} }
 async function startStockAudit(){ try{ const exp=await api('stock_expected'); STOCKAUDIT={expected_present:exp.expected_present, on_rent:exp.on_rent, scanned:{}}; render(); setTimeout(()=>{const i=$("#saQr");if(i)i.focus();},50); }catch(e){toast(e.message,true);} }
 function stockUI(){
   const d=STOCKAUDIT, total=d.expected_present.length, got=d.expected_present.filter(a=>d.scanned[a.asset_id]).length;
-  return `<div class="head"><div><h1 class="h1">Stock audit in progress</h1><p class="sub">${got} of ${total} on-shelf units checked</p></div><button class="btn sm" onclick="STOCKAUDIT=null;render()">Cancel</button></div>
+  return `<div class="head"><div><h1 class="h1">Stock check in progress</h1><p class="sub">${got} of ${total} items checked</p></div><button class="btn sm" onclick="STOCKAUDIT=null;render()">Cancel</button></div>
   <div class="dispgrid">
     <div><div style="display:flex;gap:8px;margin-bottom:12px"><input class="input" id="saQr" placeholder="Scan or type QR, then Enter" onkeydown="if(event.key==='Enter'){stockScan(this.value);this.value='';}"><button class="btn" onclick="var i=document.getElementById('saQr');stockScan(i.value);i.value='';i.focus();">Check</button></div>
       <button class="btn" style="margin-bottom:12px" onclick="openQrScanner(function(t){stockScan(t);var i=document.getElementById('saQr');if(i)i.focus();},'Scan item for stock audit')">📷 Use camera</button>
-      <button class="btn pri block" onclick="submitStock()">Finish & reconcile (${got}/${total})</button>
+      <button class="btn pri block" onclick="submitStock()">Finish count (${got}/${total})</button>
       ${d.on_rent.length?`<p class="muted" style="font-size:11.5px;margin:12px 0 0">${d.on_rent.length} unit(s) on rent — expected off-shelf, not counted here.</p>`:''}</div>
     <div class="card" style="max-height:62vh;overflow:auto">${d.expected_present.map(a=>{const done=!!d.scanned[a.asset_id];return `<div class="slot ${done?'done':''}"><div class="box">${done?'✓':''}</div><div><div style="font-weight:550;font-size:13px">${esc(a.name)}</div><div class="mono muted" style="font-size:11px">${a.qr_code||'no QR'}</div></div>${done?'<span class="qty">here</span>':`<button class="btn sm" style="margin-left:auto" onclick="stockMark('${a.asset_id}')">Mark</button>`}</div>`;}).join("")}</div>
   </div>`;
@@ -3535,18 +3538,26 @@ const PICKUP_LBL={self:'Self pickup',proxy:'Proxy pickup',delivery:'Delivery'};
 let CUR_DOC=null;
 VIEWS.docview=()=> CUR_DOC?docViewHtml(CUR_DOC):loading('Document');
 function docViewHtml(d){
+  const waMsg=`Hi${d.clientName?' '+d.clientName:''}, here's your ${d.title.toLowerCase()} from ${(SETTINGS&&SETTINGS.profile&&SETTINGS.profile.business_name)||'us'}. Total: ${d.amountLine||''} Please find the full document attached/printed — reply here if you have any questions.`;
+  const waHref=d.phone?('https://wa.me/'+String(d.phone).replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(waMsg))
+    :('https://api.whatsapp.com/send?text='+encodeURIComponent(waMsg));
   return `<div class="head noprint"><div><button class="btn sm" onclick="go('${d.backView}')" style="margin-bottom:8px">← Back</button>
     <h1 class="h1">${esc(d.title)}</h1><p class="sub">${d.archived?('Generated '+fmtDate(d.meta.created_at)+' by '+esc(d.meta.generated_by_name)+' — a saved record, not live data.'):'Print this page (Ctrl/Cmd+P) and choose "Save as PDF" — or print directly for a signature copy.'}</p></div>
-    <button class="btn pri" onclick="window.print()">🖨 Print / Save as PDF</button></div>
+    <div style="display:flex;gap:8px"><a class="btn" style="background:#25D366;color:#fff;border-color:#25D366" href="${waHref}" target="_blank" rel="noopener">📤 Notify on WhatsApp</a>
+    <button class="btn pri" onclick="window.print()">🖨 Print / Save as PDF</button></div></div>
   <div class="docsheet">${d.html}</div>`;
 }
 /** Builds a document via buildFn, archives it server-side, then shows it. buildFn returns
- *  the inner HTML that goes inside .docsheet (letterhead through signature lines). */
-async function generateAndArchive(docType, entityType, entityId, title, buildFn, backView){
+ *  the inner HTML that goes inside .docsheet (letterhead through signature lines).
+ *  phone/clientName/amountLine are optional — power the one-tap WhatsApp notify button;
+ *  the document itself still needs Print/Save as PDF to actually attach a file, WhatsApp
+ *  links can only pre-fill a text message, not attach a file automatically. */
+async function generateAndArchive(docType, entityType, entityId, title, buildFn, backView, extra){
+  extra=extra||{};
   try{
     const html=await buildFn();
     await api('document_save',{doc_type:docType, entity_type:entityType, entity_id:entityId, title:title, html:html});
-    CUR_DOC={html:html, title:title, meta:{}, backView:backView, archived:false};
+    CUR_DOC={html:html, title:title, meta:{}, backView:backView, archived:false, phone:extra.phone||'', clientName:extra.clientName||'', amountLine:extra.amountLine||''};
     VIEW='docview'; renderSide(); render();
     toast('Generated and saved to Documents');
     if(entityType==='bookings'&&CUR_BOOKING&&CUR_BOOKING.id===entityId) loadBookingDocs(entityId);
@@ -3556,7 +3567,7 @@ async function viewArchivedDoc(id, backView){
   CUR_DOC=null; VIEW='docview'; renderSide(); render();
   try{
     const d=await api('document_get',{id:id});
-    CUR_DOC={html:d.html, title:d.title, meta:{created_at:d.created_at, generated_by_name:d.generated_by_name}, backView:backView, archived:true};
+    CUR_DOC={html:d.html, title:d.title, meta:{created_at:d.created_at, generated_by_name:d.generated_by_name}, backView:backView, archived:true, phone:'', clientName:'', amountLine:''};
     render();
   }catch(e){ toast(e.message,true); }
 }
@@ -3578,14 +3589,18 @@ async function loadBookingDocs(bookingId){
 async function openAgreement(bookingId){
   const b=(CUR_BOOKING&&CUR_BOOKING.id===bookingId)?CUR_BOOKING:await api('booking',{booking_id:bookingId}).catch(e=>{toast(e.message,true);return null;});
   if(!b) return;
+  const c=clientObjById(b.client_id)||{};
   await generateAndArchive('rental_agreement','bookings',bookingId,'Rental agreement — '+(b.booking_number||bookingId.slice(0,8)),
-    async()=>{ const biz=await api('store_info',{}); return agreementHtml(b,biz); }, 'bookings');
+    async()=>{ const biz=await api('store_info',{}); return agreementHtml(b,biz); }, 'bookings',
+    {phone:c.phone_primary, clientName:c.name, amountLine:inr(b.total_estimated)});
 }
 async function openQuoteDoc(bookingId){
   const b=(CUR_BOOKING&&CUR_BOOKING.id===bookingId)?CUR_BOOKING:await api('booking',{booking_id:bookingId}).catch(e=>{toast(e.message,true);return null;});
   if(!b) return;
+  const c=clientObjById(b.client_id)||{};
   await generateAndArchive('quote','bookings',bookingId,'Quote — '+(b.booking_number||bookingId.slice(0,8)),
-    async()=>{ const biz=await api('store_info',{}); return quoteDocHtml(b,biz); }, 'bookings');
+    async()=>{ const biz=await api('store_info',{}); return quoteDocHtml(b,biz); }, 'bookings',
+    {phone:c.phone_primary, clientName:c.name, amountLine:inr(b.total_estimated)});
 }
 function quoteDocHtml(b,biz){
   const items=b.item_detail||b.items||[];
@@ -3916,6 +3931,37 @@ async function submitExtend(bookingId){
 }
 
 let pick={client:'', assets:[]};
+function quickBookingModal(){
+  pick={client:'', assets:[]};
+  const today=new Date().toISOString().slice(0,10);
+  const end=new Date(Date.now()+86400000).toISOString().slice(0,10);
+  const avail=CACHE.assets.filter(a=>truthy(a.is_available));
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">⚡ Quick booking</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    <p class="muted" style="font-size:12px;margin:0 0 14px">For the common case — one thing, going out today. Need more than one item, an offer, or a coupon? Use <a href="#" onclick="closeOverlays();newQuote();return false" style="color:var(--brand-ink)">New quote</a> instead.</p>
+    <label class="fld"><span>Who's renting?</span><select id="qbClient" class="input">
+      <option value="">Select client…</option>${CACHE.clients.map(c=>`<option value="${c.id}">${esc(c.name)}${truthy(c.is_blacklisted)?' (blacklisted)':''}</option>`).join("")}</select></label>
+    <button class="btn sm" style="margin:-6px 0 12px" onclick="addClientFromQuote()">+ New client</button>
+    <label class="fld"><span>What are they taking?</span><select id="qbAsset" class="input">
+      <option value="">Select item…</option>${avail.map(a=>`<option value="${a.id}">${esc(a.name)} — ${inr(a.daily_rate)}/day</option>`).join("")}</select></label>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>From</span><input id="qbStart" class="input" type="date" value="${today}"></label>
+      <label class="fld" style="flex:1"><span>Until</span><input id="qbEnd" class="input" type="date" value="${end}"></label></div>
+    <button class="btn pri block" id="qbBtn" onclick="submitQuickBooking()">Book it</button>
+  </div>`;
+  openOverlay($("#modal"));
+}
+async function submitQuickBooking(){
+  const clientId=($("#qbClient")||{}).value, assetId=($("#qbAsset")||{}).value;
+  if(!clientId){ toast('Pick who\'s renting',true); return; }
+  if(!assetId){ toast('Pick what they\'re taking',true); return; }
+  const btn=$("#qbBtn"); btn.disabled=true; btn.textContent='Booking…';
+  try{
+    const r=await api('create_quote', {client_id:clientId, asset_ids:[assetId],
+      start_date:($("#qbStart")||{}).value, end_date:($("#qbEnd")||{}).value});
+    toast('Booked · '+r.booking_number+' · '+inr(r.total)); closeOverlays();
+    await reloadData(); openBooking(r.booking_id);
+  }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Book it'; }
+}
 function newQuote(){
   pick={client:'', assets:[]};
   const today=new Date().toISOString().slice(0,10);
