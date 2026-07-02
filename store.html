@@ -459,6 +459,7 @@ function stOpenRequest(){
     <div class="fld"><label>Company</label><input id="stCompany" class="input" placeholder="optional"></div>
     <div class="fld"><label>What's the shoot?</label><input id="stShoot" class="input" placeholder="e.g. wedding film, ad shoot"></div>
     <div class="fld"><label>Location</label><input id="stLoc" class="input" placeholder="optional"></div>
+    <div class="fld"><label>Coupon code <span class="muted" style="font-weight:400">(optional)</span></label><input id="stCoupon" class="input" style="text-transform:uppercase" placeholder="Have a code? Enter it here"></div>
     <button class="btn pri block" id="stSubmitBtn" onclick="stSubmit()">Send request</button>
   </div></div>`;
 }
@@ -474,7 +475,7 @@ async function stSubmit(){
   try{
     const r = await stApi('store_request', {
       name, phone, email:$("#stEmail").value.trim(), company:$("#stCompany").value.trim(),
-      shoot_type:$("#stShoot").value.trim(), location:$("#stLoc").value.trim(),
+      shoot_type:$("#stShoot").value.trim(), location:$("#stLoc").value.trim(), coupon_code:$("#stCoupon").value.trim(),
       start_date:$("#stStart").value, end_date:$("#stEnd").value,
       start_time:$("#stStartTime").value, end_time:$("#stEndTime").value, items
     });

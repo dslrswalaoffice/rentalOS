@@ -414,6 +414,8 @@ body.demo-active .whatsnew{bottom:76px}
 .setbody{flex:1;min-width:0;max-width:720px}
 @media(max-width:760px){.setwrap{flex-direction:column}.setnav{width:100%;position:static;display:flex;flex-wrap:wrap;gap:4px}.setnav .grp{width:100%}.setnav button{width:auto}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -465,6 +467,7 @@ body.demo-active .whatsnew{bottom:76px}
         oninput="gsOnInput(this.value)" onfocus="gsOnInput(this.value)" onkeydown="gsKeydown(event)">
       <div id="gsResults" class="gsresults hide"></div>
     </div>
+    <button class="btn sm" style="margin-left:8px" title="Scan a QR code to look something up" onclick="openUniversalScan()">📷 Scan</button>
     <div class="spacer"></div>
     <div class="bellwrap" id="bellWrap">
       <button class="bellbtn" onclick="bellOpen()" title="Needs your attention">
@@ -1035,6 +1038,11 @@ const ROADMAP={
     {t:'Live payment capture',d:'Real Razorpay payment links generated from an invoice, and the webhook now actually records the payment instead of just logging it. Built against Razorpay\u2019s documented API but not yet run against real traffic — test with Razorpay TEST MODE credentials before pointing this at production keys',p:'Billing → Invoices → Send payment link'},
     {t:'Configurable date format',d:'DD-MM-YYYY by default, switchable to YYYY-MM-DD / MM-DD-YYYY / DD/MM/YYYY — applies everywhere at once since every date on screen goes through one shared formatter',p:'Settings → Documents → Numbering'},
     {t:'360-view visual hierarchy',d:'Client 360, Asset, and Investor pages restructured so the one number/status that matters most is visually prominent, with related facts grouped instead of one flat list — consistent design language across all of them',p:'Client 360 · Asset detail · Investor detail'},
+    {t:'Document archive',d:'Quotes, rental agreements, invoices, and investor statements are snapshotted the moment they\u2019re generated and stay browsable later — exactly as they looked that day, not re-rendered from data that may have since changed. Branded with your logo and business colour throughout',p:'Booking/Invoice/Investor detail pages → Documents'},
+    {t:'Client-facing PDF invoice / statement',d:'Covered by the document archive above — branded, printable/downloadable invoices and statements a client can keep for their own records',p:'Billing → Invoices → Generate invoice document'},
+    {t:'Time-of-day precision',d:'Pickup/return times, not just dates — availability conflicts, overdue detection, and trust scoring are now hour-precise. Pricing stays day-based; this only affects when things count as due/overdue/conflicting. Bookings made before this update default to full-day treatment, unaffected',p:'New Quote · Extend Rental · Dashboard · Documents'},
+    {t:'Booking page decluttered',d:'Sidebar restructured from 8 stacked blocks into 3 tabs — Overview, Documents, Activity — so the page doesn\u2019t get more overwhelming as features are added',p:'Booking detail page'},
+    {t:'Security & speed audit',d:'Fixed a payment-webhook bypass (would process unsigned requests if no secret was configured yet — now fails closed), added spreadsheet-formula-injection protection for public storefront input, closed several XSS gaps in staff-entered fields, and fixed 3 N+1 query patterns',p:'Whole app — no single screen'},
   ],
   progress:[
     {t:'Real WhatsApp send',d:'AiSensy / WATI live dispatch (currently logged only)',p:'Notification bell · full Notifications page'},
@@ -1051,7 +1059,6 @@ const ROADMAP={
     {t:'Customizable table columns',d:'Choose which columns show in Bookings/Invoices/Clients tables, per person — not everyone needs to see the same fields',p:'Every list page'},
     {t:'Bulk pricing edit',d:'Change daily rates across many assets at once (e.g. a seasonal price bump) instead of one at a time',p:'Inventory → Assets (bulk actions)'},
     {t:'Staff activity intelligence',d:'Who\u2019s actually handling the dispatches/returns/quotes and how workload balances across the team, over a date range — the exact same buy/hold/sell-style signal logic already proven in Analytics (for gear) and in the separate Crew OS build (for freelance crew), pointed at your own staff_id data this system already captures',p:'New: Insights → Analytics (staff tab)'},
-    {t:'Client-facing PDF invoice / statement',d:'Branded, downloadable PDF a client can save for their own records or hand to their CA — invoices currently only live inside the app. Direct match to what the separate partner portal already does for investors',p:'Billing → Invoices (new download button)'},
     {t:'Recommendation engine',d:'Cross-sell / next-best gear at quote',p:'New Quote modal'},
     {t:'Wishlist alerts',d:'Notify when wished-for gear frees up',p:'Client 360 (new) · Notification bell'},
     {t:'Multi-tenant / white-label',d:'Productize the OS for other rental houses',p:'Foundational — touches the whole system'},
@@ -1408,7 +1415,12 @@ VIEWS.dashboard=()=>{
     <span style="font-size:12.5px">${label}</span><span class="chip ${cls}" style="min-width:22px;text-align:center">${count}</span></div>`:'';
   const attnCount=quotesWaiting.length+overdueMaint.length+urgentNotifs.length+(outstanding>0?1:0);
 
-  return `<div class="head"><div><h1 class="h1">${_greeting_()}</h1><p class="sub">${a.length} assets · ${CACHE.clients.length} clients · here's what's on for today</p></div>
+  return `${wizardShouldShow()?`<div class="card pad" style="background:var(--brand-wash);border-color:var(--brand);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div><b style="font-family:var(--disp);font-size:14px;color:var(--brand-ink)">New here? Let's get RentalOS set up</b>
+      <p class="muted" style="font-size:12px;margin:2px 0 0">Business info, tax settings, and a starting inventory — about 5 minutes.</p></div>
+    <div style="display:flex;gap:8px;flex:none"><button class="btn sm" onclick="wizardDismiss()">Not now</button><button class="btn sm pri" onclick="WIZ_STEP=1;go('settings');setGo('setup')">Start setup</button></div>
+  </div>`:''}
+  <div class="head"><div><h1 class="h1">${_greeting_()}</h1><p class="sub">${a.length} assets · ${CACHE.clients.length} clients · here's what's on for today</p></div>
     <button class="btn pri" onclick="newQuote()">+ New quote</button></div>
 
   <div class="bkgrid">
@@ -1735,6 +1747,11 @@ function client360Html(d){
           <div class="fact"><div class="k">Email</div><div class="v" style="font-size:11.5px">${esc(c.email)||'—'}</div></div>
           <div class="fact"><div class="k">GSTIN</div><div class="v mono" style="font-size:11px">${esc(c.gst_number)||'—'}</div></div>
         </div>
+        <button class="btn sm block" style="margin-top:10px" onclick="var box=document.getElementById('clQrBox');if(box.style.display==='none'){box.style.display='block';renderQrInto('clQrCanvas','RENTALOS:CL:${c.id}');}else{box.style.display='none';}">📱 Client QR</button>
+        <div id="clQrBox" style="display:none;text-align:center;padding:10px 0 0">
+          <div id="clQrCanvas" style="display:inline-block"></div>
+          <p class="muted" style="font-size:11px;margin:6px 0 0">Scan at the counter to pull up this client instantly.</p>
+        </div>
       </div>
 
       <div class="bkcard">
@@ -1784,7 +1801,7 @@ function dispatchUI(){
       <div style="display:flex;gap:8px;margin-top:12px">
         <input class="input" id="qrIn" placeholder="Scan or type a QR code, then Enter" onkeydown="if(event.key==='Enter'){scanQr(this.value);this.value='';}">
         <button class="btn" onclick="var i=document.getElementById('qrIn');scanQr(i.value);i.value='';i.focus();">Scan</button></div>
-      <p class="muted" style="font-size:11.5px;margin:8px 0 0">No live camera here yet — type/paste a QR or use a Simulate button. Live camera is a drop-in later.</p>
+      <button class="btn pri block" style="margin-top:8px" onclick="openQrScanner(function(t){scanQr(t);var i=document.getElementById('qrIn');if(i)i.focus();},'Scan item to dispatch')">📷 Use camera</button>
     </div>
     <div class="card">
       <div style="padding:13px 14px;border-bottom:1px solid var(--line)"><b style="font-family:var(--disp)">Checklist</b>
@@ -2451,7 +2468,7 @@ function assetFormModal(assetId){
       <label class="fld" style="flex:1"><span>Type</span><select id="asType" class="input"><option value="">—</option>${types.map(t=>`<option value="${t.id}" ${a.asset_type_id===t.id?'selected':''}>${esc(t.name)}</option>`).join("")}</select></label>
       <label class="fld" style="flex:1"><span>Rate / day ₹</span><input id="asRate" class="input mono" inputmode="numeric" value="${a.daily_rate||''}"></label></div>
     <div style="display:flex;gap:10px">
-      <label class="fld" style="flex:1"><span>QR code</span><input id="asQr" class="input mono" value="${esc(a.qr_code)||''}" placeholder="FX3-01"></label>
+      <label class="fld" style="flex:1"><span>QR code</span><div style="display:flex;gap:6px"><input id="asQr" class="input mono" style="flex:1" value="${esc(a.qr_code)||''}" placeholder="FX3-01"><button type="button" class="btn sm" title="Scan a QR sticker to fill this" onclick="openQrScanner(function(t){document.getElementById('asQr').value=t;},'Scan asset QR')">📷</button></div></label>
       <label class="fld" style="flex:1"><span>Serial no.</span><input id="asSerial" class="input mono" value="${esc(a.serial_number)||''}"></label></div>
     <div style="display:flex;gap:10px">
       <label class="fld" style="flex:1"><span>Purchase price ₹</span><input id="asPrice" class="input mono" inputmode="numeric" value="${a.purchase_price||''}"></label>
@@ -2758,12 +2775,12 @@ function loading(t){ return `<div class="head"><div><h1 class="h1">${t}</h1></di
 let OFFERS=null;
 function offersBodyHtml(){
   const admin=SESSION.user.role==='admin';
-  return `${admin?`<div style="text-align:right;margin-bottom:10px"><button class="btn pri" onclick="offerModal()">+ New offer</button></div>`:''}
-  ${OFFERS.length?`<table class="tbl"><thead><tr><th>Title</th><th>Type</th><th>Discount</th><th>Valid</th><th>Status</th>${admin?'<th></th>':''}</tr></thead><tbody>
-    ${OFFERS.map(o=>`<tr><td><b>${esc(o.title)}</b></td><td>${o.type}</td><td class="mono">${o.discount_type==='percent'?o.discount_value+'%':o.discount_type==='flat'?inr(o.discount_value):o.discount_value+' days'}</td>
+  return `${admin?`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px"><button class="btn" onclick="go('couponreport')">Coupon report</button><button class="btn pri" onclick="offerModal()">+ New offer</button></div>`:''}
+  ${OFFERS.length?`<table class="tbl"><thead><tr><th>Title</th><th>Code</th><th>Type</th><th>Discount</th><th>Valid</th><th>Status</th>${admin?'<th></th>':''}</tr></thead><tbody>
+    ${OFFERS.map(o=>`<tr><td><b>${esc(o.title)}</b></td><td>${o.code?`<span class="chip brand plain mono">${esc(o.code)}</span>`:'<span class="muted">—</span>'}</td><td>${o.type}</td><td class="mono">${o.discount_type==='percent'?o.discount_value+'%':o.discount_type==='flat'?inr(o.discount_value):o.discount_value+' days'}</td>
       <td class="muted">${o.valid_from?fmtDate(o.valid_from):'—'}${o.valid_to?' – '+fmtDate(o.valid_to):''}</td>
       <td>${truthy(o.is_active)?'<span class="chip ok">Active</span>':'<span class="chip pend">Off</span>'}</td>
-      ${admin?`<td style="text-align:right"><button class="btn sm" onclick="flipOffer('${o.id}',${truthy(o.is_active)?'false':'true'})">${truthy(o.is_active)?'Disable':'Enable'}</button></td>`:''}</tr>`).join("")}
+      ${admin?`<td style="text-align:right;white-space:nowrap"><button class="btn sm" onclick="offerModal('${o.id}')">Edit</button> <button class="btn sm" onclick="flipOffer('${o.id}',${truthy(o.is_active)?'false':'true'})">${truthy(o.is_active)?'Disable':'Enable'}</button></td>`:''}</tr>`).join("")}
     </tbody></table>`:'<div class="empty">No offers yet.</div>'}`;
 }
 VIEWS.offers=()=>{
@@ -2771,31 +2788,190 @@ VIEWS.offers=()=>{
   return `<div class="head"><div><h1 class="h1">Offers</h1><p class="sub">Promotional discounts</p></div></div><div class="card pad">${offersBodyHtml()}</div>`;
 };
 async function loadOffers(){ try{ OFFERS=await api('offers'); if(VIEW==='offers'||(VIEW==='settings'&&SETTAB==='offers'))render(); }catch(e){ toast(e.message,true);} }
-function offerModal(){
-  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">New offer</b><button class="x" onclick="closeOverlays()">✕</button></div>
+function offerModal(offerId){
+  const o=offerId?((OFFERS||[]).find(x=>x.id===offerId)||{}):{};
+  const edit=!!offerId;
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${edit?'Edit offer':'New offer'}</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
-    <label class="fld"><span>Title</span><input id="ofTitle" class="input" placeholder="Diwali 15% off"></label>
-    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Type</span><select id="ofType" class="input"><option value="seasonal">Seasonal</option><option value="birthday">Birthday</option><option value="trial">Trial</option><option value="advance">Advance</option><option value="re_engagement">Re-engagement</option><option value="wishlist">Wishlist</option></select></label>
-      <label class="fld" style="flex:1"><span>Discount</span><select id="ofDt" class="input"><option value="percent">Percent</option><option value="flat">Flat</option><option value="free_days">Free days</option></select></label></div>
-    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Value</span><input id="ofVal" class="input mono" inputmode="numeric" placeholder="15"></label>
-      <label class="fld" style="flex:1"><span>Use limit (0=none)</span><input id="ofLimit" class="input mono" inputmode="numeric" value="0"></label></div>
-    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Valid from</span><input id="ofFrom" class="input" type="date"></label>
-      <label class="fld" style="flex:1"><span>Valid to</span><input id="ofTo" class="input" type="date"></label></div>
-    <button class="btn pri block" id="ofBtn" onclick="submitOffer()">Create offer</button>
+    <label class="fld"><span>Title</span><input id="ofTitle" class="input" placeholder="Diwali 15% off" value="${esc(o.title)||''}"></label>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Type</span><select id="ofType" class="input" ${edit?'disabled':''}>${['seasonal','birthday','trial','advance','re_engagement','wishlist'].map(t=>`<option value="${t}" ${o.type===t?'selected':''}>${t.replace('_',' ').replace(/^./,c=>c.toUpperCase())}</option>`).join("")}</select></label>
+      <label class="fld" style="flex:1"><span>Discount</span><select id="ofDt" class="input"><option value="percent" ${o.discount_type==='percent'?'selected':''}>Percent</option><option value="flat" ${o.discount_type==='flat'?'selected':''}>Flat</option><option value="free_days" ${o.discount_type==='free_days'?'selected':''}>Free days</option></select></label></div>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Value</span><input id="ofVal" class="input mono" inputmode="numeric" placeholder="15" value="${o.discount_value||''}"></label>
+      <label class="fld" style="flex:1"><span>Use limit (0=none)</span><input id="ofLimit" class="input mono" inputmode="numeric" value="${o.use_limit||0}"></label></div>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Valid from</span><input id="ofFrom" class="input" type="date" value="${o.valid_from||''}"></label>
+      <label class="fld" style="flex:1"><span>Valid to</span><input id="ofTo" class="input" type="date" value="${o.valid_to||''}"></label></div>
+    <label class="fld"><span>Coupon code <span class="muted" style="font-weight:400">(optional — set this to let anyone redeem it by typing the code, at checkout or in-store, instead of staff picking it from a list)</span></span>
+      <input id="ofCode" class="input mono" style="text-transform:uppercase" placeholder="SPECIAL20" value="${esc(o.code)||''}"></label>
+    <label class="fld"><span>Tags <span class="muted" style="font-weight:400">(optional, comma-separated — for organizing campaigns)</span></span>
+      <input id="ofTags" class="input" placeholder="diwali, email-campaign" value="${esc(o.tags)||''}"></label>
+    <button class="btn pri block" id="ofBtn" onclick="submitOffer('${offerId||''}')">${edit?'Save changes':'Create offer'}</button>
   </div>`;
   openOverlay($("#modal"));
 }
-async function submitOffer(){
+async function submitOffer(offerId){
   const title=($("#ofTitle")||{}).value||'', val=Number(($("#ofVal")||{}).value||0);
   if(!title||!val){ toast('Title and value required',true); return; }
-  const btn=$("#ofBtn"); btn.disabled=true; btn.textContent='Creating…';
-  try{ await api('offer_create',{title:title, type:$("#ofType").value, discount_type:$("#ofDt").value, discount_value:val, use_limit:Number(($("#ofLimit")||{}).value||0), valid_from:($("#ofFrom")||{}).value||'', valid_to:($("#ofTo")||{}).value||''});
-    toast('Offer created'); closeOverlays(); OFFERS=null; render();
-  }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Create offer'; }
+  const btn=$("#ofBtn"); btn.disabled=true; btn.textContent=offerId?'Saving…':'Creating…';
+  const p={title:title, discount_type:$("#ofDt").value, discount_value:val, use_limit:Number(($("#ofLimit")||{}).value||0),
+    valid_from:($("#ofFrom")||{}).value||'', valid_to:($("#ofTo")||{}).value||'',
+    code:($("#ofCode")||{}).value||'', tags:($("#ofTags")||{}).value||''};
+  try{
+    if(offerId){ await api('offer_update',Object.assign({offer_id:offerId},p)); toast('Offer updated'); }
+    else{ await api('offer_create',Object.assign({type:$("#ofType").value},p)); toast('Offer created'); }
+    closeOverlays(); OFFERS=null; render();
+  }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent=offerId?'Save changes':'Create offer'; }
 }
 async function flipOffer(id,on){ try{ await api('offer_toggle',{offer_id:id, on:on}); OFFERS=null; render(); toast('Updated'); }catch(e){toast(e.message,true);} }
 
-let NOTIFS=null;
+/* ===================== COUPON REPORT ===================== */
+let COUPON_REP=null, CR_STATUS='', CR_TAG='', CR_FROM='', CR_TO='';
+async function loadCouponReport(){
+  try{ COUPON_REP=await api('coupon_report',{status:CR_STATUS, tag:CR_TAG, date_from:CR_FROM, date_to:CR_TO}); if(VIEW==='couponreport') render(); }
+  catch(e){ toast(e.message,true); }
+}
+function crApplyFilter(k,v){ if(k==='status')CR_STATUS=v; if(k==='tag')CR_TAG=v; if(k==='from')CR_FROM=v; if(k==='to')CR_TO=v; COUPON_REP=null; loadCouponReport(); render(); }
+VIEWS.couponreport=()=>{
+  if(!COUPON_REP){ loadCouponReport(); return loading('Coupon report'); }
+  const rows=COUPON_REP.rows, tags=COUPON_REP.all_tags||[];
+  const statusChip=s=>({active:['ok','Active'],inactive:['pend','Inactive'],expired:['bad','Expired']}[s]||['pend',s]);
+  return `<div class="head"><div><button class="btn sm" onclick="go('offers')" style="margin-bottom:8px">← Offers</button>
+    <h1 class="h1">Coupon report</h1><p class="sub">Usage and discount impact per coupon code — only offers with a code set count as coupons</p></div>
+    <button class="btn" onclick="crExport()">Export CSV</button></div>
+  <div class="card pad" style="margin-bottom:14px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <label class="fld" style="min-width:140px"><span>Status</span><select class="input" onchange="crApplyFilter('status',this.value)">
+        <option value="" ${!CR_STATUS?'selected':''}>All</option>
+        <option value="active" ${CR_STATUS==='active'?'selected':''}>Active</option>
+        <option value="inactive" ${CR_STATUS==='inactive'?'selected':''}>Inactive</option>
+        <option value="expired" ${CR_STATUS==='expired'?'selected':''}>Expired</option></select></label>
+      <label class="fld" style="min-width:160px"><span>Tag</span><select class="input" onchange="crApplyFilter('tag',this.value)">
+        <option value="">All tags</option>${tags.map(t=>`<option value="${esc(t)}" ${CR_TAG===t?'selected':''}>${esc(t)}</option>`).join("")}</select></label>
+      <label class="fld"><span>Used from</span><input class="input" type="date" value="${CR_FROM}" onchange="crApplyFilter('from',this.value)"></label>
+      <label class="fld"><span>Used to</span><input class="input" type="date" value="${CR_TO}" onchange="crApplyFilter('to',this.value)"></label>
+    </div>
+  </div>
+  <div class="card">
+    ${rows.length?`<table class="tbl"><thead><tr><th>Coupon</th><th>Code</th><th>Status</th><th>Usage</th><th>Total discount</th><th>Tags</th><th>Created</th></tr></thead><tbody>
+    ${rows.map(r=>{const sc=statusChip(r.status); return `<tr><td><b>${esc(r.title)}</b></td>
+      <td class="mono">${esc(r.code)}</td>
+      <td><span class="chip ${sc[0]}">${sc[1]}</span></td>
+      <td class="mono">${r.usage}${r.use_limit>0?' / '+r.use_limit:''}</td>
+      <td class="mono">${inr(r.total_discount)}</td>
+      <td>${r.tags.map(t=>`<span class="chip pend plain" style="font-size:10px">${esc(t)}</span>`).join(' ')||'<span class="muted">—</span>'}</td>
+      <td class="muted" style="font-size:12px">${r.created_at?fmtDate(r.created_at):'—'}</td></tr>`;}).join("")}
+    </tbody></table>`:'<div class="empty">No coupons match these filters. Set a code on an offer to turn it into a coupon.</div>'}
+  </div>`;
+};
+function crExport(){
+  if(!COUPON_REP||!COUPON_REP.rows.length){ toast('Nothing to export',true); return; }
+  downloadCSV('coupon-report.csv', ['Coupon','Code','Status','Usage','Use limit','Total discount','Tags','Created'],
+    COUPON_REP.rows.map(r=>[r.title,r.code,r.status,r.usage,r.use_limit||'',r.total_discount,r.tags.join('; '),r.created_at?fmtDate(r.created_at):'']));
+}
+
+/* ===================== SETUP WIZARD =====================
+   Only matters when onboarding a NEW, empty RentalOS install — this
+   business's own instance is already fully configured and will never see
+   this trigger automatically (see wizardShouldShow below). Always
+   re-runnable from Settings → System → Setup wizard regardless. */
+let WIZ_STEP=1;
+const WIZ_GEAR=[
+  {cat:'Camera Body',name:'Sony A7 IV',rate:2500},{cat:'Camera Body',name:'Canon R5',rate:3000},
+  {cat:'Lens',name:'24-70mm f/2.8',rate:800},{cat:'Lens',name:'70-200mm f/2.8',rate:1000},
+  {cat:'Lighting',name:'LED Panel Light',rate:600},{cat:'Lighting',name:'Softbox Kit',rate:500},
+  {cat:'Audio',name:'Wireless Lavalier Mic',rate:400},{cat:'Audio',name:'Shotgun Mic',rate:350},
+  {cat:'Gimbal & Support',name:'3-Axis Gimbal',rate:700},{cat:'Gimbal & Support',name:'Tripod',rate:200},
+  {cat:'Drone',name:'Camera Drone',rate:2000},{cat:'Monitor',name:'Field Monitor',rate:400},
+];
+let WIZ_PICKED={};
+function wizardShouldShow(){
+  return SESSION.user.role==='admin' && !CACHE.setup_completed && (CACHE.assets||[]).length===0 && !WIZ_DISMISSED;
+}
+let WIZ_DISMISSED=false;
+function wizardDismiss(){ WIZ_DISMISSED=true; render(); }
+async function wizardFinish(){
+  try{ await api('config_save',{setup_completed:true}); CACHE.setup_completed=true; toast('Setup complete — welcome to RentalOS'); go('dashboard'); }
+  catch(e){ toast(e.message,true); }
+}
+function wizardHtml(){
+  const p=(SETTINGS&&SETTINGS.profile)||{};
+  const steps=['Welcome','Business info','Tax & booking','Quick inventory','Done'];
+  return `<div class="card pad">
+    <div style="display:flex;gap:6px;margin-bottom:18px">${steps.map((s,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i+1<=WIZ_STEP?'var(--brand)':'var(--line)'}"></div>`).join("")}</div>
+    ${WIZ_STEP===1?`
+      <b style="font-family:var(--disp);font-size:18px">Let's get RentalOS set up</b>
+      <p class="muted" style="font-size:13px;margin:8px 0 18px;line-height:1.6">A few quick steps — business details, tax settings, and a starting inventory so you're bookable today, not staring at an empty screen. About 5 minutes. Skip anything you'd rather do later.</p>
+      <button class="btn pri block" onclick="WIZ_STEP=2;render()">Get started</button>
+      <button class="btn block" style="margin-top:8px" onclick="wizardFinish()">Skip setup entirely</button>`
+    :WIZ_STEP===2?`
+      <b style="font-family:var(--disp);font-size:16px">Business info</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Shows up on every invoice, quote, and document.</p>
+      <label class="fld"><span>Business name</span><input id="wzName" class="input" value="${esc(p.business_name)||''}"></label>
+      <label class="fld"><span>GSTIN</span><input id="wzGstin" class="input" value="${esc(p.gstin)||''}"></label>
+      <label class="fld"><span>Address</span><input id="wzAddr" class="input" value="${esc(p.address)||''}"></label>
+      <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Phone</span><input id="wzPhone" class="input" value="${esc(p.phone)||''}"></label>
+        <label class="fld" style="flex:1"><span>Email</span><input id="wzEmail" class="input" value="${esc(p.email)||''}"></label></div>
+      <label class="fld"><span>State</span><select id="wzState" class="input">${INDIA_STATES.map(s=>`<option value="${s}" ${(p.state||'Gujarat')===s?'selected':''}>${s}</option>`).join("")}</select></label>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=1;render()">Back</button>
+        <button class="btn pri" style="flex:2" id="wzBiz" onclick="wizStep2Save()">Continue</button></div>`
+    :WIZ_STEP===3?`
+      <b style="font-family:var(--disp);font-size:16px">Tax &amp; booking numbering</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Defaults are fine for most — change if your accountant needs otherwise.</p>
+      <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>GST %</span><input id="wzGst" class="input mono" value="${(SETTINGS.config&&SETTINGS.config.tax.gst_pct)||18}"></label>
+        <label class="fld" style="flex:1"><span>TDS %</span><input id="wzTds" class="input mono" value="${(SETTINGS.config&&SETTINGS.config.tax.tds_pct)||2}"></label></div>
+      <label class="fld"><span>Booking reference prefix</span><input id="wzPrefix" class="input mono" style="text-transform:uppercase;max-width:160px" maxlength="8" value="${(SETTINGS.config&&SETTINGS.config.numbering.booking_prefix)||'BK'}"></label>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=2;render()">Back</button>
+        <button class="btn pri" style="flex:2" id="wzTax" onclick="wizStep3Save()">Continue</button></div>`
+    :WIZ_STEP===4?`
+      <b style="font-family:var(--disp);font-size:16px">Quick inventory</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Common gear, pre-filled — tick what you actually have, edit the rate, skip the rest. You can add more anytime from Inventory.</p>
+      <div style="max-height:340px;overflow:auto">
+      ${(function(){const byCat={}; WIZ_GEAR.forEach((g,i)=>{(byCat[g.cat]=byCat[g.cat]||[]).push([g,i]);});
+        return Object.keys(byCat).map(cat=>`<div style="margin-bottom:10px"><div class="muted" style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${cat}</div>
+        ${byCat[cat].map(([g,i])=>`<label class="pickrow" style="margin-bottom:4px"><input type="checkbox" ${WIZ_PICKED[i]?'checked':''} onchange="WIZ_PICKED[${i}]=this.checked">
+          <input class="input" id="wzGearName${i}" value="${esc(g.name)}" style="flex:1;font-size:12.5px;padding:6px 8px">
+          <input class="input mono" id="wzGearRate${i}" value="${g.rate}" style="width:80px;font-size:12.5px;padding:6px 8px" inputmode="numeric"></label>`).join("")}
+        </div>`).join("");})()}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WIZ_STEP=3;render()">Back</button>
+        <button class="btn pri" style="flex:2" id="wzInv" onclick="wizStep4Save()">Add selected &amp; continue</button></div>
+      <button class="btn block" style="margin-top:8px" onclick="WIZ_STEP=5;render()">Skip this step</button>`
+    :`
+      <b style="font-family:var(--disp);font-size:18px">All set 🎉</b>
+      <p class="muted" style="font-size:13px;margin:8px 0 18px;line-height:1.6">RentalOS is ready. You can revisit any of this anytime in Settings, and add the rest of your inventory whenever — this was just enough to get moving.</p>
+      <button class="btn pri block" onclick="wizardFinish()">Go to dashboard</button>`}
+  </div>`;
+}
+async function wizStep2Save(){
+  const btn=$("#wzBiz"); if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    await api('profile_save',{profile:{business_name:($("#wzName")||{}).value||'', gstin:($("#wzGstin")||{}).value||'',
+      address:($("#wzAddr")||{}).value||'', phone:($("#wzPhone")||{}).value||'', email:($("#wzEmail")||{}).value||'',
+      otp_channel:'whatsapp', state:$("#wzState").value, logo_url:(SETTINGS.profile&&SETTINGS.profile.logo_url)||''}});
+    SETTINGS=null; await loadSettings(); WIZ_STEP=3; render();
+  }catch(e){ toast(e.message,true); if(btn){btn.disabled=false;btn.textContent='Continue';} }
+}
+async function wizStep3Save(){
+  const btn=$("#wzTax"); if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    await api('config_save',{tax:{gst_pct:Number(($("#wzGst")||{}).value||18), tds_pct:Number(($("#wzTds")||{}).value||2)},
+      numbering:{booking_prefix:($("#wzPrefix")||{}).value||'BK'}});
+    SETTINGS=null; await loadSettings(); WIZ_STEP=4; render();
+  }catch(e){ toast(e.message,true); if(btn){btn.disabled=false;btn.textContent='Continue';} }
+}
+async function wizStep4Save(){
+  const picked=Object.keys(WIZ_PICKED).filter(i=>WIZ_PICKED[i]);
+  if(!picked.length){ WIZ_STEP=5; render(); return; }
+  const btn=$("#wzInv"); btn.disabled=true; btn.textContent='Adding…';
+  try{
+    for(const i of picked){
+      const g=WIZ_GEAR[i];
+      const name=($("#wzGearName"+i)||{}).value||g.name, rate=Number(($("#wzGearRate"+i)||{}).value||g.rate);
+      const t=await api('asset_type_create',{name:g.cat, category:'camera_av'});
+      await api('asset_create',{name:name, asset_type_id:t.id, daily_rate:rate});
+    }
+    toast(picked.length+' item(s) added to inventory'); await reloadData(); WIZ_STEP=5; render();
+  }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Add selected & continue'; }
+}
 const NOTIF_STATUS_LBL={queued:["warn","Queued · needs review"],sent:["ok","Sent"],suppressed:["bad","Rejected"],approved:["ok","Approved"],failed:["bad","Failed"]};
 VIEWS.notifications=()=>{
   if(!NOTIFS){ loadNotifs(); return loading('Notifications'); }
@@ -2898,6 +3074,7 @@ function stockUI(){
   return `<div class="head"><div><h1 class="h1">Stock audit in progress</h1><p class="sub">${got} of ${total} on-shelf units checked</p></div><button class="btn sm" onclick="STOCKAUDIT=null;render()">Cancel</button></div>
   <div class="dispgrid">
     <div><div style="display:flex;gap:8px;margin-bottom:12px"><input class="input" id="saQr" placeholder="Scan or type QR, then Enter" onkeydown="if(event.key==='Enter'){stockScan(this.value);this.value='';}"><button class="btn" onclick="var i=document.getElementById('saQr');stockScan(i.value);i.value='';i.focus();">Check</button></div>
+      <button class="btn" style="margin-bottom:12px" onclick="openQrScanner(function(t){stockScan(t);var i=document.getElementById('saQr');if(i)i.focus();},'Scan item for stock audit')">📷 Use camera</button>
       <button class="btn pri block" onclick="submitStock()">Finish & reconcile (${got}/${total})</button>
       ${d.on_rent.length?`<p class="muted" style="font-size:11.5px;margin:12px 0 0">${d.on_rent.length} unit(s) on rent — expected off-shelf, not counted here.</p>`:''}</div>
     <div class="card" style="max-height:62vh;overflow:auto">${d.expected_present.map(a=>{const done=!!d.scanned[a.asset_id];return `<div class="slot ${done?'done':''}"><div class="box">${done?'✓':''}</div><div><div style="font-weight:550;font-size:13px">${esc(a.name)}</div><div class="mono muted" style="font-size:11px">${a.qr_code||'no QR'}</div></div>${done?'<span class="qty">here</span>':`<button class="btn sm" style="margin-left:auto" onclick="stockMark('${a.asset_id}')">Mark</button>`}</div>`;}).join("")}</div>
@@ -2926,7 +3103,7 @@ const SETNAV=[
   ['Documents',[['numbering','Numbering'],['templates','Message templates']]],
   ['Integrations',[['payment','Payment gateway'],['whatsapp','WhatsApp']]],
   ['Access',[['users','Users'],['roles','Roles & access']]],
-  ['System',[['features','Features'],['demo','Demo data'],['connection','Connection'],['about','System info']]],
+  ['System',[['features','Features'],['demo','Demo data'],['setup','Setup wizard'],['connection','Connection'],['about','System info']]],
 ];
 VIEWS.settings=()=>{
   if(SESSION.user.role!=='admin') return `<div class="head"><div><h1 class="h1">Settings</h1></div></div><div class="empty">Settings are admin-only. You're signed in as ${SESSION.user.role}.</div>`;
@@ -3063,6 +3240,7 @@ const SETSECTIONS={
     ${(CACHE.demo&&CACHE.demo.active)
       ? `<div class="fact" style="margin-bottom:10px"><div class="k">Demo rows loaded</div><div class="v mono">${CACHE.demo.count}</div></div><button class="btn block" onclick="purgeDemo()">Purge demo data</button>`
       : `<button class="btn pri block" onclick="seedDemo()">Load demo data</button>`}</div>`,
+  setup:()=>wizardHtml(),
   users:()=>{ const all=SETTINGS.users||[]; const q=(USR_Q||'').trim().toLowerCase();
     const us=q?all.filter(u=>((u.name||'')+' '+(u.email||'')).toLowerCase().includes(q)):all;
     return `<div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--disp)">Users</b><button class="btn sm pri" onclick="userModal()">+ Add user</button></div>
@@ -3250,7 +3428,101 @@ function analyticsHTML(a){
 }
 
 function openOverlay(el){ el.classList.remove('wide'); $("#bg").classList.add("show"); el.classList.add("show"); }
+/* ===================== CAMERA QR SCANNER =====================
+   One shared scanner reused everywhere a QR gets scanned (dispatch, stock
+   audit, universal lookup). Falls back gracefully — every caller already
+   has a manual type/paste input, this just gives camera as a faster option
+   where the device/browser supports it. */
+let QR_STREAM=null, QR_RAF=null, QR_ONDECODE=null;
+function openQrScanner(onDecode, title){
+  QR_ONDECODE=onDecode;
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${title||'Scan QR code'}</b><button class="x" onclick="closeQrScanner()">✕</button></div>
+  <div class="db" style="padding-top:0">
+    <div id="qrScanWrap" style="position:relative;border-radius:12px;overflow:hidden;background:#111;aspect-ratio:1/1;max-width:360px;margin:0 auto">
+      <video id="qrVideo" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover"></video>
+      <div style="position:absolute;inset:14%;border:2px solid rgba(255,255,255,.85);border-radius:12px;pointer-events:none"></div>
+      <div id="qrScanStatus" style="position:absolute;bottom:10px;left:0;right:0;text-align:center;color:#fff;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.6)">Point the camera at a QR code</div>
+    </div>
+    <p class="muted" style="font-size:11.5px;text-align:center;margin:12px 0 0">No camera, or prefer typing? Close this and use the text field instead.</p>
+  </div>`;
+  openOverlay($("#modal"));
+  _startQrCamera();
+}
+async function _startQrCamera(){
+  const statusEl=$("#qrScanStatus");
+  try{
+    QR_STREAM=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const video=$("#qrVideo");
+    if(!video){ _stopQrStream(); return; }   // modal was closed before camera resolved
+    video.srcObject=QR_STREAM;
+    await video.play();
+    const canvas=document.createElement('canvas');
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const tick=()=>{
+      if(!QR_STREAM) return;   // scanner was closed
+      const video2=$("#qrVideo");
+      if(video2 && video2.readyState===video2.HAVE_ENOUGH_DATA){
+        canvas.width=video2.videoWidth; canvas.height=video2.videoHeight;
+        ctx.drawImage(video2,0,0,canvas.width,canvas.height);
+        const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+        if(code&&code.data){ _onQrDecoded(code.data); return; }
+      }
+      QR_RAF=requestAnimationFrame(tick);
+    };
+    QR_RAF=requestAnimationFrame(tick);
+  }catch(e){
+    if(statusEl) statusEl.innerHTML=`<span style="color:#ff9b9b">Camera unavailable — ${e.name==='NotAllowedError'?'permission denied':'check camera access'}. Use the text field instead.</span>`;
+  }
+}
+function _onQrDecoded(text){
+  const statusEl=$("#qrScanStatus"); if(statusEl) statusEl.textContent='✓ Scanned';
+  const fn=QR_ONDECODE;
+  closeQrScanner();
+  if(fn) fn(text);
+}
+function _stopQrStream(){
+  if(QR_RAF){ cancelAnimationFrame(QR_RAF); QR_RAF=null; }
+  if(QR_STREAM){ QR_STREAM.getTracks().forEach(t=>t.stop()); QR_STREAM=null; }
+}
+function closeQrScanner(){ _stopQrStream(); QR_ONDECODE=null; closeOverlays(); }
+
+/* ===================== QR CODE GENERATION (booking / client lookup) ===================== */
+function renderQrInto(elId, value){
+  const el=$('#'+elId); if(!el||typeof QRCode==='undefined') return;
+  el.innerHTML='';
+  new QRCode(el, {text:value, width:120, height:120, colorDark:'#0a0a0a', colorLight:'#ffffff'});
+}
+/** Documents get saved as static HTML snapshots, so the QR has to be baked
+ *  in as an image now, not rendered live later — QRCode.js draws into a
+ *  real (temporary, detached) DOM node, so this grabs the result as a data
+ *  URL and cleans up immediately. */
+function qrDataUrl_(value){
+  if(typeof QRCode==='undefined') return '';
+  const tmp=document.createElement('div'); tmp.style.display='none'; document.body.appendChild(tmp);
+  try{
+    new QRCode(tmp, {text:value, width:96, height:96, colorDark:'#0a0a0a', colorLight:'#ffffff'});
+    const canvas=tmp.querySelector('canvas');
+    const url=canvas?canvas.toDataURL('image/png'):'';
+    document.body.removeChild(tmp);
+    return url;
+  }catch(e){ if(tmp.parentNode) document.body.removeChild(tmp); return ''; }
+}
+/** Routes a scanned value to the right place: RENTALOS:BK:/CL: prefixes are
+ *  our own generated booking/client QRs; anything else is treated as an
+ *  asset QR/serial code, matched against the fleet. */
+function universalScanLookup(text){
+  text=String(text||'').trim();
+  if(text.indexOf('RENTALOS:BK:')===0){ openBooking(text.slice(12)); return; }
+  if(text.indexOf('RENTALOS:CL:')===0){ openClient360(text.slice(12)); return; }
+  const a=(CACHE.assets||[]).find(x=>(x.qr_code||'').toLowerCase()===text.toLowerCase()||(x.serial_number||'').toLowerCase()===text.toLowerCase());
+  if(a){ openAsset(a.id); return; }
+  toast('No match for: '+text, true);
+}
+function openUniversalScan(){ openQrScanner(universalScanLookup, 'Scan to look up'); }
 function closeOverlays(){ $("#bg").classList.remove("show"); $("#drawer").classList.remove("show"); $("#modal").classList.remove("show"); }
+
+
 
 let CUR_BOOKING=null;
 const BKI_STATUS={pending_dispatch:["pend","Pending dispatch"],dispatched:["brand","With client"],returned:["ok","Returned"],
@@ -3362,12 +3634,14 @@ function agreementHtml(b,biz){
   const c=clientObjById(b.client_id)||{};
   const dep=b.deposit_summary;
   const today=new Date().toISOString().slice(0,10);
+  const qr=qrDataUrl_('RENTALOS:BK:'+b.id);
   return `<div class="doc-letterhead">
       ${biz.logo_url?`<img src="${biz.logo_url}" class="doc-logo">`:''}
-      <div><b class="doc-bizname">${esc(biz.business_name)||'RentalOS'}</b>
+      <div style="flex:1"><b class="doc-bizname">${esc(biz.business_name)||'RentalOS'}</b>
         ${biz.address?`<div class="doc-bizline">${esc(biz.address)}</div>`:''}
         <div class="doc-bizline">${biz.phone?esc(biz.phone):''}${biz.phone&&biz.email?' · ':''}${biz.email?esc(biz.email):''}</div>
       </div>
+      ${qr?`<img src="${qr}" style="width:56px;height:56px" title="Scan to look up this booking">`:''}
     </div>
     <h2 class="doc-title">Delivery Challan &amp; Rental Agreement</h2>
     <div class="doc-meta">
@@ -3523,6 +3797,14 @@ function bookingDetailHtml(b){
         </div>
 
         <div>
+          <button class="btn sm" onclick="var box=document.getElementById('bkQrBox');if(box.style.display==='none'){box.style.display='block';renderQrInto('bkQrCanvas','RENTALOS:BK:${b.id}');}else{box.style.display='none';}">📱 Booking QR</button>
+          <div id="bkQrBox" style="display:none;text-align:center;padding:12px 0">
+            <div id="bkQrCanvas" style="display:inline-block"></div>
+            <p class="muted" style="font-size:11px;margin:6px 0 0">Scan to pull this booking up instantly — also printed on the Rental agreement.</p>
+          </div>
+        </div>
+
+        <div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${(b.tags||[]).length?'8px':'0'}">
             ${(b.tags||[]).map(t=>`<span class="bktag">${esc(t.name)}<button onclick="bkRemoveTag('${t.link_id}','${b.id}')" title="Remove">✕</button></span>`).join("")}
           </div>
@@ -3654,6 +3936,7 @@ function newQuote(){
     <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Pickup time</span><input id="qStartTime" class="input" type="time" value="09:00"></label>
       <label class="fld" style="flex:1"><span>Return time</span><input id="qEndTime" class="input" type="time" value="18:00"></label></div>
     ${offerOpts?`<label class="fld"><span>Offer <span class="muted" style="font-weight:400">(optional)</span></span><select id="qOffer" class="input"><option value="">No offer</option>${offerOpts}</select></label>`:''}
+    <label class="fld"><span>Or coupon code <span class="muted" style="font-weight:400">(optional — for in-store redemption of a customer's own code)</span></span><input id="qCoupon" class="input mono" style="text-transform:uppercase" placeholder="SPECIAL20"></label>
     <span style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:7px">Assets ${avail.length?'':'— none available'}</span>
     <div style="max-height:230px;overflow:auto">${avail.map(a=>`<label class="pickrow" id="pk-${a.id}">
       <input type="checkbox" onchange="togglePick('${a.id}',this.checked)"><div style="flex:1"><b style="font-size:13px">${esc(a.name)}</b>
@@ -3672,7 +3955,7 @@ async function submitQuote(){
     const r=await api('create_quote', {client_id:pick.client, asset_ids:pick.assets,
       start_date:$("#qStart").value, end_date:$("#qEnd").value,
       start_time:$("#qStartTime").value, end_time:$("#qEndTime").value,
-      offer_id:offEl?offEl.value:''});
+      offer_id:offEl?offEl.value:'', coupon_code:($("#qCoupon")||{}).value||''});
     const offMsg=(r.applied_offer&&r.applied_offer.amount>0)?' · '+r.applied_offer.title+' −'+inr(r.applied_offer.amount):'';
     toast('Quote '+r.booking_number+' created · '+inr(r.total)+offMsg); closeOverlays();
     if(r.warnings&&r.warnings.length){ setTimeout(()=>toast('⚠ '+r.warnings.join('   •   '), true), 250); }
