@@ -467,7 +467,7 @@ body.demo-active .whatsnew{bottom:76px}
         oninput="gsOnInput(this.value)" onfocus="gsOnInput(this.value)" onkeydown="gsKeydown(event)">
       <div id="gsResults" class="gsresults hide"></div>
     </div>
-    <button class="btn sm" style="flex:none" onclick="quickBookingModal()">⚡ Quick booking</button>
+    <button class="btn sm" style="flex:none" onclick="quickBookingModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2.5px;margin-right:2px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Quick booking</button>
     <div class="spacer"></div>
     <div class="bellwrap" id="bellWrap">
       <button class="bellbtn" onclick="bellOpen()" title="Needs your attention">
@@ -547,6 +547,16 @@ function fmtDateTime(dateVal, timeVal){
   if(ds==='—'||!timeVal) return ds;
   return ds+', '+timeVal;
 }
+/* Shared icon set — matches the stroke-icon style already used in nav/search/bell,
+   so newer features (QR, documents, WhatsApp) look native, not bolted-on. */
+const ICO = (path,vb) => `<svg width="14" height="14" viewBox="${vb||'0 0 24 24'}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2.5px;margin-right:2px">${path}</svg>`;
+const ICON_CAMERA=ICO('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/>');
+const ICON_BOLT=ICO('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>');
+const ICON_DOC=ICO('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>');
+const ICON_SEND=ICO('<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>');
+const ICON_PRINT=ICO('<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>');
+const ICON_QR=ICO('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="21"/><line x1="21" y1="14" x2="21" y2="21"/><line x1="14" y1="17.5" x2="21" y2="17.5"/>');
+const ICON_CLIP=ICO('<path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"/><rect x="5" y="4" width="14" height="18" rx="2"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="16" y2="15"/>');
 const tier = t => `<span class="tierbadge tier-${t||'normal'}" title="${t==='vip'?'VIP — trust limits don\'t apply, gets first pick of business-owned gear over investor-owned.':'Standard client — subject to trust-level rental limits.'}">${(t||'normal').toUpperCase()}</span>`;
 const truthy = v => v===true || v==="TRUE" || v==="true";
 /* Escape untrusted text before it goes into innerHTML. Applied at the point
@@ -1505,7 +1515,7 @@ VIEWS.bookings=()=>`<div class="head"><div><h1 class="h1">Bookings</h1><p class=
   <div style="display:flex;gap:10px;align-items:center">
     ${BK_STATUS?`<button class="btn sm" onclick="BK_STATUS=null;go('bookings')">Clear filter</button>`:''}
     <input class="input" style="max-width:230px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">
-    <button class="btn" onclick="quickBookingModal()">⚡ Quick booking</button> <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
+    <button class="btn" onclick="quickBookingModal()">${ICON_BOLT}Quick booking</button> <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
   <div class="card" id="bkList">${bookingsListHtml()}</div>`;
 
 let INV_FILTER='', IVQ='', INV_TYPE='', INV_OWNER='', INV_COND='', INV_PAGE=1;
@@ -1747,7 +1757,7 @@ function client360Html(d){
           <div class="fact"><div class="k">Email</div><div class="v" style="font-size:11.5px">${esc(c.email)||'—'}</div></div>
           <div class="fact"><div class="k">GSTIN</div><div class="v mono" style="font-size:11px">${esc(c.gst_number)||'—'}</div></div>
         </div>
-        <button class="btn sm block" style="margin-top:10px" onclick="var box=document.getElementById('clQrBox');if(box.style.display==='none'){box.style.display='block';renderQrInto('clQrCanvas','RENTALOS:CL:${c.id}');}else{box.style.display='none';}">📱 Client QR</button>
+        <button class="btn sm block" style="margin-top:10px" onclick="var box=document.getElementById('clQrBox');if(box.style.display==='none'){box.style.display='block';renderQrInto('clQrCanvas','RENTALOS:CL:${c.id}');}else{box.style.display='none';}">${ICON_QR}Client QR</button>
         <div id="clQrBox" style="display:none;text-align:center;padding:10px 0 0">
           <div id="clQrCanvas" style="display:inline-block"></div>
           <p class="muted" style="font-size:11px;margin:6px 0 0">Scan at the counter to pull up this client instantly.</p>
@@ -1801,7 +1811,7 @@ function dispatchUI(){
       <div style="display:flex;gap:8px;margin-top:12px">
         <input class="input" id="qrIn" placeholder="Scan or type a QR code, then Enter" onkeydown="if(event.key==='Enter'){scanQr(this.value);this.value='';}">
         <button class="btn" onclick="var i=document.getElementById('qrIn');scanQr(i.value);i.value='';i.focus();">Scan</button></div>
-      <button class="btn pri block" style="margin-top:8px" onclick="openQrScanner(function(t){scanQr(t);var i=document.getElementById('qrIn');if(i)i.focus();},'Scan item to dispatch')">📷 Use camera</button>
+      <button class="btn pri block" style="margin-top:8px" onclick="openQrScanner(function(t){scanQr(t);var i=document.getElementById('qrIn');if(i)i.focus();},'Scan item to dispatch')">${ICON_CAMERA}Use camera</button>
     </div>
     <div class="card">
       <div style="padding:13px 14px;border-bottom:1px solid var(--line)"><b style="font-family:var(--disp)">Checklist</b>
@@ -1885,7 +1895,7 @@ function returnUI(){
         ${dmg&&isChk?`<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <input class="input" id="cost-${it.item_id}" style="max-width:160px" inputmode="numeric" placeholder="Repair cost ₹" value="${st.cost||''}" oninput="setField('${it.item_id}','cost',this.value)">
           <input class="input" id="desc-${it.item_id}" style="flex:1;min-width:180px" placeholder="Damage description" value="${st.desc||''}" oninput="setField('${it.item_id}','desc',this.value)">
-          <label class="btn sm" style="cursor:pointer">${st.photoUrl?'📷 Photo added':'📷 Add photo'}<input type="file" accept="image/*" style="display:none" onchange="uploadReturnPhoto('${it.item_id}',this)"></label>
+          <label class="btn sm" style="cursor:pointer">${st.photoUrl?ICON_CAMERA+'Photo added':ICON_CAMERA+'Add photo'}<input type="file" accept="image/*" style="display:none" onchange="uploadReturnPhoto('${it.item_id}',this)"></label>
           ${st.photoUrl?`<img src="${st.photoUrl}" style="width:32px;height:32px;object-fit:cover;border-radius:6px">`:''}
           <span id="retPhotoStatus-${it.item_id}" class="muted" style="font-size:11px"></span></div>`:''}
       </div>`;}).join("")}
@@ -2087,7 +2097,7 @@ function invoiceDetailHtml(v){
       ${!v.tax_issued_at && ['finalised','paid'].indexOf(v.status)>=0?`<button class="btn pri block" onclick="issueTax('${v.id}')">Issue tax invoice</button>`:''}
       ${v.tax_issued_at?`<div class="chip ok" style="width:100%;justify-content:center;padding:9px">Tax invoice issued${v.tax_issued_at?' · '+fmtDate(v.tax_issued_at):''}</div>`:''}
     </div>
-    <button class="btn block" style="margin-top:10px" onclick="openInvoiceDoc('${v.id}')">📄 Generate invoice document</button>
+    <button class="btn block" style="margin-top:10px" onclick="openInvoiceDoc('${v.id}')">${ICON_DOC}Generate invoice document</button>
     <div style="margin-top:14px">${docArchiveCard(INVOICE_DOCS,'invoices')}</div>
   </div>`;
 }
@@ -2470,7 +2480,7 @@ function assetFormModal(assetId){
       <label class="fld" style="flex:1"><span>Type</span><select id="asType" class="input"><option value="">—</option>${types.map(t=>`<option value="${t.id}" ${a.asset_type_id===t.id?'selected':''}>${esc(t.name)}</option>`).join("")}</select></label>
       <label class="fld" style="flex:1"><span>Rate / day ₹</span><input id="asRate" class="input mono" inputmode="numeric" value="${a.daily_rate||''}"></label></div>
     <div style="display:flex;gap:10px">
-      <label class="fld" style="flex:1"><span>QR code</span><div style="display:flex;gap:6px"><input id="asQr" class="input mono" style="flex:1" value="${esc(a.qr_code)||''}" placeholder="FX3-01"><button type="button" class="btn sm" title="Scan a QR sticker to fill this" onclick="openQrScanner(function(t){document.getElementById('asQr').value=t;},'Scan asset QR')">📷</button></div></label>
+      <label class="fld" style="flex:1"><span>QR code</span><div style="display:flex;gap:6px"><input id="asQr" class="input mono" style="flex:1" value="${esc(a.qr_code)||''}" placeholder="FX3-01"><button type="button" class="btn sm" title="Scan a QR sticker to fill this" onclick="openQrScanner(function(t){document.getElementById('asQr').value=t;},'Scan asset QR')">${ICON_CAMERA}</button></div></label>
       <label class="fld" style="flex:1"><span>Serial no.</span><input id="asSerial" class="input mono" value="${esc(a.serial_number)||''}"></label></div>
     <div style="display:flex;gap:10px">
       <label class="fld" style="flex:1"><span>Purchase price ₹</span><input id="asPrice" class="input mono" inputmode="numeric" value="${a.purchase_price||''}"></label>
@@ -3078,7 +3088,7 @@ function stockUI(){
   return `<div class="head"><div><h1 class="h1">Stock check in progress</h1><p class="sub">${got} of ${total} items checked</p></div><button class="btn sm" onclick="STOCKAUDIT=null;render()">Cancel</button></div>
   <div class="dispgrid">
     <div><div style="display:flex;gap:8px;margin-bottom:12px"><input class="input" id="saQr" placeholder="Scan or type QR, then Enter" onkeydown="if(event.key==='Enter'){stockScan(this.value);this.value='';}"><button class="btn" onclick="var i=document.getElementById('saQr');stockScan(i.value);i.value='';i.focus();">Check</button></div>
-      <button class="btn" style="margin-bottom:12px" onclick="openQrScanner(function(t){stockScan(t);var i=document.getElementById('saQr');if(i)i.focus();},'Scan item for stock audit')">📷 Use camera</button>
+      <button class="btn" style="margin-bottom:12px" onclick="openQrScanner(function(t){stockScan(t);var i=document.getElementById('saQr');if(i)i.focus();},'Scan item for stock audit')">${ICON_CAMERA}Use camera</button>
       <button class="btn pri block" onclick="submitStock()">Finish count (${got}/${total})</button>
       ${d.on_rent.length?`<p class="muted" style="font-size:11.5px;margin:12px 0 0">${d.on_rent.length} unit(s) on rent — expected off-shelf, not counted here.</p>`:''}</div>
     <div class="card" style="max-height:62vh;overflow:auto">${d.expected_present.map(a=>{const done=!!d.scanned[a.asset_id];return `<div class="slot ${done?'done':''}"><div class="box">${done?'✓':''}</div><div><div style="font-weight:550;font-size:13px">${esc(a.name)}</div><div class="mono muted" style="font-size:11px">${a.qr_code||'no QR'}</div></div>${done?'<span class="qty">here</span>':`<button class="btn sm" style="margin-left:auto" onclick="stockMark('${a.asset_id}')">Mark</button>`}</div>`;}).join("")}</div>
@@ -3544,9 +3554,9 @@ function docViewHtml(d){
     :('https://api.whatsapp.com/send?text='+encodeURIComponent(waMsg));
   return `<div class="head noprint"><div><button class="btn sm" onclick="go('${d.backView}')" style="margin-bottom:8px">← Back</button>
     <h1 class="h1">${esc(d.title)}</h1><p class="sub">${d.archived?('Generated '+fmtDate(d.meta.created_at)+' by '+esc(d.meta.generated_by_name)+' — a saved record, not live data.'):'Print this page (Ctrl/Cmd+P) and choose "Save as PDF" — or print directly for a signature copy.'}${d.driveUrl?' A PDF copy is also saved to Drive — use that to attach the actual file.':''}</p></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${d.driveUrl?`<a class="btn" href="${d.driveUrl}" target="_blank" rel="noopener">📄 Open PDF in Drive</a>`:''}
-    <a class="btn" style="background:#25D366;color:#fff;border-color:#25D366" href="${waHref}" target="_blank" rel="noopener">📤 ${d.driveUrl?'Send link on':'Notify on'} WhatsApp</a>
-    <button class="btn pri" onclick="window.print()">🖨 Print / Save as PDF</button></div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${d.driveUrl?`<a class="btn" href="${d.driveUrl}" target="_blank" rel="noopener">${ICON_DOC}Open PDF in Drive</a>`:''}
+    <a class="btn" style="background:#25D366;color:#fff;border-color:#25D366" href="${waHref}" target="_blank" rel="noopener">${ICON_SEND}${d.driveUrl?'Send link on':'Notify on'} WhatsApp</a>
+    <button class="btn pri" onclick="window.print()">${ICON_PRINT}Print / Save as PDF</button></div></div>
   <div class="docsheet">${d.html}</div>`;
 }
 /** Builds a document via buildFn, archives it server-side, then shows it. buildFn returns
@@ -3580,7 +3590,7 @@ function docArchiveCard(docs, backView){
     <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${docs?docs.length:''}</span></div>
     ${!docs?'<p class="muted" style="font-size:12.5px;margin:0">Loading…</p>'
       :docs.length?`<div class="doc-archlist">${docs.map(d=>`<div class="doc-archrow clickable" onclick="viewArchivedDoc('${d.id}','${backView}')">
-        <span style="font-size:12.5px">${esc(d.title)}</span><span style="display:flex;align-items:center;gap:6px"><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span>${d.drive_url?`<a href="${d.drive_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open PDF in Google Drive">📄</a>`:''}</span></div>`).join("")}</div>`
+        <span style="font-size:12.5px">${esc(d.title)}</span><span style="display:flex;align-items:center;gap:6px"><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span>${d.drive_url?`<a href="${d.drive_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open PDF in Google Drive">${ICON_DOC}</a>`:''}</span></div>`).join("")}</div>`
       :'<p class="muted" style="font-size:12.5px;margin:0">Nothing generated yet — use the buttons above.</p>'}
   </div>`;
 }
@@ -3815,7 +3825,7 @@ function bookingDetailHtml(b){
         </div>
 
         <div>
-          <button class="btn sm" onclick="var box=document.getElementById('bkQrBox');if(box.style.display==='none'){box.style.display='block';renderQrInto('bkQrCanvas','RENTALOS:BK:${b.id}');}else{box.style.display='none';}">📱 Booking QR</button>
+          <button class="btn sm" onclick="var box=document.getElementById('bkQrBox');if(box.style.display==='none'){box.style.display='block';renderQrInto('bkQrCanvas','RENTALOS:BK:${b.id}');}else{box.style.display='none';}">${ICON_QR}Booking QR</button>
           <div id="bkQrBox" style="display:none;text-align:center;padding:12px 0">
             <div id="bkQrCanvas" style="display:inline-block"></div>
             <p class="muted" style="font-size:11px;margin:6px 0 0">Scan to pull this booking up instantly — also printed on the Rental agreement.</p>
@@ -3833,8 +3843,8 @@ function bookingDetailHtml(b){
 
         ${BK_SIDE_TAB==='documents'?`
         <div style="display:flex;gap:8px">
-          <button class="btn" style="flex:1" onclick="openQuoteDoc('${b.id}')">📋 Quote</button>
-          ${b.status!=='quote'?`<button class="btn" style="flex:1" onclick="openAgreement('${b.id}')">📄 Agreement</button>`:''}
+          <button class="btn" style="flex:1" onclick="openQuoteDoc('${b.id}')">${ICON_CLIP}Quote</button>
+          ${b.status!=='quote'?`<button class="btn" style="flex:1" onclick="openAgreement('${b.id}')">${ICON_DOC}Agreement</button>`:''}
         </div>
         ${docArchiveCard(BOOKING_DOCS,'bookings')}
         `:''}
@@ -3939,7 +3949,7 @@ function quickBookingModal(){
   const today=new Date().toISOString().slice(0,10);
   const end=new Date(Date.now()+86400000).toISOString().slice(0,10);
   const avail=CACHE.assets.filter(a=>truthy(a.is_available));
-  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">⚡ Quick booking</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${ICON_BOLT}Quick booking</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
     <p class="muted" style="font-size:12px;margin:0 0 14px">For the common case — one thing, going out today. Need more than one item, an offer, or a coupon? Use <a href="#" onclick="closeOverlays();newQuote();return false" style="color:var(--brand-ink)">New quote</a> instead.</p>
     <label class="fld"><span>Who's renting?</span><select id="qbClient" class="input">
