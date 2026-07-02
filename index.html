@@ -1911,7 +1911,7 @@ function invBodyHtml(){
     <th>QR / Asset</th><th>Type</th><th>Rate/day</th><th>Owner</th><th>Condition</th><th>Status</th></tr></thead><tbody>
   ${page.length?page.map(a=>`<tr class="clickable">
     <td class="nosort" onclick="event.stopPropagation()"><input type="checkbox" ${INV_SELECTED.has(a.id)?'checked':''} onchange="invToggleSel('${a.id}',this.checked)"></td>
-    <td onclick="openAsset('${a.id}')"><div class="mono" style="font-size:12px">${a.qr_code||'—'}</div><div><span class="hc-trigger" data-ha="${a.id}">${esc(a.name)}</span></div></td>
+    <td onclick="openAsset('${a.id}')"><div class="mono" style="font-size:12px">${a.qr_code||'—'}</div><div><span class="hc-trigger" data-ha="${a.id}">${esc(a.name)}</span>${truthy(a.is_temp)?' <span class="chip warn plain" style="font-size:9px">TMP</span>':''}</div></td>
     <td class="muted" onclick="openAsset('${a.id}')">${(CACHE.asset_types.find(t=>t.id===a.asset_type_id)||{}).name||'—'}</td>
     <td class="mono" onclick="openAsset('${a.id}')">${inr(a.daily_rate)}</td>
     <td class="muted" onclick="openAsset('${a.id}')">${a.owner_type==='investor'?'Investor':'Business'}</td>
@@ -2449,7 +2449,7 @@ function invoiceDetailHtml(v){
       ${(g.lines||[]).filter(l=>l.amount>0).map(l=>`<div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(l.name)} · ${l.days}d</span><span class="mono">${inr(l.amount)}</span></div>`).join("")}</div>`).join("");
   } else {
     linesHtml=lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;${l.chargeable?'':'opacity:.5'}">
-      <span>${esc(l.name)} <span class="muted">${l.rate?'· '+inr(l.rate)+'×'+l.days+'d':''}</span>${l.chargeable?'':' <span class="chip pend plain">₹0</span>'}</span><span class="mono">${inr(l.amount)}</span></div>`).join("");
+      <span>${esc(l.name)} <span class="muted">${l.rate?'· '+inr(l.rate)+'×'+l.days+'d'+(l.rental_days&&l.rental_days!==l.days?' billed ('+l.rental_days+'d reserved)':''):''}</span>${l.chargeable?'':' <span class="chip pend plain">₹0</span>'}</span><span class="mono">${inr(l.amount)}</span></div>`).join("");
   }
   return `<div class="head"><div><button class="btn sm" onclick="go('invoices')" style="margin-bottom:8px">← Billing</button>
     <div class="mono muted" style="font-size:12px">${v.type==='consolidated'?'CONSOLIDATED · '+fmtDate(v.period_start)+'–'+fmtDate(v.period_end):`<span class="hc-trigger" data-hb="${v.booking_id}">${bk.booking_number||v.id.slice(0,8)}</span>`}</div>
@@ -2844,6 +2844,7 @@ function assetDetailHtml(a){
         <div style="font-weight:700;font-size:14px;color:${statusColor}">${statusLbl}</div>
         <div class="muted" style="font-size:11.5px;margin-top:2px">Condition: ${a.condition} · ${a.owner_type==='investor'?('Investor-owned · '+esc(a.investor_name||a.investor_id.slice(0,6))):'Business-owned'}</div>
         ${a.retired&&a.retired_at?`<div class="muted" style="font-size:11px;margin-top:4px">Retired ${fmtDate(a.retired_at)}</div>`:''}
+        ${truthy(a.is_temp)?`<div style="margin-top:8px"><span class="chip warn plain">Temporary stock</span>${a.temp_expires_at?`<div class="muted" style="font-size:11px;margin-top:3px">Auto-retires ${fmtDate(a.temp_expires_at)}</div>`:''}</div>`:''}
       </div>
       ${!a.retired?`<div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn pri" onclick="serviceModal('${a.asset_id}')">Log service</button>
@@ -3744,10 +3745,65 @@ async function submitStock(){
 }
 
 let SETTINGS=null;
+let RULESETS=null;
+async function loadRulesets(){
+  try{ RULESETS=await api('ruleset_list',{}); if(SETTAB==='pricingrules')render(); }catch(e){ toast(e.message,true); }
+}
+let RS_SEASONAL=[];
+function rulesetModal(typeId, typeName){
+  const existing=(RULESETS||[]).find(r=>r.asset_type_id===typeId);
+  const rules=existing?existing.rules:[];
+  const get=k=>rules.find(r=>r.kind===k)||{};
+  RS_SEASONAL=rules.filter(r=>r.kind==='seasonal').map(r=>({label:r.label||'', from:r.from||'', to:r.to||'', pct:r.pct||0, enabled:r.enabled!==false}));
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Pricing rules — ${esc(typeName)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    <p class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 8px">Charge period</p>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="rsExPickup" ${get('exclude_pickup_day').enabled?'checked':''}> Exclude pickup day from charge</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="rsExReturn" ${get('exclude_return_day').enabled?'checked':''}> Exclude return day from charge</label>
+
+    <p class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 8px">Weekend surcharge</p>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="rsWeekendOn" ${get('weekend_surcharge').enabled?'checked':''}> Enabled</label>
+      <input id="rsWeekendPct" class="input mono" style="max-width:80px" type="number" placeholder="%" value="${get('weekend_surcharge').pct||''}">
+      <span class="muted" style="font-size:12px">% on Fri/Sat start dates</span>
+    </div>
+
+    <p class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 8px">Seasonal rules</p>
+    <div id="rsSeasonalList">${rsSeasonalRowsHtml()}</div>
+    <button class="btn sm" style="margin-bottom:14px" onclick="rsAddSeasonal()">+ Add seasonal rule</button>
+
+    <button class="btn pri block" onclick="submitRuleset('${typeId}')">Save rules</button>
+    ${existing?`<button class="btn block" style="margin-top:8px;color:var(--bad)" onclick="submitRulesetDelete('${existing.id}')">Delete rule set</button>`:''}
+  </div>`;
+  openOverlay($("#modal"));
+}
+function rsSeasonalRowsHtml(){
+  return RS_SEASONAL.map((s,i)=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+    <input class="input" style="flex:1" placeholder="Label (e.g. Wedding season)" value="${esc(s.label)}" oninput="RS_SEASONAL[${i}].label=this.value">
+    <input class="input" type="date" style="max-width:135px" value="${s.from}" onchange="RS_SEASONAL[${i}].from=this.value">
+    <input class="input" type="date" style="max-width:135px" value="${s.to}" onchange="RS_SEASONAL[${i}].to=this.value">
+    <input class="input mono" type="number" style="max-width:65px" placeholder="%" value="${s.pct||''}" oninput="RS_SEASONAL[${i}].pct=Number(this.value)||0">
+    <button class="btn sm" onclick="RS_SEASONAL.splice(${i},1);document.getElementById('rsSeasonalList').innerHTML=rsSeasonalRowsHtml()" style="color:var(--bad)">✕</button>
+  </div>`).join("")||'<p class="muted" style="font-size:11.5px;margin:0 0 10px">None yet — use for wedding/festival season surcharges or monsoon off-season discounts (negative %).</p>';
+}
+function rsAddSeasonal(){ RS_SEASONAL.push({label:'',from:'',to:'',pct:0,enabled:true}); document.getElementById('rsSeasonalList').innerHTML=rsSeasonalRowsHtml(); }
+async function submitRuleset(typeId){
+  const rules=[
+    {kind:'exclude_pickup_day', enabled:($('#rsExPickup')||{}).checked||false},
+    {kind:'exclude_return_day', enabled:($('#rsExReturn')||{}).checked||false},
+    {kind:'weekend_surcharge', enabled:($('#rsWeekendOn')||{}).checked||false, pct:Number(($('#rsWeekendPct')||{}).value||0), days:[0,6]},
+  ].concat(RS_SEASONAL.filter(s=>s.from&&s.to).map(s=>({kind:'seasonal', enabled:true, label:s.label, from:s.from, to:s.to, pct:s.pct})));
+  try{ await api('ruleset_save',{asset_type_id:typeId, name:'Pricing rules', rules:rules}); toast('Saved'); closeOverlays(); RULESETS=null; loadRulesets(); }
+  catch(e){ toast(e.message,true); }
+}
+async function submitRulesetDelete(rulesetId){
+  confirmWarn('Delete this rule set?', 'Pricing for this type reverts to plain rate × rental days — no future bookings will get charge-period or surcharge adjustments until a new rule set is created.',
+    async()=>{ try{ await api('ruleset_delete',{ruleset_id:rulesetId}); toast('Deleted'); RULESETS=null; loadRulesets(); }catch(e){ toast(e.message,true); } }, 'Delete');
+}
 let SETTAB='general', USR_Q='';
 function setGo(t){ SETTAB=t; render(); }
 const SETNAV=[
-  ['Business',[['general','General'],['pricing','Pricing'],['maintenance','Maintenance']]],
+  ['Business',[['general','General'],['pricing','Pricing'],['pricingrules','Advanced pricing'],['assettypes','Asset types'],['maintenance','Maintenance']]],
   ['Growth',[['offers','Offers']]],
   ['Online bookings',[['webbuilder','Website builder']]],
   ['Documents',[['numbering','Numbering'],['templates','Message templates']]],
@@ -3881,6 +3937,51 @@ const SETSECTIONS={
       ${p.logo_url?`<div style="margin-bottom:8px"><img src="${p.logo_url}" style="height:52px;border-radius:6px;border:1px solid var(--line);background:#fff;padding:4px"></div>`:''}
       <input id="seLogo" type="file" accept="image/*" class="input"><span id="seLogoStatus" class="muted" style="font-size:11px"></span></label>
     <button class="btn pri block" id="seBtn" onclick="doSaveProfile()">Save</button></div>`; },
+  assettypes:()=>{
+    if(!ASSET_TYPES_LIST){ loadAssetTypesList(); return '<div class="card pad"><p class="muted" style="font-size:12.5px;margin:0">Loading…</p></div>'; }
+    return `<div class="card pad" style="margin-bottom:14px"><b style="font-family:var(--disp)">Asset types</b>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Buffer = turnaround time after a rental before an item can be booked again (cleaning, QC, recharge). Shortage limit = how many temporary/sub-rented units of this type can exist at once, for controlled overbooking.</p>
+    <table class="tbl"><thead><tr><th>Type</th><th>Assets</th><th>Buffer before (hrs)</th><th>Buffer after (hrs)</th><th>Shortage limit</th><th></th></tr></thead><tbody>
+    ${ASSET_TYPES_LIST.map(t=>`<tr>
+      <td><b>${esc(t.name)}</b><div class="muted" style="font-size:11px">${esc(t.category)||'—'}${t.active_temp_count?' · '+t.active_temp_count+' temp active':''}</div></td>
+      <td class="mono muted">${t.asset_count}</td>
+      <td><input id="atb-${t.id}" class="input mono" style="max-width:70px" type="number" min="0" value="${t.buffer_before_hours}"></td>
+      <td><input id="ata-${t.id}" class="input mono" style="max-width:70px" type="number" min="0" value="${t.buffer_after_hours}"></td>
+      <td><input id="ats-${t.id}" class="input mono" style="max-width:70px" type="number" min="0" value="${t.shortage_limit}"></td>
+      <td><button class="btn sm" onclick="saveAssetTypeBuffer('${t.id}')">Save</button></td></tr>`).join("")}
+    </tbody></table>
+    ${!ASSET_TYPES_LIST.length?'<p class="muted" style="font-size:12.5px;margin:10px 0 0">No asset types yet — created automatically the first time you add an asset of a new type.</p>':''}</div>
+    ${ASSET_TYPES_LIST.filter(t=>t.shortage_limit>0).length?`<div class="card pad">
+    <b style="font-family:var(--disp)">Add temporary stock</b>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 12px">Adds one auto-tagged "TMP-" unit to cover a shortage — bookable like any other asset until it expires, then automatically retired. Only types with a shortage limit set above are eligible.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <label class="fld" style="min-width:180px"><span>Type</span><select id="tsType" class="input">${ASSET_TYPES_LIST.filter(t=>t.shortage_limit>0).map(t=>`<option value="${t.id}">${esc(t.name)} (${t.active_temp_count}/${t.shortage_limit} active)</option>`).join("")}</select></label>
+      <label class="fld"><span>Expires</span><input id="tsExpiry" class="input" type="date"></label>
+      <label class="fld"><span>Daily rate ₹ <span class="muted" style="font-weight:400">(optional)</span></span><input id="tsRate" class="input mono" style="max-width:110px" placeholder="auto"></label>
+      <button class="btn pri" onclick="submitTempAsset()">Add temp stock</button>
+    </div></div>`:''}`;
+  },
+  pricingrules:()=>{
+    if(!RULESETS){ loadRulesets(); return '<div class="card pad"><p class="muted" style="font-size:12.5px;margin:0">Loading…</p></div>'; }
+    const types=CACHE.asset_types||[];
+    const byType={}; RULESETS.forEach(r=>byType[r.asset_type_id]=r);
+    return `<div class="card pad"><b style="font-family:var(--disp)">Advanced pricing</b>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Reserve 3 days, bill 2 — exclude pickup/return day from charges. Stack weekend or seasonal surcharges on top. One rule set per asset type; rules apply top-down. Types with no rules price exactly as before.</p>
+    <table class="tbl"><thead><tr><th>Type</th><th>Rules</th><th>Status</th><th></th></tr></thead><tbody>
+    ${types.map(t=>{const r=byType[t.id];
+      const summary=r?(r.rules.filter(x=>x.enabled).map(x=>{
+        if(x.kind==='exclude_pickup_day')return 'Exclude pickup day';
+        if(x.kind==='exclude_return_day')return 'Exclude return day';
+        if(x.kind==='weekend_surcharge')return 'Weekend +'+x.pct+'%';
+        if(x.kind==='seasonal')return (x.label||'Seasonal')+' '+(x.pct>=0?'+':'')+x.pct+'%';
+        return x.kind;
+      }).join(', ')||'No rules enabled'):'No rules set';
+      return `<tr><td><b>${esc(t.name)}</b></td><td class="muted" style="font-size:12px">${esc(summary)}</td>
+      <td>${r?(r.is_active?'<span class="chip ok plain">Active</span>':'<span class="chip pend plain">Off</span>'):'<span class="muted">—</span>'}</td>
+      <td style="text-align:right"><button class="btn sm" onclick="rulesetModal('${t.id}','${esc(t.name).replace(/'/g,'')}')">${r?'Edit':'Set up'}</button></td></tr>`;}).join("")}
+    </tbody></table>
+    ${!types.length?'<p class="muted" style="font-size:12.5px;margin:10px 0 0">No asset types yet.</p>':''}</div>`;
+  },
   pricing:()=>{ const c=SETTINGS.config; return `<div class="card pad"><b style="font-family:var(--disp)">Pricing</b>
     <p class="muted" style="font-size:12.5px;margin:6px 0 12px">Multi-day discount tiers, applied automatically at quote time.</p>
     ${(c.multiday.length?c.multiday:[{minDays:3,pct:5}]).map((t,i)=>`<div data-tier="${i}" style="display:flex;gap:8px;align-items:center;margin-bottom:7px">
@@ -4043,6 +4144,24 @@ function resetConn(){
   localStorage.removeItem('rentalos_api'); API_URL=DEFAULT_API_URL;
   if(!API_URL){ toast('Reset — set a URL or bake a default', true); show('configScreen'); }
   else { toast('Reset to default'); reloadData(); }
+}
+let ASSET_TYPES_LIST=null;
+async function loadAssetTypesList(){
+  try{ ASSET_TYPES_LIST=await api('asset_type_list',{}); if(SETTAB==='assettypes')render(); }catch(e){ toast(e.message,true); }
+}
+async function saveAssetTypeBuffer(typeId){
+  const before=Number(($('#atb-'+typeId)||{}).value||0), after=Number(($('#ata-'+typeId)||{}).value||0), shortage=Number(($('#ats-'+typeId)||{}).value||0);
+  try{ await api('asset_type_update',{type_id:typeId, buffer_before_hours:before, buffer_after_hours:after, shortage_limit:shortage});
+    toast('Saved'); ASSET_TYPES_LIST=null; loadAssetTypesList();
+  }catch(e){ toast(e.message,true); }
+}
+async function submitTempAsset(){
+  const typeId=($('#tsType')||{}).value, expiry=($('#tsExpiry')||{}).value, rate=($('#tsRate')||{}).value;
+  if(!typeId){ toast('No eligible type selected',true); return; }
+  if(!expiry){ toast('Expiry date required',true); return; }
+  try{ await api('temp_asset_create',{asset_type_id:typeId, expires_at:expiry, daily_rate:rate||0});
+    toast('Temporary stock added'); await reloadData(); ASSET_TYPES_LIST=null; loadAssetTypesList();
+  }catch(e){ toast(e.message,true); }
 }
 async function savePricing(){
   const tiers=[...document.querySelectorAll('[data-tier]')].map(r=>{const i=r.dataset.tier;return {minDays:($("#td-"+i)||{}).value, pct:($("#tp-"+i)||{}).value};});
