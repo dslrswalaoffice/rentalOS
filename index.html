@@ -1060,15 +1060,13 @@ function renderDemoBanner(){
     b.classList.remove('hide'); document.body.classList.add('demo-active');
   } else { b.classList.add('hide'); document.body.classList.remove('demo-active'); }
 }
-async function seedDemo(){
-  if(!confirm('Load demo data across all tabs? You can purge it anytime.')) return;
-  try{ const r=await api('demo_seed',{}); toast('Demo data loaded · '+r.count+' rows'); await reloadData(); }
-  catch(e){ toast(e.message,true); }
+function seedDemo(){
+  confirmWarn('Load demo data?', 'Loads sample data across every tab so you can preview the app with realistic volume. You can purge it anytime — only sample rows are removed, your real data is never touched.',
+    async()=>{ try{ const r=await api('demo_seed',{}); toast('Demo data loaded · '+r.count+' rows'); await reloadData(); }catch(e){ toast(e.message,true); } }, 'Load demo data');
 }
-async function purgeDemo(){
-  if(!confirm('Remove ALL demo data? This deletes only the sample rows — your real data is untouched.')) return;
-  try{ const r=await api('demo_purge',{}); toast('Purged '+r.purged+' demo rows'); await reloadData(); }
-  catch(e){ toast(e.message,true); }
+function purgeDemo(){
+  confirmWarn('Remove all demo data?', 'This deletes only the sample rows loaded earlier — your real data is untouched.',
+    async()=>{ try{ const r=await api('demo_purge',{}); toast('Purged '+r.purged+' demo rows'); await reloadData(); }catch(e){ toast(e.message,true); } }, 'Remove demo data');
 }
 
 const VIEWS={};
@@ -1796,18 +1794,16 @@ function invSetFilter(k,v){
 function invClearFilters(){ INV_FILTER=''; IVQ=''; INV_TYPE=''; INV_OWNER=''; INV_COND=''; INV_PAGE=1; render(); }
 function invToggleSel(id,on){ on?INV_SELECTED.add(id):INV_SELECTED.delete(id); render(); }
 function invToggleSelAll(on,ids){ ids.forEach(id=>on?INV_SELECTED.add(id):INV_SELECTED.delete(id)); render(); }
-async function invBulkHold(on){
-  if(!confirm((on?'Put':'Release')+' '+INV_SELECTED.size+' asset(s) '+(on?'on hold for maintenance?':'from maintenance hold?'))) return;
-  let ok=0;
-  for(const id of INV_SELECTED){ try{ await api('maintenance_hold',{asset_id:id,on:on}); ok++; }catch(e){} }
-  toast(ok+' updated'); INV_SELECTED=new Set(); await reloadData();
+function invBulkHold(on){
+  confirmWarn((on?'Put':'Release')+' assets '+(on?'on hold':'from hold')+'?', (on?'Puts':'Releases')+' '+INV_SELECTED.size+' asset(s) '+(on?'on hold for maintenance — they\'ll show as unavailable until released.':'from maintenance hold, making them bookable again.'),
+    async()=>{ let ok=0; for(const id of INV_SELECTED){ try{ await api('maintenance_hold',{asset_id:id,on:on}); ok++; }catch(e){} } toast(ok+' updated'); INV_SELECTED=new Set(); await reloadData(); },
+    on?'Put on hold':'Release');
 }
-async function invBulkRetire(){
-  const reason=prompt('Reason for retiring '+INV_SELECTED.size+' asset(s):','');
-  if(reason===null) return;
-  let ok=0;
-  for(const id of INV_SELECTED){ try{ await api('asset_retire',{asset_id:id,reason:reason}); ok++; }catch(e){} }
-  toast(ok+' retired'); INV_SELECTED=new Set(); await reloadData();
+function invBulkRetire(){
+  promptStyled('Retire '+INV_SELECTED.size+' asset(s)', 'This marks them retired and unavailable for booking — reversible only by an admin editing each asset directly.', 'Reason for retiring',
+    async(reason)=>{ if(!reason||!reason.trim()){ toast('A reason is required',true); return; }
+      let ok=0; for(const id of INV_SELECTED){ try{ await api('asset_retire',{asset_id:id,reason:reason}); ok++; }catch(e){} }
+      toast(ok+' retired'); INV_SELECTED=new Set(); await reloadData(); });
 }
 function invBulkOwnerModal(){
   const invs=CACHE.investors||[];
@@ -2750,9 +2746,10 @@ async function submitService(assetId){
 async function holdToggle(assetId,on){
   try{ await api('maintenance_hold',{asset_id:assetId, on:on}); toast(on?'Held out of service':'Back in service'); await reloadData(); openAsset(assetId);}catch(e){toast(e.message,true);}
 }
-async function doRetire(assetId){
-  const reason=prompt('Retire this asset — reason?'); if(reason===null)return;
-  try{ await api('asset_retire',{asset_id:assetId, reason:reason}); toast('Asset retired'); await reloadData(); openAsset(assetId);}catch(e){toast(e.message,true);}
+function doRetire(assetId){
+  promptStyled('Retire this asset', 'Marks it retired and unavailable for booking.', 'Reason for retiring',
+    async(reason)=>{ if(!reason||!reason.trim()){ toast('A reason is required',true); return; }
+      try{ await api('asset_retire',{asset_id:assetId, reason:reason}); toast('Asset retired'); await reloadData(); openAsset(assetId);}catch(e){toast(e.message,true);} });
 }
 /* Reads a chosen file, uploads it, and returns the resulting URL. Used for
    both asset photos and the company logo — one code path, two callers. */
@@ -2889,6 +2886,25 @@ function clientFormModal(clientId){
  *  records, irreversible actions). Deliberately loud: red border, red wash
  *  background, warning icon — a plain confirm() dialog doesn't look
  *  different from any other "are you sure" prompt, and this needs to. */
+/** A styled stand-in for browser prompt() — same idea as confirmWarn but for
+ *  when a short text answer is actually needed (a reason, a new password),
+ *  not just yes/no. inputType lets password resets mask the field. */
+function promptStyled(title, message, placeholder, onSubmit, inputType){
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${esc(title)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    ${message?`<p class="muted" style="font-size:12.5px;margin:0 0 12px">${message}</p>`:''}
+    <input id="psInput" class="input" type="${inputType||'text'}" placeholder="${esc(placeholder)||''}" onkeydown="if(event.key==='Enter')submitPromptStyled()">
+    <button class="btn pri block" style="margin-top:12px" id="psBtn" onclick="submitPromptStyled()">Continue</button>
+  </div>`;
+  openOverlay($("#modal"));
+  window._psCallback=onSubmit;
+  setTimeout(()=>{const i=$("#psInput"); if(i)i.focus();},50);
+}
+function submitPromptStyled(){
+  const v=($("#psInput")||{}).value||'';
+  const cb=window._psCallback; closeOverlays(); window._psCallback=null;
+  if(cb) cb(v);
+}
 function confirmWarn(title, message, onConfirm, confirmLabel){
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px;color:var(--bad)">⚠ ${esc(title)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
@@ -3787,9 +3803,11 @@ async function submitUser(id){
     closeOverlays(); SETTINGS=null; render();
   }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent=id?'Save changes':'Add user'; }
 }
-async function resetUserPassword(id){
-  const pw=prompt('New password for this user (min 4 characters):'); if(!pw) return;
-  try{ await api('user_password',{user_id:id, password:pw}); toast('Password updated'); }catch(e){ toast(e.message,true); }
+function resetUserPassword(id){
+  promptStyled('Reset password', 'Sets a new sign-in password for this user immediately.', 'New password (min 4 characters)',
+    async(pw)=>{ if(!pw||pw.length<4){ toast('Password must be at least 4 characters',true); return; }
+      try{ await api('user_password',{user_id:id, password:pw}); toast('Password updated'); }catch(e){ toast(e.message,true); } },
+    'password');
 }
 async function toggleUserBlock(id, blocked){
   try{ await api('user_block',{user_id:id, blocked:blocked}); toast(blocked?'Sign-in blocked':'Sign-in restored'); closeOverlays(); SETTINGS=null; render(); }catch(e){ toast(e.message,true); }
@@ -4344,12 +4362,23 @@ async function bkAddNote(bookingId){
     if(CUR_BOOKING&&CUR_BOOKING.id===bookingId){ CUR_BOOKING.notes_thread=notes; render(); }
   }catch(e){ toast(e.message,true); inp.disabled=false; }
 }
-async function cancelBookingFlow(id){
-  const reason=prompt('Reason for cancelling this booking:','');
-  if(reason===null) return;   // user hit Cancel on the prompt itself
+function cancelBookingFlow(id){
+  const dep=(CUR_BOOKING&&CUR_BOOKING.id===id)?CUR_BOOKING.deposit_summary:null;
+  const heldWarn=(dep&&dep.held>0)?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;color:var(--ink-2)">⚠ This booking still has ${inr(dep.held)} held as deposit. Cancelling won't refund it automatically — handle that separately from the Deposit card once this is done.</div>`:'';
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px;color:var(--bad)">Cancel booking</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    ${heldWarn}
+    <label class="fld"><span>Reason <span class="muted" style="font-weight:400">(required)</span></span><input id="cbReason" class="input" placeholder="why"></label>
+    <button class="btn block" style="color:var(--bad);border-color:var(--bad)" id="cbBtn" onclick="submitCancelBooking('${id}')">Cancel this booking</button>
+  </div>`;
+  openOverlay($("#modal"));
+}
+async function submitCancelBooking(id){
+  const reason=($("#cbReason")||{}).value||'';
   if(!reason.trim()){ toast('A reason is required',true); return; }
-  try{ await api('cancel_booking',{booking_id:id, reason:reason}); toast('Booking cancelled'); await reloadData(); openBooking(id); }
-  catch(e){ toast(e.message,true); }
+  const btn=$("#cbBtn"); btn.disabled=true; btn.textContent='Cancelling…';
+  try{ await api('cancel_booking',{booking_id:id, reason:reason}); toast('Booking cancelled'); closeOverlays(); await reloadData(); openBooking(id); }
+  catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Cancel this booking'; }
 }
 async function confirmBooking(id){
   try{ const r=await api('confirm_booking',{booking_id:id, deposit_amount:0});
