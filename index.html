@@ -1960,6 +1960,25 @@ function client360Html(d){
         </tbody></table>`:'<p class="muted" style="font-size:12.5px;margin:8px 0 0">No bookings yet.</p>'}
       </div>
 
+      ${(d.consolidated_invoices&&d.consolidated_invoices.length)?(function(){
+        // Flag overlapping consolidated invoices — the exact duplicate-billing
+        // case this card exists to surface: two invoices that cover the same
+        // booking should never both sit there unpaid without someone noticing.
+        const seen={}, overlapIds=new Set();
+        d.consolidated_invoices.forEach(ci=>ci.booking_numbers.forEach(bn=>{ if(seen[bn]) overlapIds.add(seen[bn]).add(ci.invoice_id); seen[bn]=ci.invoice_id; }));
+        return `<div class="bkcard" style="margin-bottom:14px">
+        <div class="bkhead">Consolidated invoices <span class="muted" style="text-transform:none;font-weight:500">${d.consolidated_invoices.length}</span></div>
+        ${overlapIds.size?`<div style="background:var(--bad-wash);border:1px solid #f1c4c9;border-left:3px solid var(--bad);border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12.5px;color:var(--ink-2)">⚠ Some of these cover the same booking — likely a duplicate. Check before assuming both are owed.</div>`:''}
+        <table class="tbl" style="margin:0 -16px -14px;width:calc(100% + 32px)"><thead><tr><th style="padding-left:16px">Period</th><th>Bookings covered</th><th>Status</th><th>Net payable</th><th style="padding-right:16px">Paid</th></tr></thead><tbody>
+        ${d.consolidated_invoices.map(ci=>`<tr class="clickable" onclick="openInvoice('${ci.invoice_id}')" style="${overlapIds.has(ci.invoice_id)?'background:var(--bad-wash)':''}">
+          <td style="padding-left:16px;font-size:12px" class="muted">${fmtDate(ci.period_start)}–${fmtDate(ci.period_end)}</td>
+          <td class="mono" style="font-size:11.5px">${ci.booking_numbers.join(', ')||'—'}</td>
+          <td>${stageChip(ci.status)}</td>
+          <td class="mono">${inr(ci.net_payable)}</td>
+          <td class="mono" style="padding-right:16px">${inr(ci.paid_amount)}</td></tr>`).join("")}
+        </tbody></table>
+      </div>`;})():''}
+
       <div class="bkcard" style="margin-bottom:14px">
         <div class="bkhead">Damage history <span class="muted" style="text-transform:none;font-weight:500">${d.damages.length}</span></div>
         ${d.damages.length?`<table class="tbl" style="margin:0 -16px -14px;width:calc(100% + 32px)"><thead><tr><th style="padding-left:16px">Date</th><th>Asset</th><th>Category</th><th>Photo</th><th>Repair</th><th>Recovered</th><th style="padding-right:16px">Business loss</th></tr></thead><tbody>
@@ -2360,9 +2379,27 @@ function invoiceDetailHtml(v){
       ${!v.tax_issued_at && ['finalised','paid'].indexOf(v.status)>=0?`<button class="btn pri block" onclick="issueTax('${v.id}')">Issue tax invoice</button>`:''}
       ${v.tax_issued_at?`<div class="chip ok" style="width:100%;justify-content:center;padding:9px">Tax invoice issued${v.tax_issued_at?' · '+fmtDate(v.tax_issued_at):''}</div>`:''}
     </div>
+    ${v.status==='cancelled'?`<div class="chip bad" style="width:100%;justify-content:center;padding:9px;margin-top:10px">Voided</div>`
+      :(SESSION.user.role==='admin' && Number(v.paid_amount||0)===0)?`<button class="btn block" style="margin-top:10px;color:var(--bad)" onclick="voidInvoiceFlow('${v.id}')">Void this invoice</button>`:''}
     <button class="btn block" style="margin-top:10px" onclick="openInvoiceDoc('${v.id}')">${ICON_DOC}Generate invoice document</button>
     <div style="margin-top:14px">${docArchiveCard(INVOICE_DOCS,'invoices')}</div>
   </div>`;
+}
+function voidInvoiceFlow(invId){
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px;color:var(--bad)">Void invoice</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    <p class="muted" style="font-size:12.5px;margin:0 0 12px">This doesn't delete the invoice — it stays on record, clearly marked void, with your reason attached. Use this for a genuine mistake (duplicate, wrong period), not to make an invoice disappear.</p>
+    <label class="fld"><span>Reason <span class="muted" style="font-weight:400">(required)</span></span><input id="viReason" class="input" placeholder="e.g. duplicate of another consolidated invoice"></label>
+    <button class="btn block" style="color:var(--bad);border-color:var(--bad)" id="viBtn" onclick="submitVoidInvoice('${invId}')">Void this invoice</button>
+  </div>`;
+  openOverlay($("#modal"));
+}
+async function submitVoidInvoice(invId){
+  const reason=($("#viReason")||{}).value||'';
+  if(!reason.trim()){ toast('A reason is required',true); return; }
+  const btn=$("#viBtn"); btn.disabled=true; btn.textContent='Voiding…';
+  try{ await api('invoice_void',{invoice_id:invId, reason:reason}); toast('Invoice voided'); closeOverlays(); await reloadData(); openInvoice(invId); }
+  catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Void this invoice'; }
 }
 async function finaliseInv(id){ try{ await api('invoice_finalise',{invoice_id:id}); toast('Invoice finalised'); await reloadData(); openInvoice(id);}catch(e){toast(e.message,true);} }
 async function issueTax(id){ try{ await api('invoice_tax',{invoice_id:id}); toast('Tax invoice issued'); await reloadData(); openInvoice(id);}catch(e){toast(e.message,true);} }
@@ -3992,13 +4029,25 @@ async function viewArchivedDoc(id, backView){
 }
 /** Renders a "Documents" archive card — used on Booking/Invoice/Investor detail pages. */
 function docArchiveCard(docs, backView){
+  const admin=SESSION.user.role==='admin';
   return `<div class="bkcard">
     <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${docs?docs.length:''}</span></div>
     ${!docs?'<p class="muted" style="font-size:12.5px;margin:0">Loading…</p>'
       :docs.length?`<div class="doc-archlist">${docs.map(d=>`<div class="doc-archrow clickable" onclick="viewArchivedDoc('${d.id}','${backView}')">
-        <span style="font-size:12.5px">${esc(d.title)}</span><span style="display:flex;align-items:center;gap:6px"><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span>${d.drive_url?`<a href="${d.drive_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open PDF in Google Drive">${ICON_DOC}</a>`:''}</span></div>`).join("")}</div>`
+        <span style="font-size:12.5px">${esc(d.title)}</span><span style="display:flex;align-items:center;gap:8px"><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span>${d.drive_url?`<a href="${d.drive_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open PDF in Google Drive">${ICON_DOC}</a>`:''}${admin?`<a href="#" onclick="event.stopPropagation();deleteDocFlow('${d.id}','${backView}');return false" title="Delete this document" style="color:var(--bad)">✕</a>`:''}</span></div>`).join("")}</div>`
       :'<p class="muted" style="font-size:12.5px;margin:0">Nothing generated yet — use the buttons above.</p>'}
   </div>`;
+}
+function deleteDocFlow(docId, backView){
+  confirmWarn('Delete this document?', 'This permanently removes the archived document — including its Drive PDF if one was saved. This is for a genuine mistake (wrong period, duplicate generation), not routine cleanup. It can\'t be undone.',
+    ()=>submitDeleteDoc(docId, backView), 'Delete permanently');
+}
+async function submitDeleteDoc(docId, backView){
+  try{ await api('document_delete',{id:docId}); toast('Document deleted');
+    if(backView==='bookings' && CUR_BOOKING) loadBookingDocs(CUR_BOOKING.id);
+    else if(backView==='invoices' && CUR_INVOICE) loadInvoiceDocs(CUR_INVOICE.id);
+    else render();
+  }catch(e){ toast(e.message,true); }
 }
 
 let BOOKING_DOCS=null;
