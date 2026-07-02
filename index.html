@@ -2874,11 +2874,14 @@ function assetPnlBlock(p){
   const roi=p.roi_pct===null?'—':(p.roi_pct>=0?'+':'')+p.roi_pct+'%';
   const roiColor=p.roi_pct===null?'var(--ink-2)':(p.roi_pct>=0?'var(--ok)':'var(--bad)');
   return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px">Lifetime P&amp;L</p>
+    ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below. Close the repair ticket once done for an accurate figure.</div>`:''}
     <div class="split" style="margin-bottom:16px">
       <div class="fact"><div class="k">Purchase price</div><div class="v mono">${inr(p.purchase_price)}</div></div>
       <div class="fact"><div class="k">Lifetime revenue</div><div class="v mono">${inr(p.lifetime_revenue)}</div></div>
       <div class="fact"><div class="k">Maintenance cost</div><div class="v mono">${inr(p.maintenance_cost)}</div></div>
-      <div class="fact"><div class="k">Damage absorbed</div><div class="v mono">${inr(p.repair_absorbed)}</div></div>
+      <div class="fact"><div class="k">Repair cost · total</div><div class="v mono">${inr(p.repair_total)}</div></div>
+      <div class="fact"><div class="k">Repair · recovered from client</div><div class="v mono" style="color:${p.repair_recovered>0?'var(--ok)':''}">${inr(p.repair_recovered)}</div></div>
+      <div class="fact"><div class="k">Repair · absorbed by business</div><div class="v mono" style="color:${p.repair_absorbed>0?'var(--bad)':''}">${inr(p.repair_absorbed)}</div></div>
       <div class="fact"><div class="k">Net contribution</div><div class="v mono" style="color:${p.net_contribution>=0?'var(--ok)':'var(--bad)'}">${inr(p.net_contribution)}</div></div>
       <div class="fact"><div class="k">ROI vs purchase</div><div class="v mono" style="color:${roiColor}">${roi}</div></div>
       <div class="fact"><div class="k">Revenue / day owned</div><div class="v mono">${p.revenue_per_day_owned===null?'—':inr(p.revenue_per_day_owned)}</div></div>
