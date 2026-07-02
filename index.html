@@ -440,6 +440,23 @@ body.demo-active .whatsnew{bottom:76px}
       <label class="fld"><span>Password</span><input id="password" class="input" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></label>
       <button class="btn pri block" id="loginBtn" onclick="doLogin()">Sign in</button>
       <p class="authrole">Role-based access — you'll land on the tools for your level: <b>admin</b>, <b>staff</b>, <b>client</b> or <b>investor</b>.</p>
+      <p style="text-align:center;font-size:12.5px;margin-top:14px"><a href="#" onclick="togglePortalLogin();return false" style="color:var(--brand-ink);font-weight:600">Client or investor? Sign in with your phone →</a></p>
+    </div>
+    <div class="authcard hide" id="portalLoginCard">
+      <div class="logo"><i></i></div>
+      <h1>RentalOS</h1>
+      <p>No password needed — we'll text you a code.</p>
+      <div id="portalErr" class="err hide"></div>
+      <div id="portalPhoneStep">
+        <label class="fld"><span>Phone number</span><input id="portalPhone" class="input" type="tel" inputmode="numeric" placeholder="98XXXXXXXX" onkeydown="if(event.key==='Enter')portalSendCode()"></label>
+        <button class="btn pri block" id="portalSendBtn" onclick="portalSendCode()">Send code</button>
+      </div>
+      <div id="portalCodeStep" class="hide">
+        <p class="muted" style="font-size:12.5px;margin:0 0 10px">Code sent to <b id="portalSentTo"></b>.</p>
+        <label class="fld"><span>Enter code</span><input id="portalCode" class="input mono" inputmode="numeric" placeholder="6-digit code" onkeydown="if(event.key==='Enter')portalVerifyCode()"></label>
+        <button class="btn pri block" id="portalVerifyBtn" onclick="portalVerifyCode()">Verify &amp; sign in</button>
+      </div>
+      <p style="text-align:center;font-size:12.5px;margin-top:14px"><a href="#" onclick="togglePortalLogin();return false" style="color:var(--brand-ink);font-weight:600">← Staff sign in instead</a></p>
     </div>
     <div class="authinfo">
       <h2>One system to run the rental floor</h2>
@@ -629,6 +646,38 @@ async function doLogin(){
   finally{ btn.disabled=false; btn.textContent="Sign in"; }
 }
 function logout(){ try{ api('logout',{}); }catch(e){} SESSION=null; localStorage.removeItem('rentalos_session'); CACHE=null; show('loginScreen'); }
+function togglePortalLogin(){
+  const staff=$(".authcard:not(#portalLoginCard)"), portal=$("#portalLoginCard");
+  const showingPortal=!portal.classList.contains('hide');
+  portal.classList.toggle('hide', showingPortal); staff.classList.toggle('hide', !showingPortal);
+  $("#portalPhoneStep").classList.remove('hide'); $("#portalCodeStep").classList.add('hide');
+  $("#portalErr").classList.add('hide');
+}
+async function portalSendCode(){
+  const phone=($("#portalPhone")||{}).value||'';
+  const btn=$("#portalSendBtn"), err=$("#portalErr");
+  err.classList.add('hide'); btn.disabled=true; btn.textContent='Sending…';
+  try{
+    const r=await api('portal_login_request',{phone:phone});
+    $("#portalSentTo").textContent=r.sent_to||phone;
+    $("#portalPhoneStep").classList.add('hide'); $("#portalCodeStep").classList.remove('hide');
+    if(r.dev_otp) toast('Dev mode — code is '+r.dev_otp);
+    setTimeout(()=>{const i=$("#portalCode"); if(i)i.focus();},50);
+  }catch(e){ err.textContent=e.message; err.classList.remove('hide'); }
+  finally{ btn.disabled=false; btn.textContent='Send code'; }
+}
+async function portalVerifyCode(){
+  const phone=($("#portalPhone")||{}).value||'', code=($("#portalCode")||{}).value||'';
+  const btn=$("#portalVerifyBtn"), err=$("#portalErr");
+  err.classList.add('hide'); btn.disabled=true; btn.textContent='Verifying…';
+  try{
+    const data=await api('portal_login_verify',{phone:phone, code:code});
+    SESSION={token:data.token, user:data.user};
+    localStorage.setItem('rentalos_session', JSON.stringify(SESSION));
+    startApp();
+  }catch(e){ err.textContent=e.message; err.classList.remove('hide'); }
+  finally{ btn.disabled=false; btn.textContent='Verify & sign in'; }
+}
 function handleAuthExpiry(){ if(SESSION){ SESSION=null; CACHE=null; localStorage.removeItem('rentalos_session'); show('loginScreen'); toast('Session expired — please sign in again', true); } }
 
 async function startApp(){
@@ -638,7 +687,8 @@ async function startApp(){
   const u=SESSION.user;
   $("#whoName").textContent=u.name; $("#whoRole").textContent=u.role[0].toUpperCase()+u.role.slice(1);
   $("#avatar").textContent=(u.name||"?")[0].toUpperCase();
-  if(u.role==='client' || u.role==='investor'){ renderSideClient(); VIEW='portalsoon'; render(); return; }
+  if(u.role==='client'){ renderSideClient(); VIEW='clientportal'; render(); loadClientPortal(); return; }
+  if(u.role==='investor'){ renderSideClient(); VIEW='investorportal'; render(); loadInvestorPortal(); return; }
   renderSide(); await reloadData(); showWhatsNewIfAny(); loadNotifs(); loadDashActivity();
 }
 let WHATSNEW_SHOWN=false;
@@ -782,9 +832,14 @@ function renderSide(){
   }).join("");
   $("#side").innerHTML=`<div class="navinner">${h}</div>`;
 }
-function renderSideClient(){ $("#side").innerHTML=`<div class="navinner"><div class="grp grp-first"><span class="lbl">Portal</span>${NAV_TGL()}</div>${navBtn('portalsoon','Home',ICONS.dashboard)}</div>`; }
+function renderSideClient(){
+  const role=SESSION.user.role;
+  const leaf=role==='investor'?'investorportal':'clientportal';
+  $("#side").innerHTML=`<div class="navinner"><div class="grp grp-first"><span class="lbl">Portal</span>${NAV_TGL()}</div>${navBtn(leaf,'My '+(role==='investor'?'investments':'account'),ICONS.dashboard)}</div>`;
+}
 async function go(v){
-  VIEW=v; renderSide();
+  VIEW=v; if(SESSION.user.role==='client'||SESSION.user.role==='investor'){ renderSideClient(); render(); return; }
+  renderSide();
   if((VIEW_SLICES[v]||[]).some(s=>!SLICE_LOADED[s])) $("#main").innerHTML='<div class="spin"></div>';
   try{ await ensureSlices(v); }catch(e){ toast(e.message,true); }
   render(); window.scrollTo({top:0,behavior:'smooth'});
@@ -1005,9 +1060,99 @@ async function purgeDemo(){
 }
 
 const VIEWS={};
-VIEWS.portalsoon=()=>`<div class="empty" style="padding-top:80px">
-  <div style="font-family:var(--disp);font-size:20px;color:var(--ink-2)">Hi ${SESSION.user.name}</div>
-  <p>The ${SESSION.user.role} portal is coming online next.<br>The admin/staff console is live now.</p></div>`;
+/* ===================== CLIENT & INVESTOR PORTALS ===================== */
+let PORTAL_DATA=null;
+async function loadClientPortal(){
+  try{
+    const [bookings,invoices,deposits,documents]=await Promise.all([
+      api('my_bookings',{}), api('my_invoices',{}), api('my_deposits',{}), api('my_documents',{})]);
+    PORTAL_DATA={bookings,invoices,deposits,documents};
+    if(VIEW==='clientportal') render();
+  }catch(e){ toast(e.message,true); }
+}
+async function loadInvestorPortal(){
+  try{
+    const [summary,documents]=await Promise.all([api('my_investor_summary',{}), api('my_investor_documents',{})]);
+    PORTAL_DATA={summary,documents};
+    if(VIEW==='investorportal') render();
+  }catch(e){ toast(e.message,true); }
+}
+function portalDocList(docs){
+  return docs.length?docs.map(d=>`<div class="doc-archrow clickable" onclick="viewArchivedDoc('${d.id}','${SESSION.user.role==='investor'?'investorportal':'clientportal'}')">
+    <span style="font-size:12.5px">${esc(d.title)}</span><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">Nothing yet.</p>';
+}
+VIEWS.clientportal=()=>{
+  if(!PORTAL_DATA) return loading('Your account');
+  const d=PORTAL_DATA;
+  const outstanding=d.invoices.reduce((s,v)=>s+Math.max(0,Number(v.net_payable||0)-Number(v.paid_amount||0)),0);
+  return `<div class="head"><div><h1 class="h1">Hi ${esc(SESSION.user.name)}</h1><p class="sub">Here's everything on your account</p></div></div>
+  <div class="bkgrid">
+    <div>
+      <div class="bkcard" style="margin-bottom:14px">
+        <div class="bkhead">Your bookings <span class="muted" style="text-transform:none;font-weight:500">${d.bookings.length}</span></div>
+        ${d.bookings.length?d.bookings.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)">
+          <span><b style="font-size:13px">${b.booking_number||b.id.slice(0,8)}</b> <span class="muted" style="font-size:12px">${fmtDateTime(b.start_date,b.start_time)} – ${fmtDateTime(b.end_date,b.end_time)}</span></span>
+          <span>${stageChip(b.status)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No bookings yet.</p>'}
+      </div>
+      <div class="bkcard">
+        <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${d.documents.length}</span></div>
+        <div class="doc-archlist">${portalDocList(d.documents)}</div>
+      </div>
+    </div>
+    <div class="bkside">
+      <div class="bkcard" style="text-align:center;padding:18px 16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px">Outstanding</div>
+        <div class="mono" style="font-size:26px;font-weight:700;color:${outstanding>0?'var(--bad)':'var(--ok)'}">${inr(outstanding)}</div>
+      </div>
+      <div class="bkcard">
+        <div class="bkhead">Invoices</div>
+        ${d.invoices.length?d.invoices.map(v=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
+          <span>${stageChip(v.status)}</span><span class="mono">${inr(v.net_payable)}</span></div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None yet.</p>'}
+      </div>
+      <div class="bkcard">
+        <div class="bkhead">Deposits held <span class="muted" style="text-transform:none;font-weight:500">${inr(d.deposits.held)}</span></div>
+        ${d.deposits.bookings.length?d.deposits.bookings.map(b=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px">
+          <span class="muted">${b.booking_number}</span><span class="mono">${inr(b.held)}</span></div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">No deposits on file.</p>'}
+      </div>
+    </div>
+  </div>`;
+};
+async function portalRequestPayout(){
+  const btn=$("#reqPayoutBtn"); if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  try{ await api('request_payout',{}); toast('Payout requested — the team will follow up.'); }
+  catch(e){ toast(e.message,true); }
+  finally{ if(btn){btn.disabled=false;btn.textContent='Request a payout';} }
+}
+VIEWS.investorportal=()=>{
+  if(!PORTAL_DATA) return loading('Your account');
+  const s=PORTAL_DATA.summary, docs=PORTAL_DATA.documents;
+  return `<div class="head"><div><h1 class="h1">Hi ${esc(SESSION.user.name)}</h1><p class="sub">${s.pct}% share · ${s.asset_count} asset${s.asset_count===1?'':'s'} tagged to you</p></div></div>
+  <div class="bkgrid">
+    <div>
+      <div class="bkcard" style="margin-bottom:14px">
+        <div class="bkhead">Statements</div>
+        ${s.statements.length?s.statements.slice().reverse().map(st=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
+          <span>${fmtDate(st.period_start)}–${fmtDate(st.period_end)} <span class="muted">· gross ${inr(st.gross)}</span></span><span class="mono">${inr(st.share)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No statements yet.</p>'}
+      </div>
+      <div class="bkcard">
+        <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${docs.length}</span></div>
+        <div class="doc-archlist">${portalDocList(docs)}</div>
+      </div>
+    </div>
+    <div class="bkside">
+      <div class="bkcard" style="text-align:center;padding:18px 16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px">Outstanding</div>
+        <div class="mono" style="font-size:26px;font-weight:700;color:${s.outstanding>0?'var(--bad)':'var(--ok)'}">${inr(s.outstanding)}</div>
+        <div class="muted" style="font-size:11.5px;margin-top:4px">${inr(s.total_share)} earned · ${inr(s.total_paid)} paid out</div>
+      </div>
+      ${s.outstanding>0?`<button class="btn pri block" id="reqPayoutBtn" onclick="portalRequestPayout()">Request a payout</button>`:''}
+      <div class="bkcard">
+        <div class="bkhead">Your assets</div>
+        ${s.assets.length?s.assets.map(a=>`<div style="font-size:13px;padding:4px 0">${esc(a.name)}</div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None tagged yet.</p>'}
+      </div>
+    </div>
+  </div>`;
+};
 
 /* ── Roadmap (update these lists whenever a feature ships) ── */
 const ROADMAP={
@@ -3660,8 +3805,9 @@ async function generateAndArchive(docType, entityType, entityId, title, buildFn,
 }
 async function viewArchivedDoc(id, backView){
   CUR_DOC=null; VIEW='docview'; renderSide(); render();
+  const action=(SESSION.user.role==='client'||SESSION.user.role==='investor')?'my_document_get':'document_get';
   try{
-    const d=await api('document_get',{id:id});
+    const d=await api(action,{id:id});
     CUR_DOC={html:d.html, title:d.title, meta:{created_at:d.created_at, generated_by_name:d.generated_by_name}, backView:backView, archived:true, phone:'', clientName:'', amountLine:'', driveUrl:d.drive_url||''};
     render();
   }catch(e){ toast(e.message,true); }
