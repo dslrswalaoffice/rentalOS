@@ -2086,6 +2086,12 @@ function client360Html(d){
           <div class="fact"><div class="k">Level</div><div class="v" style="text-transform:capitalize">${c.trust_level||'new'}</div></div>
         </div>
         ${truthy(c.is_watchlisted)?`<div style="margin-top:10px"><span class="chip warn plain">Watchlisted</span>${c.flag_reason?` <span class="muted" style="font-size:11.5px">${esc(c.flag_reason)}</span>`:''}</div>`:'<p class="muted" style="font-size:11.5px;margin:10px 0 0">No flags on this client.</p>'}
+        ${(d.trust_history&&d.trust_history.length)?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+          <p class="muted" style="font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 6px">Score history</p>
+          ${d.trust_history.slice(0,8).map(e=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;font-size:11.5px">
+            <span class="muted">${esc((e.event_type||'').replace(/_/g,' '))}${e.booking_number?' · '+esc(e.booking_number):''}</span>
+            <span class="mono" style="font-weight:600;color:${e.score_change>=0?'var(--ok)':'var(--bad)'}">${e.score_change>=0?'+':''}${e.score_change}</span></div>`).join("")}
+        </div>`:''}
       </div>
 
       <div class="bkcard">
@@ -2748,7 +2754,7 @@ VIEWS.repairs=()=>{
       <td><span class="chip ${s[0]}">${s[1]}</span></td>
       <td style="font-size:12.5px">${esc(t.assigned_to)||'<span class="muted">Unassigned</span>'}</td>
       <td class="mono">${inr(t.estimated_cost)}</td>
-      <td style="text-align:right;white-space:nowrap">${t.status!=='closed'?`<button class="btn sm" onclick="repairTicketModal('${t.id}')">Manage</button>`:`<span class="muted" style="font-size:11px">${fmtDate(t.closed_at)}</span>`}</td>
+      <td style="text-align:right;white-space:nowrap">${t.status!=='closed'?`<button class="btn sm" onclick="repairTicketModal('${t.id}')">Manage</button>`:`<span class="muted" style="font-size:11px">${fmtDate(t.closed_at)}${t.closed_by?' · '+esc(t.closed_by):''}</span>`}</td>
       </tr>`;}).join("")}
     </tbody></table>`:`<div class="empty">${REPAIR_STATUS_F?'No tickets with this status.':'No repair tickets — nothing\'s come back damaged enough to need one.'}</div>`}</div>`;
 };
@@ -2818,7 +2824,7 @@ function assetDetailHtml(a){
     <div>
       <div class="bkcard" style="margin-bottom:14px">
         <div class="bkhead">Service history</div>
-        ${a.history.length?a.history.slice().reverse().map(h=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><b style="font-size:13px">${esc(h.category)}${h.description?' · '+esc(h.description):''}</b><span class="mono">${inr(h.cost)}</span></div><div class="muted" style="font-size:11px">${h.performed_at?fmtDate(h.performed_at):''}${h.vendor?' · '+esc(h.vendor):''}${h.next_due_at?' · next '+fmtDate(h.next_due_at):''}</div></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No service logged yet.</p>'}
+        ${a.history.length?a.history.slice().reverse().map(h=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><b style="font-size:13px">${esc(h.category)}${h.description?' · '+esc(h.description):''}</b><span class="mono">${inr(h.cost)}</span></div><div class="muted" style="font-size:11px">${h.performed_at?fmtDate(h.performed_at):''}${h.vendor?' · '+esc(h.vendor):''}${h.performed_by?' · logged by '+esc(h.performed_by):''}${h.next_due_at?' · next '+fmtDate(h.next_due_at):''}</div></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No service logged yet.</p>'}
       </div>
 
       <div class="bkcard">
@@ -2837,6 +2843,7 @@ function assetDetailHtml(a){
       <div class="bkcard" style="text-align:center;padding:14px 16px">
         <div style="font-weight:700;font-size:14px;color:${statusColor}">${statusLbl}</div>
         <div class="muted" style="font-size:11.5px;margin-top:2px">Condition: ${a.condition} · ${a.owner_type==='investor'?('Investor-owned · '+esc(a.investor_name||a.investor_id.slice(0,6))):'Business-owned'}</div>
+        ${a.retired&&a.retired_at?`<div class="muted" style="font-size:11px;margin-top:4px">Retired ${fmtDate(a.retired_at)}</div>`:''}
       </div>
       ${!a.retired?`<div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn pri" onclick="serviceModal('${a.asset_id}')">Log service</button>
@@ -2873,19 +2880,42 @@ async function astAddNote(assetId){
 function assetPnlBlock(p){
   const roi=p.roi_pct===null?'—':(p.roi_pct>=0?'+':'')+p.roi_pct+'%';
   const roiColor=p.roi_pct===null?'var(--ink-2)':(p.roi_pct>=0?'var(--ok)':'var(--bad)');
-  return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px">Lifetime P&amp;L</p>
-    ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below. Close the repair ticket once done for an accurate figure.</div>`:''}
-    <div class="split" style="margin-bottom:16px">
-      <div class="fact"><div class="k">Purchase price</div><div class="v mono">${inr(p.purchase_price)}</div></div>
-      <div class="fact"><div class="k">Lifetime revenue</div><div class="v mono">${inr(p.lifetime_revenue)}</div></div>
-      <div class="fact"><div class="k">Maintenance cost</div><div class="v mono">${inr(p.maintenance_cost)}</div></div>
-      <div class="fact"><div class="k">Repair cost · total</div><div class="v mono">${inr(p.repair_total)}</div></div>
-      <div class="fact"><div class="k">Repair · recovered from client</div><div class="v mono" style="color:${p.repair_recovered>0?'var(--ok)':''}">${inr(p.repair_recovered)}</div></div>
-      <div class="fact"><div class="k">Repair · absorbed by business</div><div class="v mono" style="color:${p.repair_absorbed>0?'var(--bad)':''}">${inr(p.repair_absorbed)}</div></div>
-      <div class="fact"><div class="k">Net contribution</div><div class="v mono" style="color:${p.net_contribution>=0?'var(--ok)':'var(--bad)'}">${inr(p.net_contribution)}</div></div>
-      <div class="fact"><div class="k">ROI vs purchase</div><div class="v mono" style="color:${roiColor}">${roi}</div></div>
-      <div class="fact"><div class="k">Revenue / day owned</div><div class="v mono">${p.revenue_per_day_owned===null?'—':inr(p.revenue_per_day_owned)}</div></div>
-      <div class="fact"><div class="k">Owned</div><div class="v mono">${p.age_days===null?'—':p.age_days+'d'}</div></div>
+  const netColor=p.net_contribution>=0?'var(--ok)':'var(--bad)';
+  const grp=(label,rows)=>`<div style="margin-bottom:14px"><p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px;color:var(--ink-4)">${label}</p>
+    <div class="split">${rows}</div></div>`;
+  const fact=(k,v,color)=>`<div class="fact"><div class="k">${k}</div><div class="v mono"${color?` style="color:${color}"`:''}>${v}</div></div>`;
+
+  return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 10px">Lifetime P&amp;L</p>
+    ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below. Close the repair ticket once done for an accurate figure.</div>`:''}
+
+    ${grp('Acquisition &amp; value',
+      fact('Purchase price', inr(p.purchase_price)) +
+      fact('Owned', p.age_days===null?'—':p.age_days+'d') +
+      (p.book_value!==null?fact('Book value now', inr(p.book_value)):fact('Book value now','—')) +
+      (p.depreciated_pct!==null?fact('Depreciated', p.depreciated_pct+'%'):fact('Useful life', p.useful_life_years?p.useful_life_years+'y':'not set'))
+    )}
+
+    ${grp('Revenue',
+      fact('Lifetime revenue', inr(p.lifetime_revenue)) +
+      fact('Revenue / day owned', p.revenue_per_day_owned===null?'—':inr(p.revenue_per_day_owned))
+    )}
+
+    ${grp('Costs',
+      fact('Maintenance', inr(p.maintenance_cost)) +
+      fact('Repair · total', inr(p.repair_total)) +
+      fact('Repair · recovered', inr(p.repair_recovered), p.repair_recovered>0?'var(--ok)':null) +
+      fact('Repair · absorbed', inr(p.repair_absorbed), p.repair_absorbed>0?'var(--bad)':null)
+    )}
+
+    <div style="border-top:1px solid var(--line);padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="text-align:center;padding:10px;background:var(--panel);border-radius:10px">
+        <div class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Net contribution</div>
+        <div class="mono" style="font-size:18px;font-weight:700;color:${netColor}">${inr(p.net_contribution)}</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--panel);border-radius:10px">
+        <div class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">ROI vs purchase</div>
+        <div class="mono" style="font-size:18px;font-weight:700;color:${roiColor}">${roi}</div>
+      </div>
     </div>`;
 }
 function serviceModal(assetId){
@@ -2957,7 +2987,10 @@ function assetFormModal(assetId){
       <label class="fld" style="flex:1"><span>Purchase date</span><input id="asPdate" class="input" type="date" value="${a.purchase_date||''}"></label></div>
     <div style="display:flex;gap:10px">
       <label class="fld" style="flex:1"><span>Insurance value ₹</span><input id="asIns" class="input mono" inputmode="numeric" value="${a.insurance_value||''}"></label>
-      ${edit?`<label class="fld" style="flex:1"><span>Condition</span><select id="asCond" class="input"><option value="good" ${a.condition_status==='good'?'selected':''}>Good</option><option value="minor" ${a.condition_status==='minor'?'selected':''}>Minor</option><option value="major" ${a.condition_status==='major'?'selected':''}>Major</option></select></label>`:'<div style="flex:1"></div>'}</div>
+      <label class="fld" style="flex:1"><span>Useful life <span class="muted" style="font-weight:400">(years)</span></span><input id="asLife" class="input mono" inputmode="numeric" value="${a.useful_life_years||5}" placeholder="5"></label></div>
+    <div style="display:flex;gap:10px">
+      ${edit?`<label class="fld" style="flex:1"><span>Condition</span><select id="asCond" class="input"><option value="good" ${a.condition_status==='good'?'selected':''}>Good</option><option value="minor" ${a.condition_status==='minor'?'selected':''}>Minor</option><option value="major" ${a.condition_status==='major'?'selected':''}>Major</option></select></label>`:'<div style="flex:1"></div>'}
+      <div style="flex:1"></div></div>
     <label class="fld"><span>Photo <span class="muted" style="font-weight:400">(used on the storefront)</span></span>
       ${a.image_url?`<div style="margin-bottom:8px"><img src="${a.image_url}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></div>`:''}
       <input id="asPhoto" type="file" accept="image/*" class="input"><span id="asPhotoStatus" class="muted" style="font-size:11px"></span></label>
@@ -2980,7 +3013,7 @@ async function submitAsset(assetId){
   const p={ name:name, asset_type_id:$("#asType").value, daily_rate:($("#asRate")||{}).value||0,
     qr_code:($("#asQr")||{}).value||'', serial_number:($("#asSerial")||{}).value||'',
     purchase_price:($("#asPrice")||{}).value||0, purchase_date:($("#asPdate")||{}).value||'',
-    insurance_value:($("#asIns")||{}).value||0 };
+    insurance_value:($("#asIns")||{}).value||0, useful_life_years:($("#asLife")||{}).value||5 };
   if(imageUrl) p.image_url=imageUrl;
   if($("#asCond")) p.condition_status=$("#asCond").value;
   try{
@@ -3360,6 +3393,10 @@ async function loadOffers(){ try{ OFFERS=await api('offers'); if(VIEW==='offers'
 function offerModal(offerId){
   const o=offerId?((OFFERS||[]).find(x=>x.id===offerId)||{}):{};
   const edit=!!offerId;
+  let curTiers=[], curCats=[];
+  try{ curTiers=JSON.parse(o.eligible_tiers||'[]'); }catch(e){}
+  try{ curCats=JSON.parse(o.eligible_categories||'[]'); }catch(e){}
+  const allCats=Array.from(new Set((CACHE.assets||[]).map(a=>a.category).filter(Boolean))).sort();
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${edit?'Edit offer':'New offer'}</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
     <label class="fld"><span>Title</span><input id="ofTitle" class="input" placeholder="Diwali 15% off" value="${esc(o.title)||''}"></label>
@@ -3373,6 +3410,10 @@ function offerModal(offerId){
       <input id="ofCode" class="input mono" style="text-transform:uppercase" placeholder="SPECIAL20" value="${esc(o.code)||''}"></label>`:''}
     <label class="fld"><span>Tags <span class="muted" style="font-weight:400">(optional, comma-separated — for organizing campaigns)</span></span>
       <input id="ofTags" class="input" placeholder="diwali, email-campaign" value="${esc(o.tags)||''}"></label>
+    <label class="fld"><span>Eligible tiers <span class="muted" style="font-weight:400">(none checked = all tiers)</span></span></label>
+    <div style="display:flex;gap:14px;margin-bottom:12px">${['normal','premium','vip'].map(t=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" class="ofTierCk" value="${t}" ${curTiers.indexOf(t)>=0?'checked':''}> ${t.charAt(0).toUpperCase()+t.slice(1)}</label>`).join("")}</div>
+    ${allCats.length?`<label class="fld"><span>Eligible categories <span class="muted" style="font-weight:400">(none checked = all categories)</span></span></label>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px">${allCats.map(c=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" class="ofCatCk" value="${esc(c)}" ${curCats.indexOf(c)>=0?'checked':''}> ${esc(c)}</label>`).join("")}</div>`:''}
     <button class="btn pri block" id="ofBtn" onclick="submitOffer('${offerId||''}')">${edit?'Save changes':'Create offer'}</button>
   </div>`;
   openOverlay($("#modal"));
@@ -3381,9 +3422,12 @@ async function submitOffer(offerId){
   const title=($("#ofTitle")||{}).value||'', val=Number(($("#ofVal")||{}).value||0);
   if(!title||!val){ toast('Title and value required',true); return; }
   const btn=$("#ofBtn"); btn.disabled=true; btn.textContent=offerId?'Saving…':'Creating…';
+  const tiers=Array.from(document.querySelectorAll('.ofTierCk:checked')).map(el=>el.value);
+  const cats=Array.from(document.querySelectorAll('.ofCatCk:checked')).map(el=>el.value);
   const p={title:title, discount_type:$("#ofDt").value, discount_value:val, use_limit:Number(($("#ofLimit")||{}).value||0),
     valid_from:($("#ofFrom")||{}).value||'', valid_to:($("#ofTo")||{}).value||'',
-    code:($("#ofCode")||{}).value||'', tags:($("#ofTags")||{}).value||''};
+    code:($("#ofCode")||{}).value||'', tags:($("#ofTags")||{}).value||'',
+    eligible_tiers:tiers, eligible_categories:cats};
   try{
     if(offerId){ await api('offer_update',Object.assign({offer_id:offerId},p)); toast('Offer updated'); }
     else{ await api('offer_create',Object.assign({type:$("#ofType").value},p)); toast('Offer created'); }
@@ -4414,6 +4458,7 @@ function bookingDetailHtml(b){
           <div class="split">
             <div class="fact"><div class="k">Subtotal</div><div class="v mono">${inr(b.subtotal)}</div></div>
             <div class="fact"><div class="k">Discount</div><div class="v mono">${inr(b.discount_amount)}</div></div>
+            ${Number(b.offer_discount)>0?`<div class="fact"><div class="k">Coupon discount</div><div class="v mono" style="color:var(--ok)">−${inr(b.offer_discount)}</div></div>`:''}
             <div class="fact"><div class="k">GST</div><div class="v mono">${inr(b.gst_amount)}</div></div>
             <div class="fact"><div class="k">Estimate</div><div class="v mono" style="font-weight:700">${inr(b.total_estimated)}</div></div>
           </div>
@@ -4422,10 +4467,15 @@ function bookingDetailHtml(b){
         <div class="bkcard">
           <div class="bkhead">Items <span class="muted" style="text-transform:none;font-weight:500">${items.length}</span></div>
           ${items.length?items.map(it=>{const st=BKI_STATUS[it.status]||["pend",it.status];
+            const condLbl={good:['ok','Good'],minor:['warn','Minor damage'],major:['bad','Major damage'],non_functional:['bad','Non-functional']}[it.condition_at_return];
+            const waived=truthy(it.is_optional_excluded);
             return `<div class="bkitemrow">
               <div class="nm"><b class="hc-trigger" data-ha="${it.asset_id}">${esc(it.name)||assetName(it.asset_id)}</b>
                 <span>${esc(it.qr_code)||''}${it.serial_number?' · S/N '+esc(it.serial_number):''}${it.owner_type==='investor'?' · investor-owned':''}</span>
                 ${it.damage_description?`<div class="bkdmg">⚠ ${esc(it.damage_description)}${it.repair_cost?' · '+inr(it.repair_cost)+(it.repair_cost_recovered?' (recovered)':' (outstanding)'):''}</div>`:''}
+                ${condLbl?`<div style="margin-top:3px"><span class="chip ${condLbl[0]} plain" style="font-size:10px">Returned: ${condLbl[1]}</span></div>`:''}
+                ${waived?`<div class="muted" style="font-size:11px;margin-top:3px">Waived — ${esc(it.waiver_reason)||'no reason given'} <a href="#" onclick="event.preventDefault();unwaiveItem('${it.id}')" style="margin-left:4px">undo</a></div>`
+                  :`<div style="margin-top:3px"><a href="#" onclick="event.preventDefault();waiveItemFlow('${it.id}')" class="muted" style="font-size:10.5px;text-decoration:underline">Waive charge</a></div>`}
               </div>
               <span class="chip ${st[0]}">${st[1]}</span>
             </div>`;}).join(""):'<div class="empty" style="padding:20px 0">No items.</div>'}
@@ -4557,6 +4607,16 @@ async function submitCancelBooking(id){
   const btn=$("#cbBtn"); btn.disabled=true; btn.textContent='Cancelling…';
   try{ await api('cancel_booking',{booking_id:id, reason:reason}); toast('Booking cancelled'); closeOverlays(); await reloadData(); openBooking(id); }
   catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Cancel this booking'; }
+}
+function waiveItemFlow(itemId){
+  promptStyled('Waive this charge', 'Excludes this item from revenue everywhere — invoices, P&L, reports. Use for a genuine complimentary item, not routine discounting.', 'Reason (e.g. goodwill, our error)',
+    async(reason)=>{ if(!reason||!reason.trim()){ toast('A reason is required',true); return; }
+      try{ await api('item_waive',{item_id:itemId, reason:reason}); toast('Charge waived'); await reloadData(); if(CUR_BOOKING)openBooking(CUR_BOOKING.id); }
+      catch(e){ toast(e.message,true); } });
+}
+async function unwaiveItem(itemId){
+  try{ await api('item_unwaive',{item_id:itemId}); toast('Waiver removed'); await reloadData(); if(CUR_BOOKING)openBooking(CUR_BOOKING.id); }
+  catch(e){ toast(e.message,true); }
 }
 async function confirmBooking(id){
   try{ const r=await api('confirm_booking',{booking_id:id, deposit_amount:0});
