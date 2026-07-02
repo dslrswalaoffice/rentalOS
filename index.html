@@ -2879,44 +2879,50 @@ async function astAddNote(assetId){
   }catch(e){ toast(e.message,true); inp.disabled=false; }
 }
 function assetPnlBlock(p){
-  const roi=p.roi_pct===null?'—':(p.roi_pct>=0?'+':'')+p.roi_pct+'%';
-  const roiColor=p.roi_pct===null?'var(--ink-2)':(p.roi_pct>=0?'var(--ok)':'var(--bad)');
+  const roi=p.roi_pct===null?null:(p.roi_pct>=0?'+':'')+p.roi_pct+'%';
+  const roiColor=p.roi_pct>=0?'var(--ok)':'var(--bad)';
   const netColor=p.net_contribution>=0?'var(--ok)':'var(--bad)';
-  const grp=(label,rows)=>`<div style="margin-bottom:14px"><p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px;color:var(--ink-4)">${label}</p>
-    <div class="split">${rows}</div></div>`;
-  const fact=(k,v,color)=>`<div class="fact"><div class="k">${k}</div><div class="v mono"${color?` style="color:${color}"`:''}>${v}</div></div>`;
+  const hasAcquisition = p.purchase_price>0 || p.age_days!==null;
+
+  // A tight label-value row instead of a padded card — reads like a
+  // statement, not a grid of mostly-empty boxes. Rows with no meaningful
+  // value are simply skipped rather than shown as "—", so a field only
+  // ever appears when there's something real to say.
+  const row=(k,v,color)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px">
+    <span class="muted">${k}</span><span class="mono" style="font-weight:600${color?`;color:${color}`:''}">${v}</span></div>`;
+  const grp=(label,rowsHtml)=>rowsHtml?`<div style="margin-bottom:16px"><p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 4px;color:var(--ink-4)">${label}</p>${rowsHtml}</div>`:'';
+
+  const acquisitionRows = !hasAcquisition ? '' :
+    (p.purchase_price>0?row('Purchase price', inr(p.purchase_price)):'') +
+    (p.age_days!==null?row('Owned', p.age_days+' days'):'') +
+    (p.book_value!==null?row('Book value now', inr(p.book_value))+row('Depreciated', p.depreciated_pct+'%'):'') +
+    (p.book_value===null && p.useful_life_years?row('Useful life', p.useful_life_years+' years'):'');
+
+  const revenueRows =
+    row('Lifetime revenue', inr(p.lifetime_revenue)) +
+    (p.revenue_per_day_owned!==null?row('Revenue / day owned', inr(p.revenue_per_day_owned)):'');
+
+  const costRows =
+    row('Maintenance', inr(p.maintenance_cost)) +
+    (p.repair_total>0?row('Repair · total', inr(p.repair_total))+row('Repair · recovered', inr(p.repair_recovered), p.repair_recovered>0?'var(--ok)':null)+row('Repair · absorbed', inr(p.repair_absorbed), p.repair_absorbed>0?'var(--bad)':null):'');
 
   return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 10px">Lifetime P&amp;L</p>
-    ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below. Close the repair ticket once done for an accurate figure.</div>`:''}
+    ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below.</div>`:''}
+    ${!hasAcquisition?`<div style="background:var(--panel);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-3)">No purchase price or date on record — add these in Edit details to see book value and ROI.</div>`:''}
 
-    ${grp('Acquisition &amp; value',
-      fact('Purchase price', inr(p.purchase_price)) +
-      fact('Owned', p.age_days===null?'—':p.age_days+'d') +
-      (p.book_value!==null?fact('Book value now', inr(p.book_value)):fact('Book value now','—')) +
-      (p.depreciated_pct!==null?fact('Depreciated', p.depreciated_pct+'%'):fact('Useful life', p.useful_life_years?p.useful_life_years+'y':'not set'))
-    )}
+    ${grp('Acquisition &amp; value', acquisitionRows)}
+    ${grp('Revenue', revenueRows)}
+    ${grp('Costs', costRows)}
 
-    ${grp('Revenue',
-      fact('Lifetime revenue', inr(p.lifetime_revenue)) +
-      fact('Revenue / day owned', p.revenue_per_day_owned===null?'—':inr(p.revenue_per_day_owned))
-    )}
-
-    ${grp('Costs',
-      fact('Maintenance', inr(p.maintenance_cost)) +
-      fact('Repair · total', inr(p.repair_total)) +
-      fact('Repair · recovered', inr(p.repair_recovered), p.repair_recovered>0?'var(--ok)':null) +
-      fact('Repair · absorbed', inr(p.repair_absorbed), p.repair_absorbed>0?'var(--bad)':null)
-    )}
-
-    <div style="border-top:1px solid var(--line);padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="border-top:1px solid var(--line);padding-top:14px;display:grid;grid-template-columns:${roi!==null?'1fr 1fr':'1fr'};gap:12px">
       <div style="text-align:center;padding:10px;background:var(--panel);border-radius:10px">
         <div class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Net contribution</div>
         <div class="mono" style="font-size:18px;font-weight:700;color:${netColor}">${inr(p.net_contribution)}</div>
       </div>
-      <div style="text-align:center;padding:10px;background:var(--panel);border-radius:10px">
+      ${roi!==null?`<div style="text-align:center;padding:10px;background:var(--panel);border-radius:10px">
         <div class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">ROI vs purchase</div>
         <div class="mono" style="font-size:18px;font-weight:700;color:${roiColor}">${roi}</div>
-      </div>
+      </div>`:''}
     </div>`;
 }
 function serviceModal(assetId){
