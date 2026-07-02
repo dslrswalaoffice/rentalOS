@@ -302,6 +302,13 @@ const slug = s => String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace
 const waLink = (phone,msg) => 'https://wa.me/'+String(phone||'').replace(/[^0-9]/g,'')+(msg?'?text='+encodeURIComponent(msg):'');
 
 let CATALOG=[], AVAIL={}, CART={}, DAYS=0, INFO=null;
+const STORE_THEMES={
+  blue:{brand:'#2d44c7',ink:'#1d2f96',wash:'#eef1ff',deep:'#181c4a'},
+  green:{brand:'#1f7a4d',ink:'#155c3a',wash:'#e7f6ee',deep:'#0d3322'},
+  amber:{brand:'#c2660a',ink:'#914d08',wash:'#fdf1e2',deep:'#4a2704'},
+  rose:{brand:'#c23050',ink:'#8f2138',wash:'#fdeef1',deep:'#4a1420'},
+  slate:{brand:'#3d4759',ink:'#2a3140',wash:'#eef0f3',deep:'#181c24'},
+};
 
 /* ── Category icons — matched by keyword, generic camera-body fallback.
    No product photos exist in the system yet, so the visual language leans
@@ -337,6 +344,11 @@ async function stLoadInfo(){
     document.title = name+' — Camera & AV equipment rental';
     $("#brandName").textContent = name;
     if(INFO.logo_url){ $(".brandmark").innerHTML=`<img src="${INFO.logo_url}" style="height:30px;max-width:120px;object-fit:contain">`; }
+    if(INFO.theme && STORE_THEMES[INFO.theme]){
+      const t=STORE_THEMES[INFO.theme], r=document.documentElement.style;
+      r.setProperty('--brand',t.brand); r.setProperty('--brand-ink',t.ink); r.setProperty('--brand-wash',t.wash); r.setProperty('--brand-deep',t.deep);
+    }
+    if(INFO.tagline){ $("#heroSub").textContent = INFO.tagline; }
     $("#ftrBrand").textContent = name;
     $("#ftrCopy").textContent = '© '+new Date().getFullYear()+' '+name;
     if(INFO.phone){

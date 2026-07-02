@@ -1060,16 +1060,21 @@ const ROADMAP={
     {t:'Time-of-day precision',d:'Pickup/return times, not just dates — availability conflicts, overdue detection, and trust scoring are now hour-precise. Pricing stays day-based; this only affects when things count as due/overdue/conflicting. Bookings made before this update default to full-day treatment, unaffected',p:'New Quote · Extend Rental · Dashboard · Documents'},
     {t:'Booking page decluttered',d:'Sidebar restructured from 8 stacked blocks into 3 tabs — Overview, Documents, Activity — so the page doesn\u2019t get more overwhelming as features are added',p:'Booking detail page'},
     {t:'Security & speed audit',d:'Fixed a payment-webhook bypass (would process unsigned requests if no secret was configured yet — now fails closed), added spreadsheet-formula-injection protection for public storefront input, closed several XSS gaps in staff-entered fields, and fixed 3 N+1 query patterns',p:'Whole app — no single screen'},
+    {t:'QR camera scanning',d:'Real camera scanning (not type/paste) for dispatch and stock audits, plus a smart extension: every booking and client now generates its own scannable QR too — scan a booking\u2019s QR (printed on its Rental agreement) or a client\u2019s QR to pull them up instantly',p:'Rentals → Scan & dispatch · Inventory → Stock audit · Booking/Client pages'},
+    {t:'Coupon codes',d:'Any offer can carry a customer-typeable code — redeemable at storefront checkout or typed in by staff for an in-store sale — plus a coupon performance report (status/period/tag filters, usage, total discount, CSV export) matching Booqable\u2019s own report structure',p:'Settings → Growth → Offers · Coupon report · Storefront checkout'},
+    {t:'Setup wizard',d:'Guided first-run flow — business info, which features you need, tax settings, then a 5-minute smart-suggested starting inventory. Only triggers for a genuinely empty install; always re-runnable from Settings',p:'Settings → System → Setup wizard'},
+    {t:'Modular feature toggles',d:'Turn Investors / Coupons / Website builder on or off per business — disabled modules disappear from navigation and search entirely, nothing is deleted, flip back on anytime',p:'Settings → System → Modules'},
+    {t:'Guided website theme builder',d:'Real, not preview: pick a colour theme (5 palettes), confirm logo, set a tagline, reorder storefront categories — actually changes the live storefront\u2019s colours/text/ordering, not just a settings record',p:'Settings → Online bookings → Website builder'},
+    {t:'WhatsApp document sharing',d:'Every generated document (quote, agreement, invoice, statement) has a one-tap WhatsApp button pre-filled with the client\u2019s number, their name, and the amount',p:'Any document\u2019s view page'},
+    {t:'Real PDF documents in Drive',d:'Generated documents now save an actual PDF to a "RentalOS Documents" Drive folder and can share a real link over WhatsApp instead of just a text summary (needs the Drive API advanced service enabled once)',p:'Any document\u2019s view page · Documents archive'},
+    {t:'Visual consistency pass',d:'Every icon across newer features (QR, documents, WhatsApp, quick booking) now matches the app\u2019s original stroke-icon style instead of mixed emoji, which rendered differently across devices',p:'Whole app'},
   ],
   progress:[
     {t:'Real WhatsApp send',d:'AiSensy / WATI live dispatch (currently logged only)',p:'Notification bell · full Notifications page'},
-    {t:'QR live-camera scan',d:'Replace type/paste QR entry with an actual camera scan',p:'Rentals → Scan & dispatch · Returns'},
     {t:'Client portal',d:'Self-service bookings, invoices, deposits — the partner portal built separately for investors already proves this exact pattern works (PIN login, zero manual follow-up); same playbook, client-facing',p:'New: client-facing portal (separate from staff app)'},
     {t:'Investor portal',d:'Live ROI & equipment statements, one-tap payout request — RentalOS already has the investor data; this exposes it self-service instead of staff pulling it manually',p:'New: investor-facing portal (separate from staff app)'},
   ],
   planned:[
-    {t:'One-time setup wizard',d:'A guided checklist for a brand-new RentalOS install — walks through every configurable Settings field one at a time (company info, GST, tax profile, pricing tiers, message templates), then a "5-minute inventory setup" step with smart-suggested common gear (pre-filled name/type/rate, fully editable, add or skip each) so a new rental business is bookable the same day instead of staring at an empty Inventory tab',p:'New: first-login wizard, before the app shell'},
-    {t:'Coupon codes',d:'Customer-facing promo codes (not just staff-applied Offers) — a code typed at storefront checkout auto-applies a discount, with usage limits and expiry, and a redemption report so you can see which codes actually drove bookings',p:'Settings → Growth (create codes) · Storefront checkout (redeem) · Reports (redemption)'},
     {t:'Multi-language interface',d:'English by default, user-selectable native language per person — see the full scope note on this below',p:'Account/profile menu · Settings'},
     {t:'Mobile apps — iOS & Android',d:'Native apps once the web app is stable — same account, same data, built for on-the-go dispatch/returns/scanning rather than desk work',p:'New: separate mobile apps'},
     {t:'Accounting software sync',d:'Auto-push finalised invoices to Tally/Zoho Books — reduces double-entry between RentalOS and whatever your CA actually uses',p:'Settings → Integrations · triggered from Billing → Invoices'},
@@ -1079,7 +1084,7 @@ const ROADMAP={
     {t:'Recommendation engine',d:'Cross-sell / next-best gear at quote',p:'New Quote modal'},
     {t:'Wishlist alerts',d:'Notify when wished-for gear frees up',p:'Client 360 (new) · Notification bell'},
     {t:'Multi-tenant / white-label',d:'Productize the OS for other rental houses',p:'Foundational — touches the whole system'},
-    {t:'Storefront: theme & website builder — full build',d:'Tier 2 (Booqable-style) — pick a theme, customize colors/layout, add pages (FAQ/About/Contact), organize products into categories. Note: on Booqable\u2019s own model, this and the simple booking page are mutually exclusive — publishing a custom site takes the plain storefront offline, not both running at once',p:'Settings → Online bookings → Website builder (frontend already scaffolded)'},
+    {t:'Storefront: custom pages & blog',d:'FAQ/About/Contact-style custom pages and blog posts — genuine CMS territory, separate from the theme builder that already shipped. Booqable\u2019s own model keeps this and the simple booking page mutually exclusive — publishing a custom site takes the plain storefront offline, not both at once',p:'Settings → Online bookings → Website builder'},
     {t:'Storefront: hosted checkout',d:'Coupons, down-payment/pay-later capture right in the booking flow — depends on live payment capture landing first',p:'Storefront (public)'},
     {t:'Storefront: embeddable widgets',d:'Embed codes to drop live availability + a product card/cart into an existing WordPress/Shopify/Squarespace site, for owners who don\u2019t want a standalone page',p:'New: embeddable widget, external sites'},
     {t:'Storefront: custom domain per tenant',d:'Let each rental house connect their own domain to their storefront and checkout — the monetisable layer, needs multi-tenant first',p:'Settings → Online bookings'},
@@ -3162,57 +3167,86 @@ VIEWS.settings=()=>{
   return `<div class="head"><div><h1 class="h1">Settings</h1><p class="sub">Back office configuration</p></div></div>
   <div class="setwrap"><nav class="setnav">${nav}</nav><div class="setbody">${body}</div></div>`;
 };
-let WB_TAB='status';
-const WB_TABS={
-  status:()=>{
-    const p=SETTINGS.profile||{};
-    return `<div class="card pad">
-      <div style="display:flex;gap:16px;align-items:flex-start">
-        <div style="flex:1"><b style="font-family:var(--disp)">Online store</b>
-          <div style="display:flex;align-items:center;gap:8px;margin:8px 0 4px"><span class="chip ok">Live</span><span class="mono muted" style="font-size:12px">${esc(p.business_name)||'Your storefront'}</span></div>
-          <p class="muted" style="font-size:12px;margin:0 0 14px">Preview of what a full theme/publish system will look like — for now, your live storefront is the single booking page built earlier.</p>
-          <div style="display:flex;gap:8px"><button class="btn pri" onclick="toast('Theme customizer comes with the backend build')">Customize</button><a class="btn" href="store.html" target="_blank" rel="noopener">View online store</a></div>
-        </div>
-        <div style="width:220px;flex:none;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)"><div style="height:130px;display:flex;align-items:center;justify-content:center;color:var(--ink-4);font-size:11px">Site preview</div></div>
-      </div></div>`;
-  },
-  themes:()=>{
-    const themes=[['Default','Live',true],['Minimal','',false],['Bold','',false]];
-    return `<div class="card">
-      ${themes.map(t=>`<div class="wbrow"><div><div class="nm">${t[0]}</div><div class="sub">${t[2]?'Currently published':'Not installed'}</div></div>
-        ${t[1]?`<span class="chip ok">${t[1]}</span>`:`<button class="btn sm" onclick="toast('Theme install comes with the backend build')">Preview</button>`}</div>`).join("")}
-    </div>
-    <div class="card pad" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between">
-      <div><b style="font-family:var(--disp);font-size:14px">Browse themes</b><p class="muted" style="font-size:12px;margin:4px 0 0">Pick a look for your storefront once the theme system is built.</p></div>
-      <button class="btn" onclick="toast('Coming with the backend build')">Browse themes</button>
-    </div>`;
-  },
-  menus:()=>{
-    const types=(CACHE.asset_types||[]).slice(0,10).map(t=>t.name);
-    const items=types.length?types:['Cameras','Lenses','Lighting','Audio','Drones','Accessories'];
-    return `<div class="card"><div class="wbrow"><div><div class="nm">Main Menu</div><div class="sub">${items.length} items · built from your asset types</div></div><button class="btn sm" onclick="toast('Menu editing comes with the backend build')">Edit</button></div></div>
-    <p class="muted" style="font-size:12px;margin:10px 0 0">${items.map(esc).join(', ')}</p>
-    <button class="btn pri" style="margin-top:14px" onclick="toast('Coming with the backend build')">+ Add menu</button>`;
-  },
-  pages:()=>{
-    const pages=['About Us','Contact Us','Terms & Conditions','FAQ'];
-    return `<div class="card">${pages.map(p=>`<div class="wbrow"><div class="nm">${esc(p)}</div><button class="btn sm" onclick="toast('Page editing comes with the backend build')">Edit</button></div>`).join("")}</div>
-    <button class="btn pri" style="margin:10px 0 20px" onclick="toast('Coming with the backend build')">+ Add page</button>
-    <p style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 8px">Blog posts</p>
-    <div class="card pad"><p class="muted" style="font-size:12.5px;margin:0">No posts yet. Blog publishing is part of the same future build as the rest of this page.</p></div>`;
-  },
-  redirects:()=>{
-    return `<div class="card pad"><p class="muted" style="font-size:12.5px;margin:0 0 4px">Redirects keep old links working after you rename or remove a page — useful once the storefront has enough history to accumulate broken links. Nothing to redirect yet on a brand-new storefront.</p></div>
-    <button class="btn pri" style="margin-top:14px" onclick="toast('Coming with the backend build')">+ Add redirect</button>`;
-  },
+const WEBSITE_THEME_SWATCH={
+  blue:{brand:'#2d44c7',ink:'#1d2f96',wash:'#eef1ff',label:'Blue'},
+  green:{brand:'#1f7a4d',ink:'#155c3a',wash:'#e7f6ee',label:'Green'},
+  amber:{brand:'#c2660a',ink:'#914d08',wash:'#fdf1e2',label:'Amber'},
+  rose:{brand:'#c23050',ink:'#8f2138',wash:'#fdeef1',label:'Rose'},
+  slate:{brand:'#3d4759',ink:'#2a3140',wash:'#eef0f3',label:'Slate'},
+};
+let WB_BUILD_STEP=0, WB_THEME='', WB_TAGLINE='', WB_CATS=[];
+function wbStart(){
+  const w=(SETTINGS.config&&SETTINGS.config.website)||{theme:'blue',tagline:'',category_order:[]};
+  WB_THEME=w.theme||'blue'; WB_TAGLINE=w.tagline||'';
+  const allCats=Array.from(new Set((CACHE.asset_types||[]).map(t=>t.category||'General')));
+  WB_CATS=(w.category_order&&w.category_order.length)?w.category_order.filter(c=>allCats.indexOf(c)>=0).concat(allCats.filter(c=>(w.category_order||[]).indexOf(c)<0)):allCats;
+  WB_BUILD_STEP=1; render();
+}
+function wbMove(i,dir){ const j=i+dir; if(j<0||j>=WB_CATS.length) return; const t=WB_CATS[i]; WB_CATS[i]=WB_CATS[j]; WB_CATS[j]=t; render(); }
+async function wbFinish(){
+  try{
+    await api('config_save',{website:{theme:WB_THEME, tagline:WB_TAGLINE, category_order:WB_CATS, built:true}});
+    SETTINGS.config.website={theme:WB_THEME, tagline:WB_TAGLINE, category_order:WB_CATS, built:true};
+    WB_BUILD_STEP=5; render();
+  }catch(e){ toast(e.message,true); }
+}
+function wbBuilderHtml(){
+  const steps=['Theme','Logo & tagline','Categories','Done'];
+  return `<div class="card pad">
+    <div style="display:flex;gap:6px;margin-bottom:18px">${steps.map((s,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i+1<=WB_BUILD_STEP?'var(--brand)':'var(--line)'}"></div>`).join("")}</div>
+    ${WB_BUILD_STEP===1?`
+      <b style="font-family:var(--disp);font-size:16px">Pick a colour theme</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 14px">This colours your whole storefront — buttons, headings, highlights. You can change it anytime.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-bottom:16px">
+        ${Object.keys(WEBSITE_THEME_SWATCH).map(k=>{const t=WEBSITE_THEME_SWATCH[k];
+          return `<button onclick="WB_THEME='${k}';render()" style="border:2px solid ${WB_THEME===k?t.brand:'var(--line)'};border-radius:12px;padding:10px;background:${WB_THEME===k?t.wash:'var(--surface)'};text-align:center">
+          <div style="width:100%;height:32px;border-radius:7px;background:${t.brand};margin-bottom:6px"></div>
+          <span style="font-size:12px;font-weight:600;color:${WB_THEME===k?t.ink:'var(--ink-2)'}">${t.label}${WB_THEME===k?' ✓':''}</span></button>`;}).join("")}
+      </div>
+      <button class="btn pri block" onclick="WB_BUILD_STEP=2;render()">Continue</button>`
+    :WB_BUILD_STEP===2?`
+      <b style="font-family:var(--disp);font-size:16px">Logo &amp; tagline</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Your logo is already set in Settings → General${(SETTINGS.profile&&SETTINGS.profile.logo_url)?' — looking good.':"; add one there first if you haven't."}</p>
+      ${(SETTINGS.profile&&SETTINGS.profile.logo_url)?`<img src="${SETTINGS.profile.logo_url}" style="height:44px;border-radius:6px;border:1px solid var(--line);background:#fff;padding:4px;margin-bottom:14px">`:`<button class="btn sm" style="margin-bottom:14px" onclick="go('settings');setGo('general')">Add a logo in Settings</button>`}
+      <label class="fld"><span>Tagline <span class="muted" style="font-weight:400">(shows right under your name on the storefront)</span></span>
+        <input id="wbTagline" class="input" maxlength="160" placeholder="e.g. Vadodara's camera &amp; AV rental specialists" value="${esc(WB_TAGLINE)}"></label>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="flex:1" onclick="WB_BUILD_STEP=1;render()">Back</button>
+        <button class="btn pri" style="flex:2" onclick="WB_TAGLINE=($('#wbTagline')||{}).value||'';WB_BUILD_STEP=3;render()">Continue</button></div>`
+    :WB_BUILD_STEP===3?`
+      <b style="font-family:var(--disp);font-size:16px">Order your categories</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 14px">This is the order customers see them in on your storefront. Put your most-booked gear first.</p>
+      ${WB_CATS.length?WB_CATS.map((c,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px">
+        <span style="flex:1;font-size:13px;font-weight:600">${esc(c)}</span>
+        <button class="btn sm" ${i===0?'disabled':''} onclick="wbMove(${i},-1)">↑</button>
+        <button class="btn sm" ${i===WB_CATS.length-1?'disabled':''} onclick="wbMove(${i},1)">↓</button>
+      </div>`).join(""):'<p class="muted" style="font-size:12.5px">No categories yet — add some inventory first, then come back to order them.</p>'}
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" style="flex:1" onclick="WB_BUILD_STEP=2;render()">Back</button>
+        <button class="btn pri" style="flex:2" onclick="wbFinish()">Publish</button></div>`
+    :WB_BUILD_STEP===5?`
+      <b style="font-family:var(--disp);font-size:18px">Your storefront is ready 🎉</b>
+      <p class="muted" style="font-size:13px;margin:8px 0 18px;line-height:1.6">You built this — the colours, the tagline, the order gear shows in. Come back anytime to change any of it.</p>
+      <div style="display:flex;gap:8px"><a class="btn pri block" href="store.html" target="_blank" rel="noopener">View your storefront</a>
+        <button class="btn block" onclick="WB_BUILD_STEP=0;render()">Done</button></div>`
+    :''}
+  </div>`;
+}
+const SETSECTIONS_WB_STATUS=()=>{
+  const p=SETTINGS.profile||{}, w=(SETTINGS.config&&SETTINGS.config.website)||{theme:'blue',tagline:'',built:false};
+  const t=WEBSITE_THEME_SWATCH[w.theme]||WEBSITE_THEME_SWATCH.blue;
+  return `<div class="card pad">
+    <div style="display:flex;gap:16px;align-items:flex-start">
+      <div style="flex:1"><b style="font-family:var(--disp)">Online store</b>
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0 4px"><span class="chip ok">Live</span><span class="mono muted" style="font-size:12px">${esc(p.business_name)||'Your storefront'}</span></div>
+        <p class="muted" style="font-size:12px;margin:0 0 14px">${w.built?`Theme: ${t.label}${w.tagline?' · "'+esc(w.tagline)+'"':''}`:'Not customized yet — build it below, takes about 2 minutes.'}</p>
+        <div style="display:flex;gap:8px"><button class="btn pri" onclick="wbStart()">${w.built?'Edit storefront':'Build your storefront'}</button><a class="btn" href="store.html" target="_blank" rel="noopener">View online store</a></div>
+      </div>
+      <div style="width:60px;height:60px;flex:none;border-radius:12px;background:${t.brand}"></div>
+    </div></div>`;
 };
 const SETSECTIONS={
   webbuilder:()=>{
-    const tabs=[['status','Status'],['themes','Themes'],['menus','Menus'],['pages','Pages'],['redirects','URL redirects']];
-    return `<div class="wbpreview"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      Preview only — this shows the shape of the feature. Editing, theme switching, and publishing aren't wired up yet.</div>
-    <div class="wbtabs">${tabs.map(t=>`<button class="${WB_TAB===t[0]?'on':''}" onclick="WB_TAB='${t[0]}';render()">${t[1]}</button>`).join("")}</div>
-    ${WB_TABS[WB_TAB]?WB_TABS[WB_TAB]():''}`;
+    if(WB_BUILD_STEP>0) return wbBuilderHtml();
+    return SETSECTIONS_WB_STATUS()+`<div class="card pad" style="margin-top:14px"><p class="muted" style="font-size:12px;margin:0">Custom pages, a blog, and URL redirects are a bigger future build — full CMS territory, not part of this guided theme builder. Ask if you want that scoped out next.</p></div>`;
   },
   offers:()=>{
     if(!OFFERS){ loadOffers(); return loading('Offers'); }
