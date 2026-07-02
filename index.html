@@ -1081,6 +1081,18 @@ function portalDocList(docs){
   return docs.length?docs.map(d=>`<div class="doc-archrow clickable" onclick="viewArchivedDoc('${d.id}','${SESSION.user.role==='investor'?'investorportal':'clientportal'}')">
     <span style="font-size:12.5px">${esc(d.title)}</span><span class="muted" style="font-size:11px">${fmtDate(d.created_at)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">Nothing yet.</p>';
 }
+/* Client-facing labels — deliberately NOT reusing stageChip(), which shows
+   internal staff workflow stages (Dispatched, Open, Tax invoice, Finalised)
+   that describe our process, not anything a customer would recognize.
+   A client cares about two things: is my gear out, and do I owe money. */
+const PORTAL_BOOKING_LBL={draft:['pend','Quote'],quote:['pend','Quote'],confirmed:['brand','Confirmed'],
+  dispatched:['warn','With you'],open:['warn','With you'],finalised:['ok','Completed'],cancelled:['bad','Cancelled']};
+function portalBookingChip(status){ const l=PORTAL_BOOKING_LBL[status]||['pend',status]; return `<span class="chip ${l[0]}">${l[1]}</span>`; }
+function portalInvoiceLine(v){
+  const due=Math.max(0,Number(v.net_payable||0)-Number(v.paid_amount||0));
+  if(due<=0) return `<span class="chip ok">Paid</span>`;
+  return `<span class="chip bad">${inr(due)} due</span>`;
+}
 VIEWS.clientportal=()=>{
   if(!PORTAL_DATA) return loading('Your account');
   const d=PORTAL_DATA;
@@ -1092,7 +1104,7 @@ VIEWS.clientportal=()=>{
         <div class="bkhead">Your bookings <span class="muted" style="text-transform:none;font-weight:500">${d.bookings.length}</span></div>
         ${d.bookings.length?d.bookings.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)">
           <span><b style="font-size:13px">${b.booking_number||b.id.slice(0,8)}</b> <span class="muted" style="font-size:12px">${fmtDateTime(b.start_date,b.start_time)} – ${fmtDateTime(b.end_date,b.end_time)}</span></span>
-          <span>${stageChip(b.status)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No bookings yet.</p>'}
+          <span>${portalBookingChip(b.status)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No bookings yet.</p>'}
       </div>
       <div class="bkcard">
         <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${d.documents.length}</span></div>
@@ -1107,12 +1119,15 @@ VIEWS.clientportal=()=>{
       <div class="bkcard">
         <div class="bkhead">Invoices</div>
         ${d.invoices.length?d.invoices.map(v=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
-          <span>${stageChip(v.status)}</span><span class="mono">${inr(v.net_payable)}</span></div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None yet.</p>'}
+          <span class="muted">${fmtDate(v.created_at)}</span>${portalInvoiceLine(v)}</div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None yet.</p>'}
       </div>
       <div class="bkcard">
         <div class="bkhead">Deposits held <span class="muted" style="text-transform:none;font-weight:500">${inr(d.deposits.held)}</span></div>
-        ${d.deposits.bookings.length?d.deposits.bookings.map(b=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px">
-          <span class="muted">${b.booking_number}</span><span class="mono">${inr(b.held)}</span></div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">No deposits on file.</p>'}
+        ${d.deposits.bookings.length?d.deposits.bookings.map(b=>{
+          const lbl=b.status==='agreed'?['pend','Due at pickup: '+inr(b.agreed)]:b.status==='held'?['ok',inr(b.held)+' held']:
+            b.status==='refunded'?['pend','Refunded']:b.status==='forfeited'?['bad','Forfeited — see documents']:['pend',inr(b.held)];
+          return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px">
+          <span class="muted">${b.booking_number}</span><span class="chip ${lbl[0]}" style="font-size:11px">${lbl[1]}</span></div>`;}).join(""):'<p class="muted" style="font-size:12px;margin:0">No deposits on file.</p>'}
       </div>
     </div>
   </div>`;
