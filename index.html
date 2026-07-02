@@ -2975,6 +2975,7 @@ async function wizStep4Save(){
     toast(picked.length+' item(s) added to inventory'); await reloadData(); WIZ_STEP=5; render();
   }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Add selected & continue'; }
 }
+let NOTIFS=null;
 const NOTIF_STATUS_LBL={queued:["warn","Queued · needs review"],sent:["ok","Sent"],suppressed:["bad","Rejected"],approved:["ok","Approved"],failed:["bad","Failed"]};
 VIEWS.notifications=()=>{
   if(!NOTIFS){ loadNotifs(); return loading('Notifications'); }
