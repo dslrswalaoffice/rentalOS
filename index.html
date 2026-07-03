@@ -11,9 +11,10 @@
 :root{
   --ink:#16181d;--ink-2:#3c4150;--ink-3:#6b7280;--ink-4:#9aa1ad;
   --surface:#fff;--panel:#f6f7f9;--panel-2:#eef0f4;--line:#e3e6ec;--line-2:#d3d7e0;
-  --brand:#2d44c7;--brand-ink:#1d2f96;--brand-wash:#eef1ff;
+  --brand:#2d44c7;--brand-ink:#2438a8;--brand-wash:#eef1fc;
   --ok:#1f9d57;--ok-wash:#e7f6ed;--warn:#b9791b;--warn-wash:#fbf1df;
-  --bad:#cc3340;--bad-wash:#fbe9eb;--pend:#7a8294;--pend-wash:#eef0f4;
+  --bad:#cc3340;--bad-ink:#a3272f;--bad-wash:#fbe9eb;--bad-wash-2:#fdf7f7;--bad-border:#f3cfd2;--pend:#7a8294;--pend-wash:#eef0f4;
+  --dark-hero:#20232b;--dark-muted:#8891a8;--ok-bright:#4ade80;--bad-bright:#ff8a94;
   --r:10px;--r-lg:14px;--sh:0 1px 2px rgba(16,18,29,.05);--sh-lg:0 8px 30px rgba(16,18,29,.10);
   --font:"Inter",system-ui,sans-serif;--disp:"Space Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
 }
@@ -36,7 +37,7 @@ label.fld span{font-size:12px;font-weight:600;color:var(--ink-2);display:block;m
 .btn{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:9px;padding:9px 15px;font-size:13px;font-weight:550;display:inline-flex;align-items:center;gap:7px;transition:.12s}
 .btn:hover{background:var(--panel)}.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}.btn.pri:hover{background:var(--brand-ink)}
 .btn.sm{padding:6px 11px;font-size:12px}.btn:disabled{opacity:.55;cursor:not-allowed}.btn.block{width:100%;justify-content:center;padding:11px}
-.err{background:var(--bad-wash);border:1px solid #f1c4c9;color:#9b232e;font-size:12.5px;padding:9px 12px;border-radius:9px;margin-bottom:14px}
+.err{background:var(--bad-wash);border:1px solid var(--bad-border);color:var(--bad-ink);font-size:12.5px;padding:9px 12px;border-radius:9px;margin-bottom:14px}
 .demohint{margin-top:16px;font-size:11.5px;color:var(--ink-4);border-top:1px solid var(--line);padding-top:12px}
 .demohint code{font-family:var(--mono);color:var(--ink-2)}
 .authrole{font-size:11.5px;color:var(--ink-4);margin:16px 0 0;border-top:1px solid var(--line);padding-top:12px;line-height:1.5}
@@ -128,8 +129,8 @@ body.nav-pinned .grp-first .lbl,body:not(.nav-pinned) .side:hover .grp-first .lb
 .whomenu-item{width:100%;display:flex;align-items:center;gap:9px;border:0;background:transparent;text-align:left;padding:9px 10px;border-radius:8px;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer;font-family:inherit}
 .whomenu-item:hover{background:var(--panel)}
 .whomenu-item svg{flex:none;color:var(--ink-4)}
-.whomenu-item.danger:hover{background:var(--bad-wash);color:#9b232e}
-.whomenu-item.danger:hover svg{color:#9b232e}
+.whomenu-item.danger:hover{background:var(--bad-wash);color:var(--bad-ink)}
+.whomenu-item.danger:hover svg{color:var(--bad-ink)}
 .whomenu-sep{height:1px;background:var(--line);margin:4px 0}
 .whomenu::before{content:"";position:absolute;top:-8px;left:0;right:0;height:8px}
 .who:hover .whomenu,.who:focus-within .whomenu{opacity:1;visibility:visible;transform:none}
@@ -174,14 +175,14 @@ body.nav-pinned .side,body.nav-pinned .navinner{width:250px}
 .hbar.clickable{cursor:pointer;border-radius:8px;padding:4px 6px;margin:0 -6px;transition:background .1s}
 .hbar.clickable:hover{background:var(--panel)}
 .kpi .lbl{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4)}
-.kpi .val{font-family:var(--disp);font-size:26px;font-weight:700;margin-top:7px;line-height:1.1}
+.kpi .val{font-family:var(--disp);font-size:29px;font-weight:700;letter-spacing:-.02em;margin-top:8px;line-height:1.1;font-variant-numeric:tabular-nums}
 .kpi .val small{font-family:var(--mono);font-size:12px;color:var(--ink-4)}
 .kpi .delta{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:8px}
 .kpi .delta.up{color:var(--ok);background:var(--ok-wash)}.kpi .delta.down{color:var(--bad);background:var(--bad-wash)}
 .kpi .foot{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line-2);font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-4)}
-.kpi.alert{background:var(--bad-wash);border-color:#f1c4c9}
-.kpi.alert .lbl{color:var(--bad)}.kpi.alert .val{color:var(--bad)}
-.kpi.alert .subrow{margin-top:7px;font-size:11px;font-weight:600;color:var(--bad-ink,var(--bad))}
+.kpi.alert{background:var(--bad-wash-2);border-color:var(--bad-border)}
+.kpi.alert .lbl{color:var(--bad-ink)}.kpi.alert .val{color:var(--bad)}
+.kpi.alert .subrow{margin-top:7px;font-size:11px;font-weight:600;color:var(--bad-ink)}
 table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-4);padding:10px 14px;border-bottom:1px solid var(--line)}
 .tbl thead th{cursor:pointer;user-select:none;transition:color .1s}
@@ -1195,10 +1196,13 @@ VIEWS.clientportal=()=>{
       </div>
     </div>
     <div class="bkside">
-      <div class="bkcard" style="text-align:center;padding:18px 16px">
+      ${outstanding>0?`<div style="background:var(--bad-wash);border:1px solid var(--bad-border);border-radius:14px;padding:16px 18px">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--bad)">Amount due</div>
+        <div class="mono" style="font-size:26px;font-weight:700;color:var(--bad);margin-top:4px">${inr(outstanding)}</div>
+      </div>`:`<div class="bkcard" style="text-align:center;padding:18px 16px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px">Outstanding</div>
-        <div class="mono" style="font-size:26px;font-weight:700;color:${outstanding>0?'var(--bad)':'var(--ok)'}">${inr(outstanding)}</div>
-      </div>
+        <div class="mono" style="font-size:26px;font-weight:700;color:var(--ok)">${inr(0)}</div>
+      </div>`}
       <div class="bkcard">
         <div class="bkhead">Invoices</div>
         ${d.invoices.length?d.invoices.map(v=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
@@ -1225,12 +1229,23 @@ VIEWS.investorportal=()=>{
   if(!PORTAL_DATA) return loading('Your account');
   const s=PORTAL_DATA.summary, docs=PORTAL_DATA.documents;
   return `<div class="head"><div><h1 class="h1">Hi ${esc(SESSION.user.name)}</h1><p class="sub">${s.pct}% share · ${s.asset_count} asset${s.asset_count===1?'':'s'} tagged to you</p></div></div>
+  <div style="background:var(--dark-hero);border-radius:14px;padding:16px 18px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center">
+    <div>
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Lifetime earned</div>
+      <div class="mono" style="font-size:28px;font-weight:700;color:var(--ok-bright);margin-top:4px">${inr(s.total_share)}</div>
+      <div style="font-size:11px;color:var(--dark-muted);margin-top:5px">${inr(s.total_paid)} paid out across ${s.statements.length} statement${s.statements.length===1?'':'s'}.</div>
+    </div>
+    <div style="text-align:right;padding-left:16px;border-left:1px solid #2a2d3a">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Outstanding</div>
+      <div class="mono" style="font-size:22px;font-weight:700;color:${s.outstanding>0?'var(--bad-bright)':'var(--ok-bright)'};margin-top:4px">${inr(s.outstanding)}</div>
+    </div>
+  </div>
   <div class="bkgrid">
     <div>
       <div class="bkcard" style="margin-bottom:14px">
         <div class="bkhead">Statements</div>
         ${s.statements.length?s.statements.slice().reverse().map(st=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
-          <span>${fmtDate(st.period_start)}–${fmtDate(st.period_end)} <span class="muted">· gross ${inr(st.gross)}</span></span><span class="mono">${inr(st.share)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No statements yet.</p>'}
+          <span>${fmtDate(st.period_start)}–${fmtDate(st.period_end)} <span class="muted">· gross ${inr(st.gross)}</span></span><span class="moneycell" style="display:inline-block">${inr(st.share)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No statements yet.</p>'}
       </div>
       <div class="bkcard">
         <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${docs.length}</span></div>
@@ -1238,11 +1253,6 @@ VIEWS.investorportal=()=>{
       </div>
     </div>
     <div class="bkside">
-      <div class="bkcard" style="text-align:center;padding:18px 16px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px">Outstanding</div>
-        <div class="mono" style="font-size:26px;font-weight:700;color:${s.outstanding>0?'var(--bad)':'var(--ok)'}">${inr(s.outstanding)}</div>
-        <div class="muted" style="font-size:11.5px;margin-top:4px">${inr(s.total_share)} earned · ${inr(s.total_paid)} paid out</div>
-      </div>
       ${s.outstanding>0?`<button class="btn pri block" id="reqPayoutBtn" onclick="portalRequestPayout()">Request a payout</button>`:''}
       <div class="bkcard">
         <div class="bkhead">Your assets <span class="muted" style="text-transform:none;font-weight:500">performance</span></div>
@@ -1389,10 +1399,10 @@ VIEWS.activitylog=()=>{
       const open=!!ACTLOG_OPEN[l.id];
       const chips=l.changed_fields.slice(0,4).map(f=>`<span class="chip pend plain" style="font-size:10px">${f}</span>`).join(' ')+(l.changed_fields.length>4?` <span class="muted" style="font-size:11px">+${l.changed_fields.length-4} more</span>`:'');
       return `<tr class="clickable" onclick="alToggle('${l.id}')">
-        <td class="mono muted" style="font-size:11.5px;white-space:nowrap">${fmtDate(l.at)} <span style="opacity:.7">${(l.at||'').slice(11,16)}</span></td>
+        <td class="idcell muted" style="font-size:11.5px;white-space:nowrap">${fmtDate(l.at)} <span style="opacity:.7">${(l.at||'').slice(11,16)}</span></td>
         <td>${esc(l.user_name)}</td>
         <td><span class="chip ${l.action==='insert'?'ok':'brand'} plain">${esc(l.summary)}</span></td>
-        <td class="muted" style="font-size:12px">${l.entity_type.replace(/_/g,' ')}<div class="mono" style="font-size:10.5px;opacity:.7">${(l.entity_id||'').slice(0,8)}</div></td>
+        <td class="muted" style="font-size:12px">${l.entity_type.replace(/_/g,' ')}<div class="idcell" style="font-size:10.5px;opacity:.7">${(l.entity_id||'').slice(0,8)}</div></td>
         <td>${chips||'<span class="muted">—</span>'}</td>
       </tr>${open?`<tr><td colspan="5" style="background:var(--panel);padding:12px 16px">${alDiffHtml(l)}</td></tr>`:''}`;
     }).join("")}</tbody></table>`:'<div class="empty">No activity matches these filters.</div>'}</div>
@@ -1515,12 +1525,16 @@ VIEWS.utilization=()=>{
   if(UTIL_OWNER==='business') rows=rows.filter(r=>r.owner==='Business');
   else if(UTIL_OWNER==='investor') rows=rows.filter(r=>r.owner!=='Business');
   const avgUtil=rows.length?Math.round(rows.reduce((s,r)=>s+r.utilisation_pct,0)/rows.length):0;
-  const idle=rows.filter(r=>r.utilisation_pct===0).length;
+  const idleRows=rows.filter(r=>r.utilisation_pct===0);
+  const byCat={};
+  rows.forEach(r=>{ (byCat[r.category]=byCat[r.category]||[]).push(r.utilisation_pct); });
+  const catAvg=Object.keys(byCat).map(c=>({cat:c,avg:Math.round(byCat[c].reduce((a,b)=>a+b,0)/byCat[c].length)})).sort((a,b)=>b.avg-a.avg);
   return `<div class="head"><div><h1 class="h1">Utilization</h1><p class="sub">${UTIL.period_days}-day window · which gear earns its keep, which sits idle</p></div></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
-    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Avg. utilization</div><div class="mono" style="font-size:22px;font-weight:700">${avgUtil}%</div></div>
-    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Assets tracked</div><div class="mono" style="font-size:22px;font-weight:700">${rows.length}</div></div>
-    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Never rented this period</div><div class="mono" style="font-size:22px;font-weight:700;color:${idle?'var(--bad)':''}">${idle}</div></div>
+  <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+    <div class="kpi" style="cursor:default"><div class="lbl">Blended utilization</div><div class="val">${avgUtil}%</div></div>
+    <div class="kpi" style="cursor:default"><div class="lbl">Assets tracked</div><div class="val">${rows.length}</div></div>
+    ${idleRows.length>0?`<div class="kpi alert" style="cursor:default"><div class="lbl">Idle this period</div><div class="val">${idleRows.length}</div><div class="subrow">! never rented</div></div>`
+      :`<div class="kpi" style="cursor:default"><div class="lbl">Idle this period</div><div class="val">0</div><div class="foot">Every asset earned →</div></div>`}
   </div>
   <div class="card pad" style="margin-bottom:14px">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
@@ -1530,12 +1544,28 @@ VIEWS.utilization=()=>{
       <label class="fld" style="min-width:130px"><span>Owner</span><select class="input" onchange="utilFilter('owner',this.value)"><option value="">All</option><option value="business" ${UTIL_OWNER==='business'?'selected':''}>Business</option><option value="investor" ${UTIL_OWNER==='investor'?'selected':''}>Investor</option></select></label>
     </div>
   </div>
-  <div class="card">${rows.length?`<table class="tbl"><thead><tr><th>Asset</th><th>Category</th><th>Owner</th><th>Utilization</th><th>Booked</th><th>Idle</th><th>Revenue (period)</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr class="clickable" onclick="openAsset('${r.asset_id}')"><td><b>${esc(r.name)}</b></td><td class="muted" style="font-size:12px">${esc(r.category)}</td><td style="font-size:12px">${esc(r.owner)}</td>
+  ${catAvg.length>1?`<div class="card pad" style="margin-bottom:14px">
+    <p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 12px">Utilization by category · this period</p>
+    ${catAvg.map(c=>`<div style="display:flex;align-items:center;gap:12px;padding:6px 0">
+      <span style="width:100px;font-size:12.5px;flex:none">${esc(c.cat)}</span>
+      <div style="flex:1;height:7px;border-radius:4px;background:var(--panel-2);overflow:hidden"><div style="height:100%;width:${c.avg}%;background:${c.avg===0?'var(--bad)':c.avg<25?'var(--warn)':'var(--ok)'}"></div></div>
+      <span class="mono" style="font-size:12.5px;font-weight:700;width:36px;text-align:right">${c.avg}%</span></div>`).join("")}
+  </div>`:''}
+  <div class="card" style="margin-bottom:14px">${rows.length?`<table class="tbl"><thead><tr><th>Asset</th><th>Category</th><th>Owner</th><th>Utilization</th><th>Booked</th><th>Idle</th><th style="text-align:right">Revenue (period)</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="clickable${r.utilisation_pct===0?' exception':''}" onclick="openAsset('${r.asset_id}')"><td><b>${esc(r.name)}</b></td><td class="muted" style="font-size:12px">${esc(r.category)}</td><td style="font-size:12px">${esc(r.owner)}</td>
       <td style="min-width:120px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden"><div style="height:100%;width:${r.utilisation_pct}%;background:${r.utilisation_pct===0?'var(--bad)':r.utilisation_pct<25?'var(--warn)':'var(--ok)'}"></div></div><span class="mono" style="font-size:12px;min-width:32px">${r.utilisation_pct}%</span></div></td>
       <td class="mono" style="font-size:12px">${r.booked_days}d</td><td class="mono muted" style="font-size:12px">${r.idle_days}d</td>
-      <td class="mono">${inr(r.revenue)}</td></tr>`).join("")}
-    </tbody></table>`:'<div class="empty">No assets match these filters.</div>'}</div>`;
+      <td class="moneycell">${inr(r.revenue)}</td></tr>`).join("")}
+    </tbody></table>`:'<div class="empty">No assets match these filters.</div>'}</div>
+  ${idleRows.length>0?`<div class="card pad">
+    <p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 10px">Idle assets · needs attention <span style="color:var(--bad)">${idleRows.length} tying up capital</span></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${idleRows.map(r=>`<div class="clickable" onclick="openAsset('${r.asset_id}')" style="background:var(--warn-wash);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px">
+        <span class="idcell muted" style="font-size:10px">${esc(r.category).slice(0,3).toUpperCase()}</span>
+        <div><div style="font-size:12.5px;font-weight:600">${esc(r.name)}</div><div class="muted" style="font-size:10.5px">${r.idle_days} days idle</div></div>
+      </div>`).join("")}
+    </div>
+  </div>`:''}`;
 };
 /* ===================== MONEY LEDGER ===================== */
 let LEDGER=null, LG_PARTY='', LG_KIND='', LG_FROM='', LG_TO='';
@@ -1551,11 +1581,11 @@ VIEWS.moneyledger=()=>{
   const rows=LEDGER.rows, s=LEDGER.summary;
   const dirChip=d=>({'in':['ok','In'],'out':['bad','Out'],'reclass':['warn','Reclassified']}[d]||['pend',d]);
   return `<div class="head"><div><h1 class="h1">Money ledger</h1><p class="sub">Every rupee that moved, client and investor side, in one place</p></div></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px">
-    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Real revenue in</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--ok)">${inr(s.revenue_in)}</div><div class="muted" style="font-size:11px;margin-top:2px">Rental payments + damage recovery + forfeited deposits</div></div>
-    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Deposits held (net)</div><div class="mono" style="font-size:20px;font-weight:700">${inr(s.deposits_held_net)}</div><div class="muted" style="font-size:11px;margin-top:2px">In trust — not revenue until forfeited</div></div>
-    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Paid to investors</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--bad)">${inr(s.investor_paid_out)}</div><div class="muted" style="font-size:11px;margin-top:2px">Revenue share payouts, all time</div></div>
-    <div class="card pad" style="text-align:center"><div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px">Repair costs</div><div class="mono" style="font-size:20px;font-weight:700;color:var(--bad)">${inr(s.repair_cost_total)}</div><div class="muted" style="font-size:11px;margin-top:2px">Closed repair tickets, all time</div></div>
+  <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+    <div class="kpi" style="cursor:default"><div class="lbl">Real revenue in</div><div class="val" style="color:var(--ok)">${inr(s.revenue_in)}</div><div class="foot">Rental payments + damage recovery + forfeited deposits</div></div>
+    <div class="kpi" style="cursor:default"><div class="lbl">Deposits held (net)</div><div class="val">${inr(s.deposits_held_net)}</div><div class="foot">In trust — not revenue until forfeited</div></div>
+    <div class="kpi" style="cursor:default"><div class="lbl">Paid to investors</div><div class="val" style="color:var(--bad)">${inr(s.investor_paid_out)}</div><div class="foot">Revenue share payouts, all time</div></div>
+    <div class="kpi" style="cursor:default"><div class="lbl">Repair costs</div><div class="val" style="color:var(--bad)">${inr(s.repair_cost_total)}</div><div class="foot">Closed repair tickets, all time</div></div>
   </div>
   <div class="card pad" style="margin-bottom:14px">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
@@ -1568,14 +1598,14 @@ VIEWS.moneyledger=()=>{
     </div>
   </div>
   <div class="card">
-    ${rows.length?`<table class="tbl"><thead><tr><th>Date</th><th>Type</th><th>Party</th><th>Reference</th><th>Method</th><th></th><th>Amount</th></tr></thead><tbody>
+    ${rows.length?`<table class="tbl"><thead><tr><th>Date</th><th>Type</th><th>Party</th><th>Reference</th><th>Method</th><th></th><th style="text-align:right">Amount</th></tr></thead><tbody>
     ${rows.map(r=>{const dc=dirChip(r.direction); return `<tr><td class="muted" style="font-size:12px">${fmtDate(r.at)}</td>
       <td>${esc(r.label)}</td>
       <td><span class="chip pend plain" style="font-size:10px;text-transform:uppercase">${r.party_type}</span> ${esc(r.party_name)}</td>
-      <td class="mono muted" style="font-size:11.5px">${esc(r.reference)||'—'}</td>
+      <td class="idcell muted" style="font-size:11.5px">${esc(r.reference)||'—'}</td>
       <td class="muted" style="font-size:12px;text-transform:capitalize">${esc(r.method)||'—'}</td>
       <td><span class="chip ${dc[0]}" style="font-size:10px">${dc[1]}</span></td>
-      <td class="mono" style="text-align:right">${inr(r.amount)}</td></tr>`;}).join("")}
+      <td class="moneycell">${inr(r.amount)}</td></tr>`;}).join("")}
     </tbody></table>`:'<div class="empty">No transactions match these filters.</div>'}
   </div>`;
 };
@@ -1610,6 +1640,13 @@ VIEWS.reports=()=>{
 const GANTT_DAYS_BACK=7, GANTT_DAYS_FWD=75, GANTT_TOTAL=GANTT_DAYS_BACK+GANTT_DAYS_FWD;
 const GANTT_ZOOM_PX={month:26,week:64,day:140};
 let GANTT_ZOOM='week';
+let GT_CONFLICTS=null;
+async function loadGtConflicts(){
+  const origin=gtOrigin(); const ws=origin.toISOString().slice(0,10);
+  const we=new Date(origin.getTime()+GANTT_TOTAL*86400000).toISOString().slice(0,10);
+  try{ const r=await api('availability_timeline',{start_date:ws, end_date:we}); GT_CONFLICTS=r.conflicts||[]; if(VIEW==='timeline')render(); }
+  catch(e){ /* non-critical — calendar still works without this */ }
+}
 const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const WD_SHORT=['Su','Mo','Tu','We','Th','Fr','Sa'];
 function gtOrigin(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-GANTT_DAYS_BACK); return d; }
@@ -1663,6 +1700,7 @@ function ganttRows(){
 VIEWS.timeline=()=>{
   const rows=ganttRows();
   setTimeout(gtJumpToday,0);
+  if(GT_CONFLICTS===null) loadGtConflicts();
   const dayW=GANTT_ZOOM_PX[GANTT_ZOOM];
   const origin=gtOrigin();
 
@@ -1701,6 +1739,10 @@ VIEWS.timeline=()=>{
   const gridHeightPx=26+42+totalLanes*34;
 
   return `<div class="head"><div><h1 class="h1">Calendar</h1><p class="sub">Every product's holds across time — solid = confirmed, hatched = quote (not yet a real hold)</p></div></div>
+  ${GT_CONFLICTS&&GT_CONFLICTS.length?`<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bad-wash-2);border:1px solid var(--bad-border);border-radius:11px;margin-bottom:14px">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bad)" stroke-width="1.9" style="flex:none"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+    <span style="font-size:12.5px;color:var(--ink-2)"><strong style="color:var(--bad-ink)">${GT_CONFLICTS.length} real double-booking${GT_CONFLICTS.length===1?'':'s'} on specific units</strong> — ${esc(GT_CONFLICTS[0].asset_name)}: ${esc(GT_CONFLICTS[0].a)} overlaps ${esc(GT_CONFLICTS[0].b)}${GT_CONFLICTS.length>1?' (+'+(GT_CONFLICTS.length-1)+' more)':''}. This shouldn't happen — availability checks normally block it.</span>
+  </div>`:''}
   <div class="gtoolbar">
     <button class="btn sm" onclick="gtJumpToday()">Today</button>
     <div class="spacer"></div>
@@ -1858,7 +1900,7 @@ function bkStatusCounts(){
     finalised:all.filter(b=>['finalised','tax_invoice','paid','closed'].indexOf(b.status)>=0).length, overdue:overdue};
 }
 function bkFilterPill(label,count,active,onclick,alert){
-  return `<button onclick="${onclick}" style="border:1px solid ${alert?'#f1c4c9':(active?'var(--ink)':'var(--line)')};background:${active?'var(--ink)':(alert?'var(--bad-wash)':'var(--surface)')};color:${active?'#fff':(alert?'var(--bad)':'var(--ink-2)')};border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">${label} <span class="mono" style="font-weight:700">${count}</span></button>`;
+  return `<button onclick="${onclick}" style="border:1px solid ${alert?'var(--bad-border)':(active?'var(--ink)':'var(--line)')};background:${active?'var(--ink)':(alert?'var(--bad-wash)':'var(--surface)')};color:${active?'#fff':(alert?'var(--bad)':'var(--ink-2)')};border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">${label} <span class="mono" style="font-weight:700">${count}</span></button>`;
 }
 let BK_Q='';
 let BK_STATUS=null;   // null = all, or an array of statuses to restrict to
@@ -1884,11 +1926,54 @@ function bookingsListHtml(){
   return bookingsTable(shown)+(filt.length>BK_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${BK_CAP} of ${filt.length} — refine your search to narrow.</div>`:'');
 }
 function renderBookingsList(){ _preserveFocus_(()=>{ const el=$("#bkList"); if(el) el.innerHTML=bookingsListHtml(); }); }
+let BK_VIEW_MODE='list';
+function bkColumns(){
+  const all=bookingsFiltered();
+  const cols=[
+    {key:'quote', title:'Quote', dot:'var(--pend)', statuses:['quote']},
+    {key:'confirmed', title:'Confirmed', dot:'var(--brand)', statuses:['confirmed']},
+    {key:'dispatched', title:'Dispatched', dot:'var(--brand-ink)', statuses:['dispatched']},
+    {key:'open', title:'Open', dot:'var(--warn)', statuses:['open']},
+    {key:'finalised', title:'Finalised', dot:'var(--ok)', statuses:['finalised','tax_invoice','paid','closed']},
+  ];
+  const today=new Date().toISOString().slice(0,10);
+  cols.forEach(c=>{ c.items=all.filter(b=>c.statuses.indexOf(b.status)>=0); });
+  return cols;
+}
+function bookingsBoardHtml(){
+  const cols=bkColumns();
+  return `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;overflow-x:auto">
+    ${cols.map(c=>`<div style="background:var(--panel-2);border-radius:12px;padding:8px;min-height:200px">
+      <div style="display:flex;align-items:center;gap:7px;padding:7px 9px 10px">
+        <span style="width:6px;height:6px;border-radius:50%;background:${c.dot}"></span>
+        <span class="idcell" style="font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--ink-3)">${c.title.toUpperCase()}</span>
+        <span class="mono" style="margin-left:auto;font-size:10px;font-weight:700;color:var(--ink-3);background:#fff;padding:1px 7px;border-radius:999px">${c.items.length}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${c.items.slice(0,25).map(b=>{const overdue=['dispatched','open'].indexOf(b.status)>=0 && b.end_date && b.end_date<new Date().toISOString().slice(0,10);
+          return `<div class="clickable" onclick="openBooking('${b.id}')" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;border-left:3px solid ${overdue?'var(--bad)':c.dot};box-shadow:var(--sh)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+            <span class="idcell" style="font-size:10.5px;font-weight:600;color:var(--brand-ink)">${b.booking_number||b.id.slice(0,8)}</span>
+            <span class="mono" style="font-size:11px;font-weight:600">${inr(b.total_estimated)}</span>
+          </div>
+          <div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${clientName(b.client_id)}</div>
+          <div class="muted" style="font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtDate(b.start_date)}–${fmtDate(b.end_date)}</div>
+          ${overdue?`<div style="margin-top:8px"><span class="chip bad plain" style="font-size:9px">Overdue</span></div>`:''}
+        </div>`;}).join("")||`<div class="muted" style="font-size:11.5px;padding:10px;text-align:center">Empty</div>`}
+        ${c.items.length>25?`<div class="muted" style="font-size:10.5px;text-align:center;padding:6px">+${c.items.length-25} more — switch to List</div>`:''}
+      </div>
+    </div>`).join("")}
+  </div>`;
+}
 VIEWS.bookings=()=>{
   const c=bkStatusCounts();
   return `<div class="head"><div><h1 class="h1">Bookings</h1><p class="sub">${bookingsFiltered().length} shown of ${CACHE.bookings.length} total</p></div>
   <div style="display:flex;gap:10px;align-items:center">
-    <input class="input" style="max-width:200px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">
+    ${BK_VIEW_MODE==='list'?`<input class="input" style="max-width:200px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">`:''}
+    <div style="display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden">
+      <button style="font-family:var(--font);font-weight:600;font-size:12.5px;color:${BK_VIEW_MODE==='board'?'#fff':'var(--ink-2)'};background:${BK_VIEW_MODE==='board'?'var(--ink)':'#fff'};border:none;padding:8px 14px;cursor:pointer" onclick="BK_VIEW_MODE='board';render()">Board</button>
+      <button style="font-family:var(--font);font-weight:600;font-size:12.5px;color:${BK_VIEW_MODE==='list'?'#fff':'var(--ink-2)'};background:${BK_VIEW_MODE==='list'?'var(--ink)':'#fff'};border:none;padding:8px 14px;cursor:pointer" onclick="BK_VIEW_MODE='list';render()">List</button>
+    </div>
     <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     ${bkFilterPill('All',c.all,!BK_STATUS&&!BK_OVERDUE,"bkPillFilter(null)")}
@@ -1899,7 +1984,7 @@ VIEWS.bookings=()=>{
     ${bkFilterPill('Finalised',c.finalised,BK_STATUS&&BK_STATUS.length>1,"bkPillFilter(['finalised','tax_invoice','paid','closed'])")}
     ${c.overdue>0?bkFilterPill('Overdue',c.overdue,BK_OVERDUE,"bkPillFilter(null,true)",true):''}
   </div>
-  <div class="card" id="bkList">${bookingsListHtml()}</div>`;
+  ${BK_VIEW_MODE==='board'?bookingsBoardHtml():`<div class="card" id="bkList">${bookingsListHtml()}</div>`}`;
 };
 
 let INV_FILTER='', IVQ='', INV_TYPE='', INV_OWNER='', INV_COND='', INV_PAGE=1;
@@ -2053,8 +2138,15 @@ function clientsFiltered(){
 VIEWS.clients=()=>{
   const filtered=clientsFiltered();
   const anyFilter=CL_FILTER||CL_TIER;
-  return `<div class="head"><div><h1 class="h1">Clients</h1><p class="sub">${filtered.length} shown${anyFilter?' (filtered)':''} of ${CACHE.clients.length} total</p></div>
+  const all=CACHE.clients, cBlack=all.filter(c=>truthy(c.is_blacklisted)).length, cWatch=all.filter(c=>truthy(c.is_watchlisted)&&!truthy(c.is_blacklisted)).length, cVip=all.filter(c=>c.tier==='vip').length;
+  return `<div class="head"><div><h1 class="h1">Clients</h1><p class="sub">${filtered.length} shown${anyFilter?' (filtered)':''} of ${all.length} total</p></div>
     <button class="btn pri" onclick="clientFormModal()">+ Add client</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    ${bkFilterPill('All',all.length,!CL_FILTER&&!CL_TIER,"CL_FILTER='';CL_TIER='';render()")}
+    ${cVip>0?bkFilterPill('VIP',cVip,CL_TIER==='vip',"clFilter('tier','vip')"):''}
+    ${cWatch>0?bkFilterPill('Watchlisted',cWatch,CL_FILTER==='watchlist',"clFilter('level','watchlist')",true):''}
+    ${cBlack>0?bkFilterPill('Blacklisted',cBlack,CL_FILTER==='blacklist',"clFilter('level','blacklist')",true):''}
+  </div>
   <div class="card pad" style="margin-bottom:14px">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <input class="input" style="max-width:220px" placeholder="Search clients…" value="${CL_Q.replace(/"/g,'&quot;')}" oninput="CL_Q=this.value;render()">
@@ -2064,9 +2156,9 @@ VIEWS.clients=()=>{
     </div>
   </div>
   <div class="card">${filtered.length?`<table class="tbl"><thead><tr><th>Client</th><th>Tier</th><th>Trust</th><th>Phone</th><th>Flags</th></tr></thead><tbody>
-    ${filtered.map(c=>`<tr class="clickable" onclick="openClient360('${c.id}')"><td><b>${esc(c.name)}</b>${c.company?'<div class="muted" style="font-size:11.5px">'+esc(c.company)+'</div>':''}</td>
+    ${filtered.map(c=>`<tr class="clickable${truthy(c.is_blacklisted)?' exception':''}" onclick="openClient360('${c.id}')"><td><b>${esc(c.name)}</b>${c.company?'<div class="muted" style="font-size:11.5px">'+esc(c.company)+'</div>':''}</td>
       <td>${tier(c.tier)}</td><td><span class="mono">${c.trust_score||0}</span> <span class="muted">· ${c.trust_level||'new'}</span></td>
-      <td class="mono" style="font-size:12px">${esc(c.phone_primary)||'—'}</td>
+      <td class="idcell">${esc(c.phone_primary)||'—'}</td>
       <td>${truthy(c.is_blacklisted)?'<span class="chip bad">blacklist</span>':truthy(c.is_watchlisted)?'<span class="chip warn">watchlist</span>':'<span class="muted">—</span>'}</td></tr>`).join("")}
     </tbody></table>`:'<div class="empty">No clients match these filters.</div>'}</div>`;
 };
@@ -2080,24 +2172,24 @@ async function openClient360(id){
 VIEWS.client360=()=> C360?client360Html(C360):loading('Client');
 function client360Html(d){
   const c=d.client, f=d.financials;
-  const due=v=>`<span class="mono"${v>0?' style="color:#dc2626"':''}>${inr(v)}</span>`;
+  const due=v=>`<span class="mono"${v>0?' style="color:var(--bad)"':''}>${inr(v)}</span>`;
   return `<div class="head"><div style="display:flex;align-items:center;gap:12px">
     <button class="btn sm" onclick="go('clients')">← Clients</button>
     <div><h1 class="h1" style="margin:0">${esc(c.name)} ${tier(c.tier)}</h1>
     <p class="sub" style="margin:2px 0 0">${c.company?esc(c.company)+' · ':''}${f.booking_count} booking${f.booking_count===1?'':'s'}</p></div></div>
     <button class="btn" onclick="clientFormModal('${c.id}')">Edit</button></div>
-  ${truthy(c.is_blacklisted)?`<div class="card pad" style="border-left:3px solid #dc2626;margin-bottom:14px;font-size:13px;background:var(--bad-wash)"><b>Blacklisted</b>${c.flag_reason?' — '+esc(c.flag_reason):''}</div>`:''}
+  ${truthy(c.is_blacklisted)?`<div class="card pad" style="border-left:3px solid var(--bad);margin-bottom:14px;font-size:13px;background:var(--bad-wash)"><b>Blacklisted</b>${c.flag_reason?' — '+esc(c.flag_reason):''}</div>`:''}
   <div class="bkgrid">
     <div>
       <div class="bkcard" style="margin-bottom:14px">
         <div class="bkhead">Rental history <span class="muted" style="text-transform:none;font-weight:500">${d.history.length}</span></div>
         ${d.history.length?`<table class="tbl" style="margin:0 -16px -14px;width:calc(100% + 32px)"><thead><tr><th style="padding-left:16px">Booking</th><th>Dates</th><th>Items</th><th>Status</th><th>Total</th><th>Paid</th><th style="padding-right:16px">Due</th></tr></thead><tbody>
-        ${d.history.map(h=>`<tr><td class="mono" style="padding-left:16px"><span class="hc-trigger" data-hb="${h.booking_id}">${h.booking_number||'—'}</span></td>
+        ${d.history.map(h=>`<tr><td class="idcell" style="padding-left:16px"><span class="hc-trigger" data-hb="${h.booking_id}">${h.booking_number||'—'}</span></td>
           <td class="muted" style="font-size:12px">${fmtDate(h.start_date)}–${fmtDate(h.end_date)}</td>
           <td style="font-size:12px">${esc(h.items.join(', '))||'—'}</td>
           <td>${stageChip(h.status)}</td>
-          ${h.consolidated?`<td class="mono">${inr(h.total)}</td><td colspan="2" class="muted" style="font-size:11.5px;padding-right:16px">Billed together with other bookings — see Invoices</td>`
-            :`<td class="mono">${inr(h.total)}</td><td class="mono">${inr(h.paid)}</td><td style="padding-right:16px">${paymentChip(h.total,h.paid)} ${h.outstanding>0?due(h.outstanding):''}</td>`}</tr>`).join('')}
+          ${h.consolidated?`<td class="moneycell">${inr(h.total)}</td><td colspan="2" class="muted" style="font-size:11.5px;padding-right:16px">Billed together with other bookings — see Invoices</td>`
+            :`<td class="moneycell">${inr(h.total)}</td><td class="moneycell">${inr(h.paid)}</td><td style="padding-right:16px">${paymentChip(h.total,h.paid)} ${h.outstanding>0?due(h.outstanding):''}</td>`}</tr>`).join('')}
         </tbody></table>`:'<p class="muted" style="font-size:12.5px;margin:8px 0 0">No bookings yet.</p>'}
       </div>
 
@@ -2109,14 +2201,14 @@ function client360Html(d){
         d.consolidated_invoices.forEach(ci=>ci.booking_numbers.forEach(bn=>{ if(seen[bn]) overlapIds.add(seen[bn]).add(ci.invoice_id); seen[bn]=ci.invoice_id; }));
         return `<div class="bkcard" style="margin-bottom:14px">
         <div class="bkhead">Consolidated invoices <span class="muted" style="text-transform:none;font-weight:500">${d.consolidated_invoices.length}</span></div>
-        ${overlapIds.size?`<div style="background:var(--bad-wash);border:1px solid #f1c4c9;border-left:3px solid var(--bad);border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12.5px;color:var(--ink-2)">⚠ Some of these cover the same booking — likely a duplicate. Check before assuming both are owed.</div>`:''}
+        ${overlapIds.size?`<div style="background:var(--bad-wash);border:1px solid var(--bad-border);border-left:3px solid var(--bad);border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12.5px;color:var(--ink-2)">⚠ Some of these cover the same booking — likely a duplicate. Check before assuming both are owed.</div>`:''}
         <table class="tbl" style="margin:0 -16px -14px;width:calc(100% + 32px)"><thead><tr><th style="padding-left:16px">Period</th><th>Bookings covered</th><th>Status</th><th>Net payable</th><th style="padding-right:16px">Paid</th></tr></thead><tbody>
         ${d.consolidated_invoices.map(ci=>`<tr class="clickable" onclick="openInvoice('${ci.invoice_id}')" style="${overlapIds.has(ci.invoice_id)?'background:var(--bad-wash)':''}">
           <td style="padding-left:16px;font-size:12px" class="muted">${fmtDate(ci.period_start)}–${fmtDate(ci.period_end)}</td>
-          <td class="mono" style="font-size:11.5px">${ci.booking_numbers.join(', ')||'—'}</td>
+          <td class="idcell" style="font-size:11.5px">${ci.booking_numbers.join(', ')||'—'}</td>
           <td>${stageChip(ci.status)}</td>
-          <td class="mono">${inr(ci.net_payable)}</td>
-          <td class="mono" style="padding-right:16px">${inr(ci.paid_amount)}</td></tr>`).join("")}
+          <td class="moneycell">${inr(ci.net_payable)}</td>
+          <td class="moneycell" style="padding-right:16px">${inr(ci.paid_amount)}</td></tr>`).join("")}
         </tbody></table>
       </div>`;})():''}
 
@@ -2126,8 +2218,8 @@ function client360Html(d){
         ${d.damages.map(x=>`<tr><td class="muted" style="font-size:12px;padding-left:16px">${fmtDate(x.date)}</td><td><span class="hc-trigger" data-ha="${x.asset_id}">${esc(x.asset)}</span></td>
           <td class="muted" style="font-size:12px">${x.category||'—'}</td>
           <td>${(x.photo_urls&&x.photo_urls[0])?`<a href="${x.photo_urls[0]}" target="_blank" rel="noopener"><img src="${x.photo_urls[0]}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;border:1px solid var(--line)"></a>`:'<span class="muted">—</span>'}</td>
-          <td class="mono">${inr(x.repair_cost)}</td>
-          <td class="mono">${inr(x.recovered)}</td><td style="padding-right:16px">${due(x.borne)}</td></tr>`).join('')}
+          <td class="moneycell">${inr(x.repair_cost)}</td>
+          <td class="moneycell">${inr(x.recovered)}</td><td style="padding-right:16px">${due(x.borne)}</td></tr>`).join('')}
         </tbody></table>`:'<p class="muted" style="font-size:12.5px;margin:8px 0 0">No damage events — clean record.</p>'}
       </div>
 
@@ -2207,9 +2299,9 @@ VIEWS.scan=()=>{
   if(DISPATCH) return dispatchUI();
   const ready=CACHE.bookings.filter(b=>b.status==='confirmed');
   return `<div class="head"><div><h1 class="h1">Scan & dispatch</h1><p class="sub">${ready.length} booking${ready.length===1?'':'s'} ready to dispatch</p></div></div>
-  <div class="card">${ready.length?`<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Dates</th><th>Estimate</th><th></th></tr></thead><tbody>
-    ${ready.map(b=>`<tr><td class="mono"><span class="hc-trigger" data-hb="${b.id}">${b.booking_number||b.id.slice(0,8)}</span></td><td><span class="hc-trigger" data-hc="${b.client_id}">${clientName(b.client_id)}</span> ${tier(b.tier_at_booking)}</td>
-      <td class="muted">${fmtDate(b.start_date)}–${fmtDate(b.end_date)}</td><td class="mono">${inr(b.total_estimated)}</td>
+  <div class="card">${ready.length?`<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Dates</th><th style="text-align:right">Estimate</th><th></th></tr></thead><tbody>
+    ${ready.map(b=>`<tr><td class="idcell"><span class="hc-trigger" data-hb="${b.id}">${b.booking_number||b.id.slice(0,8)}</span></td><td><span class="hc-trigger" data-hc="${b.client_id}">${clientName(b.client_id)}</span> ${tier(b.tier_at_booking)}</td>
+      <td class="muted">${fmtDate(b.start_date)}–${fmtDate(b.end_date)}</td><td class="moneycell">${inr(b.total_estimated)}</td>
       <td style="text-align:right"><button class="btn pri sm" onclick="startDispatch('${b.id}')">Dispatch</button></td></tr>`).join("")}
     </tbody></table>`:'<div class="empty">No confirmed bookings waiting. Confirm a quote first, then dispatch it here.</div>'}</div>`;
 };
@@ -2230,11 +2322,13 @@ function dispatchUI(){
       <button class="btn pri block" style="margin-top:8px" onclick="openQrScanner(function(t){scanQr(t);var i=document.getElementById('qrIn');if(i)i.focus();},'Scan item to dispatch')">${ICON_CAMERA}Use camera</button>
     </div>
     <div class="card">
-      <div style="padding:13px 14px;border-bottom:1px solid var(--line)"><b style="font-family:var(--disp)">Checklist</b>
-        <div class="muted" style="font-size:12px;margin-top:2px">${got} of ${total} scanned</div></div>
+      <div style="padding:13px 14px;border-bottom:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-family:var(--disp)">Manifest</b><span class="mono" style="font-size:12.5px;font-weight:700">${got} / ${total} scanned</span></div>
+        <div style="height:5px;border-radius:3px;background:var(--panel-2);overflow:hidden;margin-top:8px"><div style="height:100%;width:${total?Math.round(got/total*100):0}%;background:${complete?'var(--ok)':'var(--brand)'}"></div></div>
+      </div>
       ${d.items.map(it=>{const done=!!d.scanned[it.item_id];
         return `<div class="slot ${done?'done':''}"><div class="box">${done?'✓':''}</div>
-          <div><div style="font-weight:550;font-size:13px">${esc(it.name)}</div><div class="mono muted" style="font-size:11px">${it.qr_code||'no QR'}</div></div>
+          <div><div style="font-weight:550;font-size:13px">${esc(it.name)}</div><div class="idcell muted" style="font-size:11px">${it.qr_code||'no QR'}</div></div>
           ${done?'<span class="qty">in</span>':`<button class="btn sm" style="margin-left:auto" data-qr="${esc(it.qr_code)}" onclick="scanQr(this.dataset.qr)">Simulate</button>`}</div>`;}).join("")}
       <div style="padding:13px 14px">
         ${!d.otp_sent
@@ -2287,7 +2381,7 @@ VIEWS.returns=()=>{
   const out=CACHE.bookings.filter(b=>['dispatched','open'].indexOf(b.status)>=0);
   return `<div class="head"><div><h1 class="h1">Returns</h1><p class="sub">${out.length} booking${out.length===1?'':'s'} out · partial returns supported</p></div></div>
   <div class="card">${out.length?`<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Stage</th><th>Dates</th><th></th></tr></thead><tbody>
-    ${out.map(b=>`<tr><td class="mono"><span class="hc-trigger" data-hb="${b.id}">${b.booking_number||b.id.slice(0,8)}</span></td><td><span class="hc-trigger" data-hc="${b.client_id}">${clientName(b.client_id)}</span> ${tier(b.tier_at_booking)}</td>
+    ${out.map(b=>`<tr><td class="idcell"><span class="hc-trigger" data-hb="${b.id}">${b.booking_number||b.id.slice(0,8)}</span></td><td><span class="hc-trigger" data-hc="${b.client_id}">${clientName(b.client_id)}</span> ${tier(b.tier_at_booking)}</td>
       <td>${stageChip(b.status)}</td><td class="muted">${fmtDateTime(b.start_date,b.start_time)}–${fmtDateTime(b.end_date,b.end_time)}</td>
       <td style="text-align:right"><button class="btn pri sm" onclick="startReturn('${b.id}')">Receive returns</button></td></tr>`).join("")}
     </tbody></table>`:'<div class="empty">Nothing out right now. Dispatch a booking first.</div>'}</div>`;
@@ -2480,7 +2574,7 @@ function invoiceDocHtml(v,biz){
   if(v.type==='consolidated'){
     linesHtml=lines.map(g=>`<tr><td colspan="2"><b class="mono" style="font-size:11px">${esc(g.booking)}</b>${(g.lines||[]).filter(l=>l.amount>0).map(l=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-top:3px"><span>${esc(l.name)} · ${l.days}d</span><span class="mono">${inr(l.amount)}</span></div>`).join("")}</td></tr>`).join("");
   } else {
-    linesHtml=lines.map(l=>`<tr><td>${esc(l.name)}</td><td class="mono">${l.rate?inr(l.rate)+' × '+l.days+'d':'—'}</td><td class="mono">${inr(l.amount)}</td></tr>`).join("")
+    linesHtml=lines.map(l=>`<tr><td>${esc(l.name)}</td><td class="mono">${l.rate?inr(l.rate)+' × '+l.days+'d':'—'}</td><td class="moneycell">${inr(l.amount)}</td></tr>`).join("")
       ||'<tr><td colspan="3">No chargeable lines.</td></tr>';
   }
   return `<div class="doc-letterhead">
@@ -2559,8 +2653,8 @@ function invoiceDetailHtml(v){
             :taxRow('IGST '+gstPct+'%', inr(v.gst), null, `Cross-state supply (client: ${esc(client.state||'unspecified')}) is taxed as IGST.`)}
           ${taxRow('Invoice total', inr(v.total))}
           ${Number(v.tds_amount)?taxRow('TDS'+((v.subtotal-v.discount)>0?' '+Math.round(v.tds_amount/(v.subtotal-v.discount)*100)+'%':''), '− '+inr(v.tds_amount), 'var(--bad)', 'Deducted at source since the client has a GST number on file.'):''}
-          <div style="background:#14161d;border-radius:12px;padding:14px 16px;margin-top:12px">
-            <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b90a3">Net payable</div>
+          <div style="background:var(--dark-hero);border-radius:12px;padding:14px 16px;margin-top:12px">
+            <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Net payable</div>
             <div class="mono" style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">${inr(v.net_payable)}</div>
           </div>
         </div>
@@ -2704,7 +2798,7 @@ VIEWS.trust=()=>{
       <div style="display:flex;gap:8px"><select class="input" style="max-width:140px" onchange="TR_FLAG=this.value;render()"><option value="">All flags</option><option value="watchlist" ${TR_FLAG==='watchlist'?'selected':''}>Watchlisted</option><option value="blacklist" ${TR_FLAG==='blacklist'?'selected':''}>Blacklisted</option></select>
       <input class="input" style="max-width:200px" placeholder="Search…" value="${TR_Q.replace(/"/g,'&quot;')}" oninput="TR_Q=this.value;render()"></div></div>
       <table class="tbl"><thead><tr><th>Client</th><th>Score</th><th>Level</th><th>Flags</th>${admin?'<th></th>':''}</tr></thead><tbody>
-      ${clients.length?clients.map(c=>`<tr><td><span class="hc-trigger" data-hc="${c.id}"><b>${esc(c.name)}</b></span></td><td class="mono">${c.trust_score||0}</td><td>${c.trust_level||'new'}</td>
+      ${clients.length?clients.map(c=>`<tr${truthy(c.is_blacklisted)?' class="exception"':''}><td><span class="hc-trigger" data-hc="${c.id}"><b>${esc(c.name)}</b></span></td><td class="mono">${c.trust_score||0}</td><td>${c.trust_level||'new'}</td>
         <td>${truthy(c.is_blacklisted)?'<span class="chip bad">blacklist</span>':truthy(c.is_watchlisted)?'<span class="chip warn">watchlist</span>':'<span class="muted">—</span>'}</td>
         ${admin?`<td style="text-align:right;white-space:nowrap">
           <button class="btn sm" onclick="trustOverrideModal('${c.id}','${(c.name||'').replace(/'/g,'')}')">Adjust</button>
@@ -2760,10 +2854,10 @@ VIEWS.deposits=()=>{
       <option value="">All statuses</option>${Object.keys(DEP_STATUS).map(k=>`<option value="${k}" ${DEP_STATUS_F===k?'selected':''}>${DEP_STATUS[k][1]}</option>`).join("")}</select>
     ${DEP_STATUS_F?`<button class="btn sm" onclick="DEP_STATUS_F='';render()">Clear</button>`:''}
   </div>`:''}
-  <div class="card" style="margin-top:12px">${filtered.length?`<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Agreed</th><th>Held</th><th>Status</th></tr></thead><tbody>
+  <div class="card" style="margin-top:12px">${filtered.length?`<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th style="text-align:right">Agreed</th><th style="text-align:right">Held</th><th>Status</th></tr></thead><tbody>
     ${filtered.map(d=>{const m=DEP_STATUS[d.status]||["pend",d.status];return `<tr class="clickable" onclick="openDeposit('${d.booking_id}')">
-      <td class="mono"><span class="hc-trigger" data-hb="${d.booking_id}">${d.booking_number||d.booking_id.slice(0,8)}</span></td><td><span class="hc-trigger" data-hc="${d.client_id}">${clientName(d.client_id)}</span></td>
-      <td class="mono">${inr(d.agreed)}</td><td class="mono">${inr(d.held)}</td><td><span class="chip ${m[0]}">${m[1]}</span></td></tr>`;}).join("")}
+      <td class="idcell"><span class="hc-trigger" data-hb="${d.booking_id}">${d.booking_number||d.booking_id.slice(0,8)}</span></td><td><span class="hc-trigger" data-hc="${d.client_id}">${clientName(d.client_id)}</span></td>
+      <td class="moneycell">${inr(d.agreed)}</td><td class="moneycell">${inr(d.held)}</td><td><span class="chip ${m[0]}">${m[1]}</span></td></tr>`;}).join("")}
     </tbody></table>`:dep.length?'<div class="empty">No deposits match these filters.</div>':'<div class="empty">No deposits yet. Collect one from a booking via Manage deposit.</div>'}</div>`;
 };
 let CUR_DEPOSIT=null;
@@ -2776,7 +2870,7 @@ VIEWS.depositdetail=()=> CUR_DEPOSIT?depositDetailHtml(CUR_DEPOSIT):loading('Dep
 function depositDetailHtml(s){
   const evLbl={deposit:["brand","Collected"],deposit_refund:["ok","Refunded"],deposit_forfeit:["bad","Forfeited"]};
   return `<div class="head"><div><button class="btn sm" onclick="go('deposits')" style="margin-bottom:8px">← Billing</button>
-    <div class="mono muted" style="font-size:12px"><span class="hc-trigger" data-hb="${s.booking_id}">${s.booking_number||s.booking_id.slice(0,8)}</span></div>
+    <div class="idcell muted" style="font-size:12px"><span class="hc-trigger" data-hb="${s.booking_id}">${s.booking_number||s.booking_id.slice(0,8)}</span></div>
     <h1 class="h1" style="margin-top:4px"><span class="hc-trigger" data-hc="${s.client_id}">${clientName(s.client_id)}</span> · deposit</h1></div></div>
   <div class="detailpage narrow">
     <div class="split" style="margin-bottom:14px">
@@ -2784,7 +2878,7 @@ function depositDetailHtml(s){
       <div class="fact"><div class="k">Held now</div><div class="v mono" style="color:${s.held>0?'var(--brand-ink)':''}">${inr(s.held)}</div></div>
       <div class="fact"><div class="k">Refunded</div><div class="v mono">${inr(s.refunded)}</div></div>
       <div class="fact"><div class="k">Forfeited</div><div class="v mono">${inr(s.forfeited)}</div></div></div>
-    ${s.damage_outstanding>0?`<div class="card pad" style="background:var(--bad-wash);border-color:#f1c4c9;margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b style="font-size:13px;color:#9b232e">Damage on this booking</b><div class="muted" style="font-size:12px">${inr(s.damage_total)} logged · ${inr(s.damage_outstanding)} not recovered</div></div>${s.held>0?`<button class="btn sm" onclick="depositAction('forfeit','${s.booking_id}',${Math.min(s.held,s.damage_outstanding)},'damage')">Forfeit to cover</button>`:''}</div></div>`:''}
+    ${s.damage_outstanding>0?`<div class="card pad" style="background:var(--bad-wash);border-color:var(--bad-border);margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b style="font-size:13px;color:var(--bad-ink)">Damage on this booking</b><div class="muted" style="font-size:12px">${inr(s.damage_total)} logged · ${inr(s.damage_outstanding)} not recovered</div></div>${s.held>0?`<button class="btn sm" onclick="depositAction('forfeit','${s.booking_id}',${Math.min(s.held,s.damage_outstanding)},'damage')">Forfeit to cover</button>`:''}</div></div>`:''}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <button class="btn" onclick="depositAction('collect','${s.booking_id}',${s.agreed>s.collected?s.agreed-s.collected:0},'')">Collect</button>
       ${s.held>0?`<button class="btn" onclick="depositAction('refund','${s.booking_id}',${s.held},'')">Refund</button>`:''}
@@ -2863,7 +2957,7 @@ VIEWS.repairs=()=>{
       <td style="font-size:12.5px">${esc(t.client_name)}</td>
       <td><span class="chip ${s[0]}">${s[1]}</span></td>
       <td style="font-size:12.5px">${esc(t.assigned_to)||'<span class="muted">Unassigned</span>'}</td>
-      <td class="mono">${inr(t.estimated_cost)}</td>
+      <td class="moneycell">${inr(t.estimated_cost)}</td>
       <td style="text-align:right;white-space:nowrap">${t.status!=='closed'?`<button class="btn sm" onclick="repairTicketModal('${t.id}')">Manage</button>`:`<span class="muted" style="font-size:11px">${fmtDate(t.closed_at)}${t.closed_by?' · '+esc(t.closed_by):''}</span>`}</td>
       </tr>`;}).join("")}
     </tbody></table>`:emptyState(EMPTY_ICONS.list, REPAIR_STATUS_F?'No tickets with this status':'No repairs open',
@@ -2918,8 +3012,8 @@ VIEWS.maintenance=()=>{
     <div class="kpi" onclick="MAINT_FILTER='healthy';render()" title="Under the service threshold, or close enough to flag as coming due soon."><div class="lbl">Healthy / soon</div><div class="val">${healthy}</div></div></div>
   <div style="margin-top:14px"><input class="input" style="max-width:260px" placeholder="Search asset name or QR…" value="${MNT_Q.replace(/"/g,'&quot;')}" oninput="MNT_Q=this.value;render()"></div>
   <div class="card" style="margin-top:12px"><table class="tbl"><thead><tr><th>Asset</th><th>Rentals since</th><th>Last service</th><th>Condition</th><th>Status</th></tr></thead><tbody>
-    ${m.length?m.map(x=>{const c=MAINT_ST[x.status]||["pend",x.status];return `<tr class="clickable" onclick="openAsset('${x.asset_id}')">
-      <td><b>${esc(x.name)}</b> <span class="mono muted" style="font-size:11px">${x.qr_code||''}</span></td>
+    ${m.length?m.map(x=>{const c=MAINT_ST[x.status]||["pend",x.status];return `<tr class="clickable${x.status==='overdue'?' exception':''}" onclick="openAsset('${x.asset_id}')">
+      <td><b>${esc(x.name)}</b> <span class="idcell muted" style="font-size:11px">${x.qr_code||''}</span></td>
       <td class="mono">${x.rentals_since}/${MAINT_RENTAL}</td><td class="muted">${x.last_maintenance_at?fmtDate(x.last_maintenance_at):'never'}</td>
       <td>${x.condition}</td><td><span class="chip ${c[0]}">${c[1]}</span><div class="muted" style="font-size:11px">${x.reason}</div></td></tr>`;}).join(""):`<tr><td colspan="5"><div class="empty">No assets match.</div></td></tr>`}
   </tbody></table></div>`;
@@ -2997,7 +3091,7 @@ async function astAddNote(assetId){
 }
 function assetPnlBlock(p){
   const roi=p.roi_pct===null?null:(p.roi_pct>=0?'+':'')+p.roi_pct+'%';
-  const roiColor=p.roi_pct>=0?'#5fe08a':'#ff8a94';
+  const roiColor=p.roi_pct>=0?'var(--ok-bright)':'var(--bad-bright)';
   const hasAcquisition = p.purchase_price>0 || p.age_days!==null;
   const totalCost = p.maintenance_cost + p.repair_absorbed;
   const gross = p.lifetime_revenue>0?p.lifetime_revenue:0;
@@ -3031,16 +3125,16 @@ function assetPnlBlock(p){
   return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 10px">Lifetime P&amp;L</p>
     ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below.</div>`:''}
 
-    <div style="background:#14161d;border-radius:14px;padding:16px 18px;margin-bottom:18px;display:grid;grid-template-columns:${roi!==null?'1fr auto':'1fr'};gap:16px;align-items:center">
+    <div style="background:var(--dark-hero);border-radius:14px;padding:16px 18px;margin-bottom:18px;display:grid;grid-template-columns:${roi!==null?'1fr auto':'1fr'};gap:16px;align-items:center">
       <div>
-        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b90a3">Net contribution · lifetime</div>
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Net contribution · lifetime</div>
         <div class="mono" style="font-size:30px;font-weight:700;color:#fff;margin-top:4px;line-height:1.1">${inr(p.net_contribution)}</div>
-        <div style="font-size:11px;color:#8b90a3;margin-top:5px">Revenue after maintenance &amp; repair costs${hasAcquisition?', vs. purchase price':''}.</div>
+        <div style="font-size:11px;color:var(--dark-muted);margin-top:5px">Revenue after maintenance &amp; repair costs${hasAcquisition?', vs. purchase price':''}.</div>
       </div>
       ${roi!==null?`<div style="text-align:right;padding-left:16px;border-left:1px solid #2a2d3a">
-        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b90a3">ROI</div>
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">ROI</div>
         <div class="mono" style="font-size:22px;font-weight:700;color:${roiColor};margin-top:4px">${roi}</div>
-        <div style="font-size:10.5px;color:#8b90a3;margin-top:3px">on ${inr(p.purchase_price)} basis</div>
+        <div style="font-size:10.5px;color:var(--dark-muted);margin-top:3px">on ${inr(p.purchase_price)} basis</div>
       </div>`:''}
     </div>
 
@@ -3250,7 +3344,7 @@ function submitPromptStyled(){
 function confirmWarn(title, message, onConfirm, confirmLabel){
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px;color:var(--bad)">⚠ ${esc(title)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
-    <div style="background:var(--bad-wash);border:1px solid #f1c4c9;border-left:3px solid var(--bad);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;line-height:1.5;color:var(--ink-2)">${message}</div>
+    <div style="background:var(--bad-wash);border:1px solid var(--bad-border);border-left:3px solid var(--bad);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;line-height:1.5;color:var(--ink-2)">${message}</div>
     <div style="display:flex;gap:8px"><button class="btn" style="flex:1" onclick="closeOverlays()">Cancel</button>
       <button class="btn" style="flex:1;background:var(--bad);border-color:var(--bad);color:#fff" id="cwBtn">${confirmLabel||'Continue anyway'}</button></div>
   </div>`;
@@ -3269,8 +3363,9 @@ async function submitClient(clientId,force){
   try{
     const res = clientId ? await api('client_update',Object.assign({client_id:clientId},p)) : await api('client_create',p);
     toast(clientId?'Client updated':'Client added'); await reloadData();
-    if(!clientId && _quoteReturn){ _quoteReturn=false; closeOverlays(); newQuote();
-      setTimeout(()=>{ const sel=$("#qClient"); if(sel && res && res.id){ sel.value=res.id; pick.client=res.id; } },60);
+    if(!clientId && _quoteReturn){ _quoteReturn=false; closeOverlays();
+      if(NB){ NB.client_id=res.id; render(); const sel=$("#nbClient"); if(sel)sel.value=res.id; }
+      else{ openNewBookingWizard(); setTimeout(()=>{ NB.client_id=res.id; render(); },60); }
     } else { closeOverlays(); if(VIEW==='client360'&&clientId){ openClient360(clientId); } else { render(); } }
   }catch(e){
     const m=String(e.message||''), dup=m.match(/^DUPLICATE_CLIENT:([^:]+):(.+)$/);
@@ -3311,10 +3406,10 @@ VIEWS.investors=()=>{
   const inv=CACHE.investors||[];
   return `<div class="head"><div><h1 class="h1">Investors</h1><p class="sub">Revenue share on investor-owned assets</p></div>
   <div style="display:flex;gap:8px">${SESSION.user.role==='admin'?`<button class="btn" onclick="tagAssetsModal()">Tag assets</button><button class="btn pri" onclick="investorModal()">+ Add investor</button>`:''}</div></div>
-  <div class="card">${inv.length?`<table class="tbl"><thead><tr><th>Investor</th><th>Share</th><th>Assets</th><th>Earned</th><th>Outstanding</th></tr></thead><tbody>
-    ${inv.map(i=>`<tr class="clickable" onclick="openInvestor('${i.investor_id}')"><td><b>${esc(i.name)}</b> <span class="muted" style="font-size:11px">${i.period}</span></td>
-      <td class="mono">${i.pct}%</td><td class="mono">${i.asset_count}</td><td class="mono">${inr(i.total_share)}</td>
-      <td class="mono" style="color:${i.outstanding>0?'var(--bad)':''}">${inr(i.outstanding)}</td></tr>`).join("")}
+  <div class="card">${inv.length?`<table class="tbl"><thead><tr><th>Investor</th><th>Share</th><th>Assets</th><th style="text-align:right">Earned</th><th style="text-align:right">Outstanding</th></tr></thead><tbody>
+    ${inv.map(i=>`<tr class="clickable${i.outstanding>0?' exception':''}" onclick="openInvestor('${i.investor_id}')"><td><b>${esc(i.name)}</b> <span class="muted" style="font-size:11px">${i.period}</span></td>
+      <td class="mono">${i.pct}%</td><td class="mono">${i.asset_count}</td><td class="moneycell">${inr(i.total_share)}</td>
+      <td class="moneycell" style="color:${i.outstanding>0?'var(--bad)':''}">${inr(i.outstanding)}</td></tr>`).join("")}
   </tbody></table>`:'<div class="empty">No investors yet.</div>'}</div>`;
 };
 function investorModal(){
@@ -3357,24 +3452,30 @@ function investorDetailHtml(s){
   const admin=SESSION.user.role==='admin';
   return `<div class="head"><div><button class="btn sm" onclick="go('investors')" style="margin-bottom:8px">← People</button>
     <h1 class="h1">${esc(s.name)}</h1><p class="sub">${s.pct}% share · ${s.period} · ${s.asset_count} asset${s.asset_count===1?'':'s'}</p></div></div>
+  <div style="background:var(--dark-hero);border-radius:14px;padding:16px 18px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center">
+    <div>
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Lifetime earned</div>
+      <div class="mono" style="font-size:28px;font-weight:700;color:var(--ok-bright);margin-top:4px">${inr(s.total_share)}</div>
+      <div style="font-size:11px;color:var(--dark-muted);margin-top:5px">${inr(s.total_paid)} paid out.</div>
+    </div>
+    <div style="text-align:right;padding-left:16px;border-left:1px solid #2a2d3a">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Outstanding</div>
+      <div class="mono" style="font-size:22px;font-weight:700;color:${s.outstanding>0?'var(--bad-bright)':'var(--ok-bright)'};margin-top:4px">${inr(s.outstanding)}</div>
+    </div>
+  </div>
   <div class="bkgrid">
     <div>
       <div class="bkcard" style="margin-bottom:14px">
         <div class="bkhead">Statements</div>
-        ${s.statements.length?s.statements.slice().reverse().map(st=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span style="font-size:12.5px">${fmtDate(st.period_start)}–${fmtDate(st.period_end)} <span class="muted">· gross ${inr(st.gross)}</span></span><span class="mono">${inr(st.share)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No statements yet.</p>'}
+        ${s.statements.length?s.statements.slice().reverse().map(st=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span style="font-size:12.5px">${fmtDate(st.period_start)}–${fmtDate(st.period_end)} <span class="muted">· gross ${inr(st.gross)}</span></span><span class="moneycell" style="display:inline-block">${inr(st.share)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No statements yet.</p>'}
       </div>
       ${s.payouts.length?`<div class="bkcard">
         <div class="bkhead">Payouts</div>
-        ${s.payouts.slice().reverse().map(p=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span class="muted" style="font-size:12px">${p.at?fmtDate(p.at):''} ${esc((p.notes||'').replace('payout:',''))}</span><span class="mono">${inr(p.amount)}</span></div>`).join("")}
+        ${s.payouts.slice().reverse().map(p=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span class="muted" style="font-size:12px">${p.at?fmtDate(p.at):''} ${esc((p.notes||'').replace('payout:',''))}</span><span class="moneycell" style="display:inline-block">${inr(p.amount)}</span></div>`).join("")}
       </div>`:''}
     </div>
 
     <div class="bkside">
-      <div class="bkcard" style="text-align:center;padding:18px 16px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px">Outstanding</div>
-        <div class="mono" style="font-size:26px;font-weight:700;color:${s.outstanding>0?'var(--bad)':'var(--ok)'}">${inr(s.outstanding)}</div>
-        <div class="muted" style="font-size:11.5px;margin-top:4px">${inr(s.total_share)} earned · ${inr(s.total_paid)} paid out</div>
-      </div>
       ${admin?`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" onclick="settlementModal('${s.investor_id}','${s.period}')">Generate settlement</button>
         ${s.outstanding>0?`<button class="btn" onclick="payoutModal('${s.investor_id}',${s.outstanding})">Record payout</button>`:''}</div>`:''}
 
@@ -3438,7 +3539,7 @@ function statementDocHtml(investorName, r, biz){
       <div><span>Generated</span><b>${fmtDate(today)}</b></div>
     </div>
     <table class="doc-items"><thead><tr><th>Asset</th><th>Revenue attributed</th></tr></thead><tbody>
-      ${(r.by_asset||[]).length?r.by_asset.map(a=>`<tr><td>${esc(a.name)}</td><td class="mono">${inr(a.amount)}</td></tr>`).join(""):'<tr><td colspan="2">No revenue on tagged assets this period.</td></tr>'}
+      ${(r.by_asset||[]).length?r.by_asset.map(a=>`<tr><td>${esc(a.name)}</td><td class="moneycell">${inr(a.amount)}</td></tr>`).join(""):'<tr><td colspan="2">No revenue on tagged assets this period.</td></tr>'}
     </tbody></table>
     <div class="doc-fin">
       <div><span>Gross revenue</span><b>${inr(r.gross)}</b></div>
@@ -3481,7 +3582,7 @@ function tagAssetsModal(){
   const assets=(CACHE.assets||[]).filter(a=>!truthy(a.retirement_flag));
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Tag assets to investors</b><button class="x" onclick="closeOverlays();reloadData()">✕</button></div>
   <div class="db">
-    ${invs.length?'':'<div class="card pad" style="background:var(--bad-wash);border-color:#f1c4c9;margin-bottom:12px"><p style="font-size:12px;margin:0;color:#9b232e">No investors loaded — your deployed backend may be on an old version. Redeploy a New version.</p></div>'}
+    ${invs.length?'':'<div class="card pad" style="background:var(--bad-wash);border-color:var(--bad-border);margin-bottom:12px"><p style="font-size:12px;margin:0;color:var(--bad-ink)">No investors loaded — your deployed backend may be on an old version. Redeploy a New version.</p></div>'}
     <p class="muted" style="font-size:12px;margin:0 0 12px">Set each unit's owner. Changes save immediately.</p>
     ${assets.length?assets.map(a=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
       <div style="flex:1;min-width:0"><b style="font-size:13px">${esc(a.name)}</b> <span class="mono muted" style="font-size:11px">${a.qr_code||''}</span></div>
@@ -3606,11 +3707,11 @@ VIEWS.couponreport=()=>{
   </div>
   <div class="card">
     ${rows.length?`<table class="tbl"><thead><tr><th>Coupon</th><th>Code</th><th>Status</th><th>Usage</th><th>Total discount</th><th>Tags</th><th>Created</th></tr></thead><tbody>
-    ${rows.map(r=>{const sc=statusChip(r.status); return `<tr><td><b>${esc(r.title)}</b></td>
-      <td class="mono">${esc(r.code)}</td>
+    ${rows.map(r=>{const sc=statusChip(r.status); return `<tr${r.status==='expired'?' class="exception"':''}><td><b>${esc(r.title)}</b></td>
+      <td class="idcell">${esc(r.code)}</td>
       <td><span class="chip ${sc[0]}">${sc[1]}</span></td>
       <td class="mono">${r.usage}${r.use_limit>0?' / '+r.use_limit:''}</td>
-      <td class="mono">${inr(r.total_discount)}</td>
+      <td class="moneycell">${inr(r.total_discount)}</td>
       <td>${r.tags.map(t=>`<span class="chip pend plain" style="font-size:10px">${esc(t)}</span>`).join(' ')||'<span class="muted">—</span>'}</td>
       <td class="muted" style="font-size:12px">${r.created_at?fmtDate(r.created_at):'—'}</td></tr>`;}).join("")}
     </tbody></table>`:'<div class="empty">No coupons match these filters. Set a code on an offer to turn it into a coupon.</div>'}
@@ -3762,13 +3863,16 @@ VIEWS.notifications=()=>{
   const queue=n.outbox.filter(o=>o.status==='queued');
   const sent=n.outbox.filter(o=>o.status!=='queued');
   return `<div class="head"><div><h1 class="h1">Notifications</h1><p class="sub">${nudges.length} nudge${nudges.length===1?'':'s'} to action${NOTIF_KIND_F?' (filtered)':''}${queue.length?` · ${queue.length} awaiting review`:''}</p></div>
-    <div style="display:flex;gap:8px"><select class="input" style="max-width:170px" onchange="NOTIF_KIND_F=this.value;render()"><option value="">All types</option>${Object.keys(kindLbl).map(k=>`<option value="${k}" ${NOTIF_KIND_F===k?'selected':''}>${kindLbl[k][1]}</option>`).join("")}</select>
-    <button class="btn sm" onclick="NOTIFS=null;render()">Refresh</button></div></div>
+    <button class="btn sm" onclick="NOTIFS=null;render()">Refresh</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    ${bkFilterPill('All',n.nudges.length,!NOTIF_KIND_F,"NOTIF_KIND_F='';render()")}
+    ${Object.keys(kindLbl).map(k=>{const c=n.nudges.filter(x=>x.kind===k).length; return c>0?bkFilterPill(kindLbl[k][1],c,NOTIF_KIND_F===k,`NOTIF_KIND_F='${k}';render()`,k==='payment_due'):'';}).join("")}
+  </div>
   <div class="card">${nudges.length?nudges.map(x=>{const k=kindLbl[x.kind]||["pend",x.kind];return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)">
     <span class="chip ${k[0]} plain">${k[1]}</span>
     <div style="flex:1;min-width:0"><b style="font-size:13px">${esc(x.client_name)}</b> <span class="muted" style="font-size:12px">· ${esc(x.label)}</span><div class="muted" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.message)}</div></div>
     ${x.wa?`<a class="btn sm" href="${x.wa}" target="_blank" rel="noopener" data-client-id="${esc(x.client_id)}" data-kind="${esc(x.kind)}" data-msg="${esc(x.message)}" onclick="markNudgeFromEl(this)">WhatsApp</a>`:'<span class="muted" style="font-size:11px">no phone</span>'}
-  </div>`;}).join(""):`<div class="empty">${NOTIF_KIND_F?'No nudges of this type right now.':'Nothing to chase — all clear.'}</div>`}</div>
+  </div>`;}).join(""):emptyState(EMPTY_ICONS.list, NOTIF_KIND_F?'Nothing of this type':'All clear', NOTIF_KIND_F?'':'Nothing to chase right now.')}</div>
   ${queue.length?`<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--warn);margin:18px 0 6px">Review queue · not sent yet</p>
   <div class="card">${queue.map(o=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)">
     <div style="flex:1;min-width:0"><span style="font-size:12px;font-weight:600">${o.type} · ${o.channel}</span><div class="muted" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.message)}</div></div>
@@ -3962,7 +4066,7 @@ VIEWS.settings=()=>{
   <div class="setwrap"><nav class="setnav">${nav}</nav><div class="setbody">${body}</div></div>`;
 };
 const WEBSITE_THEME_SWATCH={
-  blue:{brand:'#2d44c7',ink:'#1d2f96',wash:'#eef1ff',label:'Blue'},
+  blue:{brand:'#2d44c7',ink:'#1d2f96',wash:'var(--brand-wash)',label:'Blue'},
   green:{brand:'#1f7a4d',ink:'#155c3a',wash:'#e7f6ee',label:'Green'},
   amber:{brand:'#c2660a',ink:'#914d08',wash:'#fdf1e2',label:'Amber'},
   rose:{brand:'#c23050',ink:'#8f2138',wash:'#fdeef1',label:'Rose'},
@@ -4770,6 +4874,23 @@ function bookingDetailHtml(b){
         </div>`:''}
 
         <div class="bkcard">
+          <div class="bkhead">Timeline</div>
+          ${(function(){
+            const dispatchedAts=items.map(it=>it.dispatched_at).filter(Boolean).sort();
+            const returnedAts=items.map(it=>it.returned_at).filter(Boolean).sort();
+            const allReturned=items.length>0 && items.every(it=>['returned','returned_with_damage','not_returned_chargeable','not_returned_non_chargeable','missing'].indexOf(it.status)>=0);
+            const tlRow=(label,when,state)=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0">
+              <div style="width:8px;height:8px;border-radius:50%;margin-top:4px;flex:none;background:${state==='done'?'var(--ok)':state==='now'?'var(--brand)':'var(--line-2)'}"></div>
+              <div style="flex:1"><div style="font-size:12.5px;font-weight:${state==='pending'?400:600};color:${state==='pending'?'var(--ink-4)':'var(--ink-2)'}">${label}</div>
+              ${when?`<div class="mono muted" style="font-size:11px;margin-top:1px">${when}</div>`:''}</div></div>`;
+            return tlRow('Created', fmtDate(b.created_at)+' · '+(b.created_at||'').slice(11,16), 'done')
+              + tlRow('Dispatched', dispatchedAts.length?fmtDate(dispatchedAts[0])+' · '+dispatchedAts[0].slice(11,16)+(dispatchedAts.length>1?' (first of '+dispatchedAts.length+')':''):null, dispatchedAts.length?'done':(b.status==='confirmed'?'now':'pending'))
+              + tlRow('Due back', fmtDate(b.end_date)+' · '+(b.end_time||'18:00'), allReturned?'done':(['dispatched','open'].indexOf(b.status)>=0?'now':'pending'))
+              + tlRow('Returned', allReturned&&returnedAts.length?fmtDate(returnedAts[returnedAts.length-1])+' · '+returnedAts[returnedAts.length-1].slice(11,16):null, allReturned?'done':'pending');
+          })()}
+        </div>
+
+        <div class="bkcard">
           <div class="bkhead">Invoice</div>
           ${inv&&inv.id?`<div class="split" style="margin-bottom:10px">
               <div class="fact"><div class="k">Status</div><div class="v" style="font-size:12px">${stageChip(inv.status)}</div></div>
@@ -4966,51 +5087,161 @@ async function submitQuickBooking(){
     await reloadData(); openBooking(r.booking_id);
   }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Book it'; }
 }
-function newQuote(){
-  pick={client:'', assets:[]};
+/* ===================== NEW BOOKING WIZARD ===================== */
+let NB=null;
+function openNewBookingWizard(){
   const today=new Date().toISOString().slice(0,10);
   const end=new Date(Date.now()+86400000).toISOString().slice(0,10);
-  const avail=CACHE.assets.filter(a=>truthy(a.is_available));
+  NB={step:1, client_id:'', start_date:today, end_date:end, start_time:'09:00', end_time:'18:00',
+    cart:[], offer_id:'', coupon_code:'', category:'', avail:null, applied_offer:null};
+  VIEW='newbooking'; renderSide(); render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+function nbExit(){ NB=null; go('bookings'); }
+function nbGoStep(n){ NB.step=n; if(n===2)nbLoadAvailability(); render(); }
+async function nbLoadAvailability(){
+  try{ NB.avail=await api('availability_detailed',{start_date:NB.start_date, end_date:NB.end_date, start_time:NB.start_time, end_time:NB.end_time, category:NB.category});
+    render();
+  }catch(e){ toast(e.message,true); }
+}
+function nbAddItem(assetId){
+  if(NB.cart.indexOf(assetId)<0) NB.cart.push(assetId);
+  render();
+}
+function nbRemoveItem(assetId){ NB.cart=NB.cart.filter(id=>id!==assetId); render(); }
+function nbStepRailHtml(){
+  const labels=['Client & dates','Equipment','Pricing','Review'];
+  return `<div style="display:flex;gap:8px;margin-bottom:18px">
+    ${labels.map((l,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i+1<NB.step?'var(--ok)':i+1===NB.step?'var(--brand)':'var(--line)'}"></div>`).join("")}
+  </div>`;
+}
+function nbCartTotals(){
+  const days=Math.max(1,Math.round((new Date(NB.end_date)-new Date(NB.start_date))/86400000)+1);
+  let subtotal=0;
+  const lines=NB.cart.map(id=>{
+    const a=(NB.avail||[]).find(x=>x.asset_id===id) || (CACHE.assets||[]).find(x=>x.id===id) || {};
+    const rate=Number(a.daily_rate)||0, amt=rate*days;
+    subtotal+=amt;
+    return {name:a.name||id, rate:rate, amount:amt};
+  });
+  return {days, subtotal, lines};
+}
+VIEWS.newbooking=()=>{
+  if(!NB) { openNewBookingWizard(); return loading('New booking'); }
+  const t=nbCartTotals();
+  return `<div class="head"><div>
+    <div class="idcell muted" style="font-size:11px">NEW BOOKING · STEP ${NB.step} OF 4</div>
+    <h1 class="h1" style="margin-top:2px">${['Client & dates','Choose equipment','Pricing & extras','Review & confirm'][NB.step-1]}</h1></div>
+    <button class="btn sm" onclick="nbExit()">✕ Cancel</button></div>
+  ${nbStepRailHtml()}
+  ${NB.step===1?nbStep1Html():NB.step===2?nbStep2Html():NB.step===3?nbStep3Html():nbStep4Html()}`;
+};
+function nbStep1Html(){
+  return `<div class="card pad" style="max-width:520px">
+    <label class="fld"><span>Client</span><select id="nbClient" class="input" onchange="NB.client_id=this.value">
+      <option value="">Select client…</option>${CACHE.clients.map(c=>`<option value="${c.id}" ${NB.client_id===c.id?'selected':''}>${esc(c.name)}${truthy(c.is_blacklisted)?' (blacklisted)':''}</option>`).join("")}</select></label>
+    <button class="btn sm" style="margin:-6px 0 12px" onclick="addClientFromQuote()">+ New client</button>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Start</span><input id="nbStart" class="input" type="date" value="${NB.start_date}" onchange="NB.start_date=this.value"></label>
+      <label class="fld" style="flex:1"><span>End</span><input id="nbEnd" class="input" type="date" value="${NB.end_date}" onchange="NB.end_date=this.value"></label></div>
+    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Pickup time</span><input id="nbStartTime" class="input" type="time" value="${NB.start_time}" onchange="NB.start_time=this.value"></label>
+      <label class="fld" style="flex:1"><span>Return time</span><input id="nbEndTime" class="input" type="time" value="${NB.end_time}" onchange="NB.end_time=this.value"></label></div>
+    <button class="btn pri block" style="margin-top:8px" onclick="if(!NB.client_id){toast('Pick a client',true);return;} if(!NB.start_date||!NB.end_date){toast('Pick dates',true);return;} nbGoStep(2);">Continue to equipment →</button>
+  </div>`;
+}
+function nbStep2Html(){
+  if(!NB.avail) { nbLoadAvailability(); return loading('Checking availability'); }
+  const cats=Array.from(new Set(NB.avail.map(a=>a.category))).sort();
+  const list=NB.category?NB.avail.filter(a=>a.category===NB.category):NB.avail;
+  const t=nbCartTotals();
+  return `<div class="dispgrid">
+    <div class="card" style="overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--brand-wash);border-radius:8px">
+          ${ICON_CLIP}<span class="idcell" style="font-weight:700;color:var(--brand-ink)">${fmtDate(NB.start_date)} → ${fmtDate(NB.end_date)} · ${t.days}d</span>
+        </div>
+        <span class="muted" style="font-size:11.5px">Availability filtered to these dates</span>
+        <select class="input" style="max-width:160px;margin-left:auto" onchange="NB.category=this.value;render()"><option value="">All categories</option>${cats.map(c=>`<option value="${esc(c)}" ${NB.category===c?'selected':''}>${esc(c)}</option>`).join("")}</select>
+      </div>
+      <div style="max-height:480px;overflow:auto">
+        ${list.map(a=>{const inCart=NB.cart.indexOf(a.asset_id)>=0; return `<div style="display:flex;align-items:center;gap:13px;padding:13px 18px;border-top:1px solid var(--line);background:${inCart?'var(--brand-wash)':(a.available?'transparent':'var(--panel)')}">
+          <span style="width:8px;height:8px;border-radius:50%;flex:none;background:${a.available?'var(--ok)':'var(--bad)'}"></span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13.5px;font-weight:600">${esc(a.name)}</span><span class="idcell" style="font-size:9px;color:var(--ink-4)">${esc(a.qr_code)||''}</span>
+              <span class="chip ${a.available?'ok':'bad'} plain" style="font-size:9px">${a.available?'Free':'Busy'}</span></div>
+            <div class="muted" style="font-size:11.5px;margin-top:2px">${a.available?inr(a.daily_rate)+'/day':esc(a.reason)}</div>
+          </div>
+          <button class="btn sm ${inCart?'':'pri'}" ${a.available?'':'disabled'} style="flex:none" onclick="${inCart?`nbRemoveItem('${a.asset_id}')`:`nbAddItem('${a.asset_id}')`}">${inCart?'Remove':(a.available?'Add':'Unavailable')}</button>
+        </div>`;}).join("")||'<div class="empty">No assets match this category.</div>'}
+      </div>
+    </div>
+    <div class="card pad" style="display:flex;flex-direction:column">
+      <div class="idcell" style="font-size:10px;color:var(--ink-4);margin-bottom:12px">THIS BOOKING</div>
+      ${t.lines.length?t.lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)">
+        <span style="font-size:12.5px">${esc(l.name)}</span><span class="idcell muted">${inr(l.rate)}/d</span></div>`).join(""):'<p class="muted" style="font-size:12.5px">No items added yet.</p>'}
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px"><span class="muted">Subtotal · ${t.days}d</span><span class="mono">${inr(t.subtotal)}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;margin-top:4px;border-top:1px solid var(--line)">
+          <span style="font-family:var(--disp);font-weight:600;font-size:14px">Est. subtotal</span><span class="mono" style="font-size:18px;font-weight:700">${inr(t.subtotal)}</span></div>
+      </div>
+      <div style="margin-top:auto;padding-top:16px;display:flex;gap:8px">
+        <button class="btn" onclick="nbGoStep(1)">← Back</button>
+        <button class="btn pri" style="flex:1" ${t.lines.length?'':'disabled'} onclick="nbGoStep(3)">Continue →</button>
+      </div>
+    </div>
+  </div>`;
+}
+function nbStep3Html(){
+  const t=nbCartTotals();
   const offerOpts=(CACHE.offers||[]).filter(o=>truthy(o.is_active)).map(o=>{
     const v=Number(o.discount_value||0);
     const tag=o.discount_type==='percent'?v+'% off':o.discount_type==='flat'?inr(v)+' off':o.discount_type==='free_days'?v+' day(s) free':'';
-    return `<option value="${o.id}">${esc(o.title)} — ${tag}</option>`;
+    return `<option value="${o.id}" ${NB.offer_id===o.id?'selected':''}>${esc(o.title)} — ${tag}</option>`;
   }).join("");
-  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">New quote</b><button class="x" onclick="closeOverlays()">✕</button></div>
-  <div class="db">
-    <label class="fld"><span>Client</span><select id="qClient" class="input" onchange="pick.client=this.value">
-      <option value="">Select client…</option>${CACHE.clients.map(c=>`<option value="${c.id}">${esc(c.name)}${truthy(c.is_blacklisted)?' (blacklisted)':''}</option>`).join("")}</select></label>
-    <button class="btn sm" style="margin:-6px 0 12px" onclick="addClientFromQuote()">+ New client</button>
-    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Start</span><input id="qStart" class="input" type="date" value="${today}"></label>
-      <label class="fld" style="flex:1"><span>End</span><input id="qEnd" class="input" type="date" value="${end}"></label></div>
-    <div style="display:flex;gap:10px"><label class="fld" style="flex:1"><span>Pickup time</span><input id="qStartTime" class="input" type="time" value="09:00"></label>
-      <label class="fld" style="flex:1"><span>Return time</span><input id="qEndTime" class="input" type="time" value="18:00"></label></div>
-    ${offerOpts?`<label class="fld"><span>Offer <span class="muted" style="font-weight:400">(optional)</span></span><select id="qOffer" class="input"><option value="">No offer</option>${offerOpts}</select></label>`:''}
-    <label class="fld"><span>Or coupon code <span class="muted" style="font-weight:400">(optional — for in-store redemption of a customer's own code)</span></span><input id="qCoupon" class="input mono" style="text-transform:uppercase" placeholder="SPECIAL20"></label>
-    <span style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:7px">Assets ${avail.length?'':'— none available'}</span>
-    <div style="max-height:230px;overflow:auto">${avail.map(a=>`<label class="pickrow" id="pk-${a.id}">
-      <input type="checkbox" onchange="togglePick('${a.id}',this.checked)"><div style="flex:1"><b style="font-size:13px">${esc(a.name)}</b>
-      <div class="muted mono" style="font-size:11.5px">${esc(a.qr_code)||''} · ${inr(a.daily_rate)}/day</div></div></label>`).join("")||'<div class="empty">No available assets</div>'}</div>
-    <button class="btn pri block" style="margin-top:16px" id="qBtn" onclick="submitQuote()">Create quote</button>
+  return `<div class="card pad" style="max-width:520px">
+    <div class="split" style="margin-bottom:16px">
+      <div class="fact"><div class="k">Items</div><div class="v mono">${t.lines.length}</div></div>
+      <div class="fact"><div class="k">Subtotal</div><div class="v mono">${inr(t.subtotal)}</div></div>
+    </div>
+    ${offerOpts?`<label class="fld"><span>Offer <span class="muted" style="font-weight:400">(optional)</span></span><select id="nbOffer" class="input" onchange="NB.offer_id=this.value"><option value="">No offer</option>${offerOpts}</select></label>`:''}
+    <label class="fld"><span>Or coupon code <span class="muted" style="font-weight:400">(optional)</span></span><input id="nbCoupon" class="input mono" style="text-transform:uppercase" value="${esc(NB.coupon_code)}" oninput="NB.coupon_code=this.value" placeholder="SPECIAL20"></label>
+    <p class="muted" style="font-size:11.5px;margin:8px 0 0">Final GST, TDS, and any multi-day/coupon discount are computed on the next step from your actual numbers — not estimated here.</p>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn" onclick="nbGoStep(2)">← Back</button>
+      <button class="btn pri" style="flex:1" onclick="nbGoStep(4)">Continue →</button>
+    </div>
   </div>`;
-  openOverlay($("#modal"));
 }
-function togglePick(id,on){ pick.assets=pick.assets.filter(x=>x!==id); if(on)pick.assets.push(id); const el=$("#pk-"+id); if(el)el.classList.toggle("on",on); }
-async function submitQuote(){
-  if(!pick.client){ toast('Pick a client', true); return; }
-  if(!pick.assets.length){ toast('Pick at least one asset', true); return; }
-  const btn=$("#qBtn"); btn.disabled=true; btn.textContent="Creating…";
+function nbStep4Html(){
+  const t=nbCartTotals();
+  const c=clientObjById(NB.client_id)||{};
+  return `<div class="card pad" style="max-width:520px">
+    <div class="split" style="margin-bottom:16px">
+      <div class="fact"><div class="k">Client</div><div class="v" style="font-size:14px">${esc(c.name)||'—'}</div></div>
+      <div class="fact"><div class="k">Dates</div><div class="v" style="font-size:13px">${fmtDate(NB.start_date)}–${fmtDate(NB.end_date)}</div></div>
+    </div>
+    <p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 8px">Items · ${t.lines.length}</p>
+    ${t.lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
+      <span>${esc(l.name)}</span><span class="mono">${inr(l.amount)}</span></div>`).join("")}
+    <div style="display:flex;justify-content:space-between;padding-top:12px;margin-top:6px"><span style="font-family:var(--disp);font-weight:600">Est. subtotal (pre-tax)</span><span class="mono" style="font-weight:700;font-size:16px">${inr(t.subtotal)}</span></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn" onclick="nbGoStep(3)">← Back</button>
+      <button class="btn pri" style="flex:1" id="nbSubmitBtn" onclick="nbSubmit()">Create booking</button>
+    </div>
+  </div>`;
+}
+async function nbSubmit(){
+  const btn=$("#nbSubmitBtn"); if(btn){btn.disabled=true;btn.textContent='Creating…';}
   try{
-    const offEl=$("#qOffer");
-    const r=await api('create_quote', {client_id:pick.client, asset_ids:pick.assets,
-      start_date:$("#qStart").value, end_date:$("#qEnd").value,
-      start_time:$("#qStartTime").value, end_time:$("#qEndTime").value,
-      offer_id:offEl?offEl.value:'', coupon_code:($("#qCoupon")||{}).value||''});
+    const r=await api('create_quote', {client_id:NB.client_id, asset_ids:NB.cart,
+      start_date:NB.start_date, end_date:NB.end_date, start_time:NB.start_time, end_time:NB.end_time,
+      offer_id:NB.offer_id, coupon_code:NB.coupon_code});
     const offMsg=(r.applied_offer&&r.applied_offer.amount>0)?' · '+r.applied_offer.title+' −'+inr(r.applied_offer.amount):'';
-    toast('Quote '+r.booking_number+' created · '+inr(r.total)+offMsg); closeOverlays();
+    toast('Booking '+r.booking_number+' created · '+inr(r.total)+offMsg);
     if(r.warnings&&r.warnings.length){ setTimeout(()=>toast('⚠ '+r.warnings.join('   •   '), true), 250); }
-    await reloadData(); openBooking(r.booking_id);
-  }catch(e){ toast(e.message, true); btn.disabled=false; btn.textContent="Create quote"; }
+    NB=null; await reloadData(); openBooking(r.booking_id);
+  }catch(e){ toast(e.message,true); if(btn){btn.disabled=false;btn.textContent='Create booking';} }
+}
+function newQuote(){
+  openNewBookingWizard();
 }
 
 boot();
