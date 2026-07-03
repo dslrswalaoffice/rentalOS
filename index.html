@@ -145,6 +145,9 @@ body.nav-pinned .grp-first .lbl,body:not(.nav-pinned) .side:hover .grp-first .lb
 .nav.on::before{height:20px}
 .navdiv{height:1px;background:var(--line);margin:4px 6px 11px}
 .navdot{position:absolute;left:27px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--brand);border:1.5px solid var(--surface)}
+.navcode{flex:none;width:28px;height:22px;border-radius:6px;background:var(--panel-2);color:var(--ink-3);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;transition:background .12s,color .12s}
+.nav.on .navcode{background:var(--brand);color:#fff}
+.nav:hover:not(.on) .navcode{background:var(--line-2)}
 .hubtabs{display:flex;gap:0;margin-bottom:18px;border-bottom:1px solid var(--line);overflow-x:auto}
 .hubtabs button{border:0;background:transparent;padding:9px 4px;margin-right:22px;font-size:13.5px;font-weight:600;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;flex:none}
 .hubtabs button.on{color:var(--brand-ink);border-bottom-color:var(--brand)}
@@ -170,7 +173,15 @@ body.nav-pinned .side,body.nav-pinned .navinner{width:250px}
 .kpi:hover{box-shadow:var(--sh-lg);transform:translateY(-1px)}
 .hbar.clickable{cursor:pointer;border-radius:8px;padding:4px 6px;margin:0 -6px;transition:background .1s}
 .hbar.clickable:hover{background:var(--panel)}
-.kpi .lbl{font-size:12px;color:var(--ink-3);font-weight:500}.kpi .val{font-family:var(--disp);font-size:24px;font-weight:600;margin-top:7px}.kpi .val small{font-family:var(--mono);font-size:12px;color:var(--ink-4)}
+.kpi .lbl{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4)}
+.kpi .val{font-family:var(--disp);font-size:26px;font-weight:700;margin-top:7px;line-height:1.1}
+.kpi .val small{font-family:var(--mono);font-size:12px;color:var(--ink-4)}
+.kpi .delta{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:8px}
+.kpi .delta.up{color:var(--ok);background:var(--ok-wash)}.kpi .delta.down{color:var(--bad);background:var(--bad-wash)}
+.kpi .foot{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line-2);font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-4)}
+.kpi.alert{background:var(--bad-wash);border-color:#f1c4c9}
+.kpi.alert .lbl{color:var(--bad)}.kpi.alert .val{color:var(--bad)}
+.kpi.alert .subrow{margin-top:7px;font-size:11px;font-weight:600;color:var(--bad-ink,var(--bad))}
 table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-4);padding:10px 14px;border-bottom:1px solid var(--line)}
 .tbl thead th{cursor:pointer;user-select:none;transition:color .1s}
@@ -183,7 +194,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .tbl thead th.nosort::after{display:none}
 .tbl td{padding:11px 14px;border-bottom:1px solid var(--line)}.tbl tr:last-child td{border-bottom:0}
 .tbl tbody tr{transition:.08s}.tbl tbody tr:hover{background:var(--panel)}.clickable{cursor:pointer}
-.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap}
 .hc-trigger{cursor:pointer;border-bottom:1px dashed var(--line-2);transition:border-color .1s}
 .hc-trigger:hover{border-bottom-color:var(--brand)}
 #hoverCard{position:fixed;z-index:70;min-width:230px;max-width:300px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-lg);padding:13px 14px;opacity:0;visibility:hidden;transform:translateY(-3px);transition:opacity .1s,transform .1s;pointer-events:none}
@@ -192,13 +203,27 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 #hoverCard .hc-sub{display:block;font-family:var(--font);font-weight:400;font-size:11px;color:var(--ink-4)}
 #hoverCard .hc-row{font-size:12px;color:var(--ink-2);margin-bottom:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 #hoverCard .hc-row:last-child{margin-bottom:0}
-.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:none}
 .chip.ok{color:var(--ok);background:var(--ok-wash)}.chip.warn{color:var(--warn);background:var(--warn-wash)}.chip.bad{color:var(--bad);background:var(--bad-wash)}
 .chip.pend{color:var(--pend);background:var(--pend-wash)}.chip.brand{color:var(--brand-ink);background:var(--brand-wash)}.chip.plain::before{display:none}
+.chip.solid.ok{color:#fff;background:var(--ok)}.chip.solid.warn{color:#fff;background:var(--warn)}.chip.solid.bad{color:#fff;background:var(--bad)}.chip.solid.pend{color:#fff;background:var(--pend)}.chip.solid.brand{color:#fff;background:var(--brand)}
 .tierbadge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px}.tier-vip{background:#f3e8ff;color:#6b21a8}.tier-premium{background:#fff4e0;color:#92600c}.tier-normal{background:var(--panel-2);color:var(--ink-2)}
 .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .fact{background:var(--panel);border-radius:10px;padding:11px 13px}.fact .k{font-size:11px;color:var(--ink-4)}.fact .v{font-family:var(--disp);font-size:16px;font-weight:600;margin-top:2px}.fact .v.mono{font-family:var(--mono);font-size:14px}
-.empty{text-align:center;padding:46px 20px;color:var(--ink-4)}
+/* Precise/Technical: money and reference IDs are mono, tabular-nums, and
+   right-aligned for money specifically — so a column of numbers stacks
+   visually instead of ragged-left text doing the same job as a number. */
+.tbl td.idcell,.tbl td .idcell{font-family:var(--mono);font-size:12px}
+.tbl td.moneycell{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.tbl tbody tr.exception{background:var(--bad-wash)}
+.tbl tbody tr.exception:hover{background:#f9dde1}
+/* Empty state: an icon, a plain-language line, and (optionally) the one
+   action that belongs there — never just a bare "nothing here" line. */
+.empty{text-align:center;padding:38px 20px;color:var(--ink-4);border:1px dashed var(--line-2);border-radius:var(--r-lg)}
+.empty .empty-ic{width:38px;height:38px;border-radius:10px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--ink-4)}
+.empty .empty-title{font-family:var(--disp);font-size:14.5px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
+.empty .empty-sub{font-size:12px;color:var(--ink-4);max-width:280px;margin:0 auto}
+.empty .empty-cta{margin-top:14px}
 .rmgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start}
 .rmcol{padding:0;overflow:hidden}
 .rmhead{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:600;font-size:14px;padding:14px 16px;border-bottom:1px solid var(--line)}
@@ -818,12 +843,14 @@ function roadmapMarkSeen(){
   $("#whatsNew") && $("#whatsNew").remove();
 }
 function navBadge_(k){ return k==='system' && roadmapUnseen()>0 ? roadmapUnseen() : 0; }
+const NAV_CODE={dashboard:'DB',rentals:'RN',billing:'BL',inventory:'IV',people:'PL',insights:'IS',system:'SY'};
 function navBtn(k,label,ic,soon){
   const isHub=!!HUBS[k], target=isHub?HUBS[k].default:k;
   const active=isHub?hubOf(VIEW)===k:VIEW===k;
   const badge=navBadge_(k);
+  const code=NAV_CODE[k]||label.slice(0,2).toUpperCase();
   return `<button class="nav ${active?'on':''} ${soon?'soon':''}" title="${label}" onclick="${soon?`toast('${label} comes online once its backend lands')`:`go('${target}')`}">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ic}</svg><span class="lbl">${label}</span>${badge?`<span class="navdot"></span><span class="navbadge lbl">${badge}</span>`:''}</button>`;}
+  <span class="navcode">${code}</span><span class="lbl">${label}</span>${badge?`<span class="navdot"></span><span class="navbadge lbl">${badge}</span>`:''}</button>`;}
 function toggleNav(){
   const on=document.body.classList.toggle('nav-pinned');
   localStorage.setItem('rentalos_navpin', on?'1':'0');
@@ -1738,6 +1765,11 @@ VIEWS.dashboard=()=>{
     <span style="font-size:12.5px">${label}</span><span class="chip ${cls}" style="min-width:22px;text-align:center">${count}</span></div>`:'';
   const attnCount=quotesWaiting.length+overdueMaint.length+urgentNotifs.length+(outstanding>0?1:0);
 
+  const lastMonthKey=(function(){ const d=new Date(); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0,7); })();
+  const invoicedLastMonth=(CACHE.invoices||[]).filter(v=>(v.created_at||'').slice(0,7)===lastMonthKey).reduce((s,v)=>s+Number(v.total||0),0);
+  const revDelta=invoicedLastMonth>0?Math.round(((invoicedThisMonth-invoicedLastMonth)/invoicedLastMonth)*1000)/10:null;
+  const monthLbl=new Date().toLocaleDateString('en-IN',{month:'short'});
+
   return `${wizardShouldShow()?`<div class="card pad" style="background:var(--brand-wash);border-color:var(--brand);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
     <div><b style="font-family:var(--disp);font-size:14px;color:var(--brand-ink)">New here? Let's get RentalOS set up</b>
       <p class="muted" style="font-size:12px;margin:2px 0 0">Business info, tax settings, and a starting inventory — about 5 minutes.</p></div>
@@ -1745,6 +1777,17 @@ VIEWS.dashboard=()=>{
   </div>`:''}
   <div class="head"><div><h1 class="h1">${_greeting_()}</h1><p class="sub">${a.length} assets · ${CACHE.clients.length} clients · here's what's on for today</p></div>
     <button class="btn pri" onclick="newQuote()">+ New quote</button></div>
+
+  <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+    <div class="kpi" onclick="go('invoices')"><div class="lbl">Revenue · ${monthLbl}</div><div class="val">${inr(invoicedThisMonth)}</div>
+      ${revDelta!==null?`<div class="delta ${revDelta>=0?'up':'down'}">${revDelta>=0?'▲':'▼'} ${Math.abs(revDelta)}%</div>`:''}
+      <div class="foot">Tap to view →</div></div>
+    <div class="kpi" onclick="go('inventory')"><div class="lbl">Fleet utilisation</div><div class="val">${util}%</div>
+      <div class="foot">${onRent} of ${a.length} units out · tap to filter →</div></div>
+    ${overdueReturns.length>0?`<div class="kpi alert" onclick="goBookings(['dispatched','open'])"><div class="lbl">Overdue returns</div><div class="val">${overdueReturns.length}</div>
+      <div class="subrow">! ${overdueReturns.filter(b=>{const t=dueAt(b);return t&&(now-t)>48*3600000;}).length} over 48h</div></div>`
+      :`<div class="kpi" onclick="go('bookings')"><div class="lbl">Live bookings</div><div class="val">${live}</div><div class="foot">Confirmed, dispatched, or open →</div></div>`}
+  </div>
 
   <div class="bkgrid">
     <div>
@@ -1796,22 +1839,39 @@ VIEWS.dashboard=()=>{
     </div>
   </div>`;
 };
-function bookingsTable(rows){return `<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Stage</th><th>Dates</th><th>Estimate</th></tr></thead><tbody>
-  ${rows.map(b=>`<tr class="clickable" onclick="openBooking('${b.id}')">
-    <td class="mono"><span class="hc-trigger" data-hb="${b.id}">${b.booking_number||b.id.slice(0,8)}</span></td>
+function bookingsTable(rows){
+  const today=new Date().toISOString().slice(0,10);
+  return `<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Stage</th><th>Dates</th><th style="text-align:right">Estimate</th></tr></thead><tbody>
+  ${rows.map(b=>{const overdue=['dispatched','open'].indexOf(b.status)>=0 && b.end_date && b.end_date<today;
+    return `<tr class="clickable${overdue?' exception':''}" onclick="openBooking('${b.id}')">
+    <td class="idcell"><span class="hc-trigger" data-hb="${b.id}">${b.booking_number||b.id.slice(0,8)}</span></td>
     <td><span class="hc-trigger" data-hc="${b.client_id}">${clientName(b.client_id)}</span> ${tier(b.tier_at_booking)}${!b.staff_id?' <span class="chip brand plain" style="font-size:10px">Storefront</span>':''}</td>
-    <td>${stageChip(b.status)}</td><td class="muted">${fmtDateTime(b.start_date,b.start_time)} – ${fmtDateTime(b.end_date,b.end_time)}</td>
-    <td class="mono">${inr(b.total_estimated)}</td></tr>`).join("")}</tbody></table>`;}
+    <td>${stageChip(b.status)}${overdue?' <span class="chip bad plain" style="font-size:9.5px">Overdue</span>':''}</td><td class="muted">${fmtDateTime(b.start_date,b.start_time)} – ${fmtDateTime(b.end_date,b.end_time)}</td>
+    <td class="moneycell">${inr(b.total_estimated)}</td></tr>`;}).join("")}</tbody></table>`;}
 
+function bkStatusCounts(){
+  const all=CACHE.bookings||[];
+  const today=new Date().toISOString().slice(0,10);
+  const overdue=all.filter(b=>['dispatched','open'].indexOf(b.status)>=0 && b.end_date && b.end_date<today).length;
+  return {all:all.length, quote:all.filter(b=>b.status==='quote').length, confirmed:all.filter(b=>b.status==='confirmed').length,
+    dispatched:all.filter(b=>b.status==='dispatched').length, open:all.filter(b=>b.status==='open').length,
+    finalised:all.filter(b=>['finalised','tax_invoice','paid','closed'].indexOf(b.status)>=0).length, overdue:overdue};
+}
+function bkFilterPill(label,count,active,onclick,alert){
+  return `<button onclick="${onclick}" style="border:1px solid ${alert?'#f1c4c9':(active?'var(--ink)':'var(--line)')};background:${active?'var(--ink)':(alert?'var(--bad-wash)':'var(--surface)')};color:${active?'#fff':(alert?'var(--bad)':'var(--ink-2)')};border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">${label} <span class="mono" style="font-weight:700">${count}</span></button>`;
+}
 let BK_Q='';
 let BK_STATUS=null;   // null = all, or an array of statuses to restrict to
+let BK_OVERDUE=false;
 const BK_CAP=60;
 const BK_STATUS_LABEL={confirmed:'Confirmed',dispatched:'Dispatched',open:'Open',finalised:'Finalised',
   quote:'Quotes',cancelled:'Cancelled',tax_invoice:'Tax invoice',paid:'Paid',closed:'Closed'};
-function goBookings(statuses){ BK_STATUS=statuses; BK_Q=''; go('bookings'); }
+function goBookings(statuses){ BK_STATUS=statuses; BK_OVERDUE=false; BK_Q=''; go('bookings'); }
+function bkPillFilter(statuses,overdue){ BK_STATUS=statuses; BK_OVERDUE=!!overdue; render(); }
 function bookingsFiltered(){
   let all=CACHE.bookings.slice().reverse();
-  if(BK_STATUS) all=all.filter(b=>BK_STATUS.indexOf(b.status)>=0);
+  if(BK_OVERDUE){ const today=new Date().toISOString().slice(0,10); all=all.filter(b=>['dispatched','open'].indexOf(b.status)>=0 && b.end_date && b.end_date<today); }
+  else if(BK_STATUS) all=all.filter(b=>BK_STATUS.indexOf(b.status)>=0);
   const q=BK_Q.trim().toLowerCase();
   if(!q) return all;
   return all.filter(b=>((b.booking_number||'')+' '+clientName(b.client_id)+' '+(b.status||'')+(b.staff_id?'':' storefront')).toLowerCase().includes(q));
@@ -1824,12 +1884,23 @@ function bookingsListHtml(){
   return bookingsTable(shown)+(filt.length>BK_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${BK_CAP} of ${filt.length} — refine your search to narrow.</div>`:'');
 }
 function renderBookingsList(){ _preserveFocus_(()=>{ const el=$("#bkList"); if(el) el.innerHTML=bookingsListHtml(); }); }
-VIEWS.bookings=()=>`<div class="head"><div><h1 class="h1">Bookings</h1><p class="sub">${bookingsFiltered().length} shown${BK_STATUS?' · '+BK_STATUS.map(s=>BK_STATUS_LABEL[s]||s).join(', '):''} of ${CACHE.bookings.length} total</p></div>
+VIEWS.bookings=()=>{
+  const c=bkStatusCounts();
+  return `<div class="head"><div><h1 class="h1">Bookings</h1><p class="sub">${bookingsFiltered().length} shown of ${CACHE.bookings.length} total</p></div>
   <div style="display:flex;gap:10px;align-items:center">
-    ${BK_STATUS?`<button class="btn sm" onclick="BK_STATUS=null;go('bookings')">Clear filter</button>`:''}
-    <input class="input" style="max-width:230px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">
+    <input class="input" style="max-width:200px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">
     <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    ${bkFilterPill('All',c.all,!BK_STATUS&&!BK_OVERDUE,"bkPillFilter(null)")}
+    ${bkFilterPill('Quotes',c.quote,BK_STATUS&&BK_STATUS[0]==='quote',"bkPillFilter(['quote'])")}
+    ${bkFilterPill('Confirmed',c.confirmed,BK_STATUS&&BK_STATUS[0]==='confirmed',"bkPillFilter(['confirmed'])")}
+    ${bkFilterPill('Dispatched',c.dispatched,BK_STATUS&&BK_STATUS[0]==='dispatched',"bkPillFilter(['dispatched'])")}
+    ${bkFilterPill('Open',c.open,BK_STATUS&&BK_STATUS[0]==='open',"bkPillFilter(['open'])")}
+    ${bkFilterPill('Finalised',c.finalised,BK_STATUS&&BK_STATUS.length>1,"bkPillFilter(['finalised','tax_invoice','paid','closed'])")}
+    ${c.overdue>0?bkFilterPill('Overdue',c.overdue,BK_OVERDUE,"bkPillFilter(null,true)",true):''}
+  </div>
   <div class="card" id="bkList">${bookingsListHtml()}</div>`;
+};
 
 let INV_FILTER='', IVQ='', INV_TYPE='', INV_OWNER='', INV_COND='', INV_PAGE=1;
 const INV_PAGE_SIZE=30;
@@ -2308,13 +2379,17 @@ function invoiceRow(v){
   const bk=(bookingById(v.booking_id)||{});
   const ref=v.type==='consolidated'?'Consolidated':(bk.booking_number||v.id.slice(0,8));
   const refHtml=v.type==='consolidated'?ref:`<span class="hc-trigger" data-hb="${v.booking_id}">${ref}</span>`;
-  return `<tr class="clickable" onclick="openInvoice('${v.id}')"><td class="mono">${refHtml}</td><td><span class="hc-trigger" data-hc="${v.client_id}">${clientName(v.client_id)}</span></td>
+  const unpaid=paymentState(v.net_payable,v.paid_amount).state==='unpaid';
+  return `<tr class="clickable${unpaid&&v.status!=='cancelled'&&v.status!=='draft'?' exception':''}" onclick="openInvoice('${v.id}')"><td class="idcell">${refHtml}</td><td><span class="hc-trigger" data-hc="${v.client_id}">${clientName(v.client_id)}</span></td>
     <td>${v.type==='consolidated'?'<span class="chip brand plain">VIP</span>':'Standard'}</td><td>${stageChip(v.status)}</td>
     <td>${paymentChip(v.net_payable,v.paid_amount)}</td>
-    <td class="mono">${inr(v.net_payable)}</td><td class="mono muted" style="font-size:12px">${inr(v.paid_amount)}</td></tr>`;
+    <td class="moneycell">${inr(v.net_payable)}</td><td class="moneycell muted" style="font-size:12px">${inr(v.paid_amount)}</td></tr>`;
 }
 function invoicesFiltered(){
   let all=(CACHE.invoices||[]).slice().reverse();
+  if(INV_QUICK==='paid') all=all.filter(v=>paymentState(v.net_payable,v.paid_amount).state==='paid');
+  else if(INV_QUICK==='pending') all=all.filter(v=>['unpaid','partial'].indexOf(paymentState(v.net_payable,v.paid_amount).state)>=0 && v.status!=='cancelled');
+  else if(INV_QUICK==='tds') all=all.filter(v=>Number(v.tds_amount)>0 && paymentState(v.net_payable,v.paid_amount).state!=='paid');
   if(INV_STATUS) all=all.filter(v=>v.status===INV_STATUS);
   if(INV_TYPE_F) all=all.filter(v=>v.type===INV_TYPE_F);
   if(INV_PAYSTATE) all=all.filter(v=>paymentState(v.net_payable,v.paid_amount).state===INV_PAYSTATE);
@@ -2324,21 +2399,32 @@ function invoicesFiltered(){
     return ((bk.booking_number||'')+' '+clientName(v.client_id)+' '+(v.type||'')+' '+(v.status||'')).toLowerCase().includes(q);});
 }
 function invFilter(k,v){ if(k==='status')INV_STATUS=v; if(k==='type')INV_TYPE_F=v; if(k==='pay')INV_PAYSTATE=v; render(); }
+function invQuickFilter(k){ INV_QUICK=k; INV_STATUS=''; INV_TYPE_F=''; INV_PAYSTATE=''; render(); }
 function invoicesListHtml(){
   if(!(CACHE.invoices||[]).length) return '<div class="empty">No invoices yet. Open one from a dispatched booking, or generate a VIP consolidated.</div>';
   const filt=invoicesFiltered();
   if(!filt.length) return '<div class="empty">No invoices match these filters.</div>';
   const shown=filt.slice(0,INV_CAP);
-  return `<table class="tbl"><thead><tr><th>Reference</th><th>Client</th><th>Type</th><th>Status</th><th>Payment</th><th>Net payable</th><th>Paid</th></tr></thead><tbody>
+  return `<table class="tbl"><thead><tr><th>Reference</th><th>Client</th><th>Type</th><th>Status</th><th>Payment</th><th style="text-align:right">Net payable</th><th style="text-align:right">Paid</th></tr></thead><tbody>
     ${shown.map(invoiceRow).join("")}</tbody></table>`+
     (filt.length>INV_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${INV_CAP} of ${filt.length} — refine your filters to narrow.</div>`:'');
 }
 function renderInvoicesList(){ _preserveFocus_(()=>{ const el=$("#invList"); if(el) el.innerHTML=invoicesListHtml(); }); }
+let INV_QUICK='';
 VIEWS.invoices=()=>{
   const inv=CACHE.invoices||[];
   const anyFilter=INV_STATUS||INV_TYPE_F||INV_PAYSTATE;
+  const cPaid=inv.filter(v=>paymentState(v.net_payable,v.paid_amount).state==='paid').length;
+  const cPending=inv.filter(v=>['unpaid','partial'].indexOf(paymentState(v.net_payable,v.paid_amount).state)>=0 && v.status!=='cancelled').length;
+  const cTds=inv.filter(v=>Number(v.tds_amount)>0 && paymentState(v.net_payable,v.paid_amount).state!=='paid').length;
   return `<div class="head"><div><h1 class="h1">Invoices</h1><p class="sub">${invoicesFiltered().length} shown${anyFilter?' (filtered)':''} of ${inv.length} total · GST & TDS computed server-side</p></div>
     <button class="btn pri" onclick="consolidatedModal()">+ VIP consolidated</button></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    ${bkFilterPill('All',inv.length,!INV_QUICK,"invQuickFilter('')")}
+    ${bkFilterPill('Paid',cPaid,INV_QUICK==='paid',"invQuickFilter('paid')")}
+    ${cPending>0?bkFilterPill('Pending',cPending,INV_QUICK==='pending',"invQuickFilter('pending')",true):''}
+    ${cTds>0?bkFilterPill('TDS pending',cTds,INV_QUICK==='tds',"invQuickFilter('tds')"):''}
+  </div>
   <div class="card pad" style="margin-bottom:14px">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <input class="input" style="max-width:220px" placeholder="Search invoices…" value="${INV_Q.replace(/"/g,'&quot;')}" oninput="INV_Q=this.value;renderInvoicesList()">
@@ -2445,38 +2531,51 @@ function invoiceDetailHtml(v){
   const gstPct=(v.subtotal-v.discount)>0?Math.round(v.gst/(v.subtotal-v.discount)*100):0;
   let linesHtml='';
   if(v.type==='consolidated'){
-    linesHtml=lines.map(g=>`<div style="padding:7px 0;border-bottom:1px solid var(--line)"><div class="mono muted" style="font-size:11px">${g.booking}</div>
-      ${(g.lines||[]).filter(l=>l.amount>0).map(l=>`<div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(l.name)} · ${l.days}d</span><span class="mono">${inr(l.amount)}</span></div>`).join("")}</div>`).join("");
+    linesHtml=lines.map(g=>`<div style="padding:7px 0;border-bottom:1px solid var(--line)"><div class="idcell muted" style="font-size:11px">${g.booking}</div>
+      ${(g.lines||[]).filter(l=>l.amount>0).map(l=>`<div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(l.name)} · ${l.days}d</span><span class="moneycell" style="display:inline-block">${inr(l.amount)}</span></div>`).join("")}</div>`).join("");
   } else {
     linesHtml=lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;${l.chargeable?'':'opacity:.5'}">
-      <span>${esc(l.name)} <span class="muted">${l.rate?'· '+inr(l.rate)+'×'+l.days+'d'+(l.rental_days&&l.rental_days!==l.days?' billed ('+l.rental_days+'d reserved)':''):''}</span>${l.chargeable?'':' <span class="chip pend plain">₹0</span>'}</span><span class="mono">${inr(l.amount)}</span></div>`).join("");
+      <span>${esc(l.name)} <span class="muted">${l.rate?'· '+inr(l.rate)+'×'+l.days+'d'+(l.rental_days&&l.rental_days!==l.days?' billed ('+l.rental_days+'d reserved)':''):''}</span>${l.chargeable?'':' <span class="chip pend plain">₹0</span>'}</span><span class="moneycell" style="display:inline-block">${inr(l.amount)}</span></div>`).join("");
   }
+  const taxRow=(k,v2,color,title)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px"${title?` title="${title}"`:''}>
+    <span class="muted">${k}</span><span class="mono" style="font-weight:600${color?`;color:${color}`:''}">${v2}</span></div>`;
   return `<div class="head"><div><button class="btn sm" onclick="go('invoices')" style="margin-bottom:8px">← Billing</button>
-    <div class="mono muted" style="font-size:12px">${v.type==='consolidated'?'CONSOLIDATED · '+fmtDate(v.period_start)+'–'+fmtDate(v.period_end):`<span class="hc-trigger" data-hb="${v.booking_id}">${bk.booking_number||v.id.slice(0,8)}</span>`}</div>
+    <div class="idcell muted" style="font-size:12px">${v.type==='consolidated'?'CONSOLIDATED · '+fmtDate(v.period_start)+'–'+fmtDate(v.period_end):`<span class="hc-trigger" data-hb="${v.booking_id}">${bk.booking_number||v.id.slice(0,8)}</span>`}</div>
     <h1 class="h1" style="margin-top:4px"><span class="hc-trigger" data-hc="${v.client_id}">${clientName(v.client_id)}</span> ${v.type==='consolidated'?'<span class="chip brand plain">VIP</span>':''}</h1></div></div>
-  <div class="detailpage narrow">
+  <div class="detailpage">
     <div style="overflow-x:auto;margin-bottom:16px"><div class="steps">${stages.map((s,i)=>`<div class="step ${i<idx?'done':i===idx?'now':''}"><span class="dot">${i<idx?'✓':i+1}</span><span class="nm">${s[1]}</span></div>${i<stages.length-1?'<span class="bar"></span>':''}`).join("")}</div></div>
-    <p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px">Line items</p>
-    <div class="card pad" style="padding:12px 14px;margin-bottom:14px">${linesHtml||'<div class="muted" style="font-size:12px">No chargeable lines</div>'}</div>
-    <div class="split">
-      <div class="fact"><div class="k">Subtotal</div><div class="v mono">${inr(v.subtotal)}</div></div>
-      <div class="fact"><div class="k">Discount</div><div class="v mono">${inr(v.discount)}</div></div>
-      ${intraState?`<div class="fact"><div class="k" title="Split because the client is in the same state (${esc(bizState)}) — same-state supply is taxed as CGST+SGST, not IGST.">CGST ${Math.round(gstPct/2)}%</div><div class="v mono">${inr(v.gst/2)}</div></div>
-      <div class="fact"><div class="k" title="Split because the client is in the same state (${esc(bizState)}) — same-state supply is taxed as CGST+SGST, not IGST.">SGST ${Math.round(gstPct/2)}%</div><div class="v mono">${inr(v.gst/2)}</div></div>`
-      :`<div class="fact"><div class="k" title="Shown as IGST because the client is in a different state (${esc(client.state||'unspecified')}) from the business (${esc(bizState)}) — cross-state supply is taxed as IGST, not split.">IGST ${gstPct}%</div><div class="v mono">${inr(v.gst)}</div></div>`}
-      <div class="fact"><div class="k">Total</div><div class="v mono">${inr(v.total)}</div></div>
-      ${Number(v.tds_amount)?`<div class="fact"><div class="k" title="Deducted at source since the client has a GST number on file. Computed from this invoice's own numbers.">TDS${(v.subtotal-v.discount)>0?' '+Math.round(v.tds_amount/(v.subtotal-v.discount)*100)+'%':''}</div><div class="v mono" style="color:var(--bad)">– ${inr(v.tds_amount)}</div></div>`:''}
-      <div class="fact"><div class="k" title="Total minus TDS — the actual amount the client needs to pay you.">Net payable</div><div class="v mono" style="color:var(--brand-ink)">${inr(v.net_payable)}</div></div></div>
-    ${paymentBlock(v)}
-    <div style="margin-top:16px">
-      ${v.status==='open'?`<button class="btn pri block" onclick="finaliseInv('${v.id}')">Finalise invoice</button><p class="muted" style="font-size:11px;margin:7px 0 0;text-align:center">Allowed once every item is returned/terminal</p>`:''}
-      ${!v.tax_issued_at && ['finalised','paid'].indexOf(v.status)>=0?`<button class="btn pri block" onclick="issueTax('${v.id}')">Issue tax invoice</button>`:''}
-      ${v.tax_issued_at?`<div class="chip ok" style="width:100%;justify-content:center;padding:9px">Tax invoice issued${v.tax_issued_at?' · '+fmtDate(v.tax_issued_at):''}</div>`:''}
+    <div class="bkgrid">
+      <div>
+        <p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px">Line items</p>
+        <div class="card pad" style="padding:12px 14px">${linesHtml||'<div class="muted" style="font-size:12px">No chargeable lines</div>'}</div>
+      </div>
+      <div class="bkside">
+        <div class="bkcard">
+          <div class="bkhead">Tax summary</div>
+          ${taxRow('Subtotal', inr(v.subtotal))}
+          ${taxRow('Discount', inr(v.discount))}
+          ${intraState?taxRow('CGST '+Math.round(gstPct/2)+'%', inr(v.gst/2), null, `Split because the client is in the same state (${esc(bizState)}) — same-state supply is taxed as CGST+SGST.`)
+            +taxRow('SGST '+Math.round(gstPct/2)+'%', inr(v.gst/2), null, `Split because the client is in the same state (${esc(bizState)}) — same-state supply is taxed as CGST+SGST.`)
+            :taxRow('IGST '+gstPct+'%', inr(v.gst), null, `Cross-state supply (client: ${esc(client.state||'unspecified')}) is taxed as IGST.`)}
+          ${taxRow('Invoice total', inr(v.total))}
+          ${Number(v.tds_amount)?taxRow('TDS'+((v.subtotal-v.discount)>0?' '+Math.round(v.tds_amount/(v.subtotal-v.discount)*100)+'%':''), '− '+inr(v.tds_amount), 'var(--bad)', 'Deducted at source since the client has a GST number on file.'):''}
+          <div style="background:#14161d;border-radius:12px;padding:14px 16px;margin-top:12px">
+            <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b90a3">Net payable</div>
+            <div class="mono" style="font-size:24px;font-weight:700;color:#fff;margin-top:4px">${inr(v.net_payable)}</div>
+          </div>
+        </div>
+        ${paymentBlock(v)}
+        <div>
+          ${v.status==='open'?`<button class="btn pri block" onclick="finaliseInv('${v.id}')">Finalise invoice</button><p class="muted" style="font-size:11px;margin:7px 0 0;text-align:center">Allowed once every item is returned/terminal</p>`:''}
+          ${!v.tax_issued_at && ['finalised','paid'].indexOf(v.status)>=0?`<button class="btn pri block" onclick="issueTax('${v.id}')">Issue tax invoice</button>`:''}
+          ${v.tax_issued_at?`<div class="chip ok" style="width:100%;justify-content:center;padding:9px">Tax invoice issued${v.tax_issued_at?' · '+fmtDate(v.tax_issued_at):''}</div>`:''}
+        </div>
+        ${v.status==='cancelled'?`<div class="chip bad" style="width:100%;justify-content:center;padding:9px">Voided</div>`
+          :(SESSION.user.role==='admin' && Number(v.paid_amount||0)===0)?`<button class="btn block" style="color:var(--bad)" onclick="voidInvoiceFlow('${v.id}')">Void this invoice</button>`:''}
+        <button class="btn block" onclick="openInvoiceDoc('${v.id}')">${ICON_DOC}Generate invoice document</button>
+        ${docArchiveCard(INVOICE_DOCS,'invoices')}
+      </div>
     </div>
-    ${v.status==='cancelled'?`<div class="chip bad" style="width:100%;justify-content:center;padding:9px;margin-top:10px">Voided</div>`
-      :(SESSION.user.role==='admin' && Number(v.paid_amount||0)===0)?`<button class="btn block" style="margin-top:10px;color:var(--bad)" onclick="voidInvoiceFlow('${v.id}')">Void this invoice</button>`:''}
-    <button class="btn block" style="margin-top:10px" onclick="openInvoiceDoc('${v.id}')">${ICON_DOC}Generate invoice document</button>
-    <div style="margin-top:14px">${docArchiveCard(INVOICE_DOCS,'invoices')}</div>
   </div>`;
 }
 function voidInvoiceFlow(invId){
@@ -2736,6 +2835,17 @@ async function loadRepairs(){
   try{ REPAIRS=await api('repair_list',{status:REPAIR_STATUS_F}); if(VIEW==='repairs') render(); }catch(e){ toast(e.message,true); }
 }
 const REPAIR_ST_LBL={open:['bad','Open'],in_progress:['warn','In progress'],closed:['ok','Closed']};
+/** Icon + plain-language line + one action — never just a bare "nothing
+ *  here" string. The .empty CSS class already gives the dashed border;
+ *  this fills it in properly. ctaLabel/ctaOnclick are optional. */
+function emptyState(iconSvg,title,sub,ctaLabel,ctaOnclick){
+  return `<div class="empty"><div class="empty-ic">${iconSvg}</div>
+    <div class="empty-title">${esc(title)}</div>
+    ${sub?`<div class="empty-sub">${esc(sub)}</div>`:''}
+    ${ctaLabel?`<button class="btn pri sm empty-cta" onclick="${ctaOnclick}">${esc(ctaLabel)}</button>`:''}
+  </div>`;
+}
+const EMPTY_ICONS={list:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>'};
 VIEWS.repairs=()=>{
   if(!REPAIRS){ loadRepairs(); return loading('Repair tickets'); }
   const open=REPAIRS.filter(t=>t.status==='open').length, inProg=REPAIRS.filter(t=>t.status==='in_progress').length, closed=REPAIRS.filter(t=>t.status==='closed').length;
@@ -2756,14 +2866,21 @@ VIEWS.repairs=()=>{
       <td class="mono">${inr(t.estimated_cost)}</td>
       <td style="text-align:right;white-space:nowrap">${t.status!=='closed'?`<button class="btn sm" onclick="repairTicketModal('${t.id}')">Manage</button>`:`<span class="muted" style="font-size:11px">${fmtDate(t.closed_at)}${t.closed_by?' · '+esc(t.closed_by):''}</span>`}</td>
       </tr>`;}).join("")}
-    </tbody></table>`:`<div class="empty">${REPAIR_STATUS_F?'No tickets with this status.':'No repair tickets — nothing\'s come back damaged enough to need one.'}</div>`}</div>`;
+    </tbody></table>`:emptyState(EMPTY_ICONS.list, REPAIR_STATUS_F?'No tickets with this status':'No repairs open',
+      REPAIR_STATUS_F?'':'Every unit is field-ready. Tickets raised from a damaged return will land here.')}</div>`;
 };
 function repairTicketModal(ticketId){
   const t=(REPAIRS||[]).find(x=>x.id===ticketId); if(!t) return;
-  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Repair ticket</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  const stages=[["open","Reported"],["in_progress","In repair"],["closed","Closed"]];
+  const idx=stages.findIndex(s=>s[0]===t.status);
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${esc(t.asset_name)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
-    <div class="fact" style="margin-bottom:12px"><div class="k">Asset</div><div class="v">${esc(t.asset_name)}</div></div>
+    <div style="overflow-x:auto;margin-bottom:14px"><div class="steps">${stages.map((s,i)=>`<div class="step ${i<idx?'done':i===idx?'now':''}"><span class="dot">${i<idx?'✓':i+1}</span><span class="nm">${s[1]}</span></div>${i<stages.length-1?'<span class="bar"></span>':''}`).join("")}</div></div>
     ${t.description?`<p class="muted" style="font-size:12.5px;margin:0 0 12px">${esc(t.description)}</p>`:''}
+    <div class="split" style="margin-bottom:14px">
+      <div class="fact"><div class="k">Opened</div><div class="v mono">${fmtDate(t.opened_at)}</div></div>
+      <div class="fact"><div class="k">Est. cost</div><div class="v mono">${inr(t.estimated_cost)}</div></div>
+    </div>
     <label class="fld"><span>Assigned to</span><input id="rtAssign" class="input" value="${esc(t.assigned_to)||''}" placeholder="who's fixing it"></label>
     <label class="fld"><span>Status</span><select id="rtStatus" class="input"><option value="open" ${t.status==='open'?'selected':''}>Open</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>In progress</option></select></label>
     <button class="btn block" style="margin-bottom:16px" onclick="submitRepairUpdate('${ticketId}')">Save</button>
@@ -2880,50 +2997,67 @@ async function astAddNote(assetId){
 }
 function assetPnlBlock(p){
   const roi=p.roi_pct===null?null:(p.roi_pct>=0?'+':'')+p.roi_pct+'%';
-  const roiColor=p.roi_pct>=0?'var(--ok)':'var(--bad)';
-  const netColor=p.net_contribution>=0?'var(--ok)':'var(--bad)';
+  const roiColor=p.roi_pct>=0?'#5fe08a':'#ff8a94';
   const hasAcquisition = p.purchase_price>0 || p.age_days!==null;
+  const totalCost = p.maintenance_cost + p.repair_absorbed;
+  const gross = p.lifetime_revenue>0?p.lifetime_revenue:0;
+  const costPct = gross>0?Math.min(100,Math.round((totalCost/gross)*100)):0;
+  const contribPct = 100-costPct;
 
   // A tight label-value row instead of a padded card — reads like a
   // statement, not a grid of mostly-empty boxes. Rows with no meaningful
-  // value are simply skipped rather than shown as "—", so a field only
-  // ever appears when there's something real to say.
-  const row=(k,v,color)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px">
-    <span class="muted">${k}</span><span class="mono" style="font-weight:600${color?`;color:${color}`:''}">${v}</span></div>`;
-  const grp=(label,rowsHtml)=>rowsHtml?`<div style="margin-bottom:16px"><p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 4px;color:var(--ink-4)">${label}</p>${rowsHtml}</div>`:'';
+  // value are simply skipped rather than shown as "—".
+  const row=(k,v,color,bold)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px">
+    <span class="muted">${k}</span><span class="mono" style="font-weight:${bold?700:600}${color?`;color:${color}`:''}">${v}</span></div>`;
+  const totalRow=(k,v)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0 0;margin-top:2px;border-top:1px solid var(--ink);font-size:12.5px"><span style="font-weight:700">${k}</span><span class="mono" style="font-weight:700">${v}</span></div>`;
+  const col=(label,rowsHtml,totalHtml)=>`<div><p class="muted" style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 6px;color:var(--ink-4)">${label}</p>${rowsHtml}${totalHtml||''}</div>`;
 
-  const acquisitionRows = !hasAcquisition ? '' :
+  const acquisitionRows = !hasAcquisition ? '<p class="muted" style="font-size:12px;margin:0">No purchase price or date on record.</p>' :
     (p.purchase_price>0?row('Purchase price', inr(p.purchase_price)):'') +
     (p.age_days!==null?row('Owned', p.age_days+' days'):'') +
-    (p.book_value!==null?row('Book value now', inr(p.book_value))+row('Depreciated', p.depreciated_pct+'%'):'') +
-    (p.book_value===null && p.useful_life_years?row('Useful life', p.useful_life_years+' years'):'');
+    (p.book_value!==null?row('Book value now', inr(p.book_value)):'');
+  const acqTotal = p.book_value!==null?totalRow('Depreciated', p.depreciated_pct+'%'):'';
 
   const revenueRows =
-    row('Lifetime revenue', inr(p.lifetime_revenue)) +
+    row('Gross rental revenue', inr(p.lifetime_revenue)) +
     (p.revenue_per_day_owned!==null?row('Revenue / day owned', inr(p.revenue_per_day_owned)):'');
+  const revTotal = totalRow('Total', inr(p.lifetime_revenue));
 
   const costRows =
     row('Maintenance', inr(p.maintenance_cost)) +
-    (p.repair_total>0?row('Repair · total', inr(p.repair_total))+row('Repair · recovered', inr(p.repair_recovered), p.repair_recovered>0?'var(--ok)':null)+row('Repair · absorbed', inr(p.repair_absorbed), p.repair_absorbed>0?'var(--bad)':null):'');
+    (p.repair_total>0?row('Repair · recovered', inr(p.repair_recovered), p.repair_recovered>0?'var(--ok)':null)+row('Repair · absorbed', inr(p.repair_absorbed), p.repair_absorbed>0?'var(--bad)':null):'');
+  const costTotal = totalRow('Total costs', inr(totalCost));
 
   return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 10px">Lifetime P&amp;L</p>
     ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below.</div>`:''}
-    ${!hasAcquisition?`<div style="background:var(--panel);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-3)">No purchase price or date on record — add these in Edit details to see book value and ROI.</div>`:''}
 
-    ${grp('Acquisition &amp; value', acquisitionRows)}
-    ${grp('Revenue', revenueRows)}
-    ${grp('Costs', costRows)}
-
-    <div style="border-top:1px solid var(--line);padding-top:14px;display:grid;grid-template-columns:${roi!==null?'1fr 1fr':'1fr'};gap:12px">
-      <div style="text-align:center;padding:10px;background:var(--panel);border-radius:10px">
-        <div class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Net contribution</div>
-        <div class="mono" style="font-size:18px;font-weight:700;color:${netColor}">${inr(p.net_contribution)}</div>
+    <div style="background:#14161d;border-radius:14px;padding:16px 18px;margin-bottom:18px;display:grid;grid-template-columns:${roi!==null?'1fr auto':'1fr'};gap:16px;align-items:center">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b90a3">Net contribution · lifetime</div>
+        <div class="mono" style="font-size:30px;font-weight:700;color:#fff;margin-top:4px;line-height:1.1">${inr(p.net_contribution)}</div>
+        <div style="font-size:11px;color:#8b90a3;margin-top:5px">Revenue after maintenance &amp; repair costs${hasAcquisition?', vs. purchase price':''}.</div>
       </div>
-      ${roi!==null?`<div style="text-align:center;padding:10px;background:var(--panel);border-radius:10px">
-        <div class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">ROI vs purchase</div>
-        <div class="mono" style="font-size:18px;font-weight:700;color:${roiColor}">${roi}</div>
+      ${roi!==null?`<div style="text-align:right;padding-left:16px;border-left:1px solid #2a2d3a">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b90a3">ROI</div>
+        <div class="mono" style="font-size:22px;font-weight:700;color:${roiColor};margin-top:4px">${roi}</div>
+        <div style="font-size:10.5px;color:#8b90a3;margin-top:3px">on ${inr(p.purchase_price)} basis</div>
       </div>`:''}
-    </div>`;
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px;margin-bottom:16px">
+      ${col('Acquisition &amp; value', acquisitionRows, acqTotal)}
+      ${col('Revenue', revenueRows, revTotal)}
+      ${col('Costs', costRows, costTotal)}
+    </div>
+
+    ${gross>0?`<div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px">
+        <span>Revenue → costs → contribution</span><span>of ${inr(gross)} gross</span></div>
+      <div style="display:flex;height:26px;border-radius:6px;overflow:hidden">
+        ${costPct>0?`<div style="width:${costPct}%;background:var(--bad);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--mono);font-size:10px;font-weight:700">${costPct>=12?'COSTS '+costPct+'%':''}</div>`:''}
+        <div style="width:${contribPct}%;background:var(--ok);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--mono);font-size:10px;font-weight:700">${contribPct>=12?'CONTRIBUTION '+contribPct+'%':''}</div>
+      </div>
+    </div>`:''}`;
 }
 function serviceModal(assetId){
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">Log service</b><button class="x" onclick="closeOverlays()">✕</button></div>
@@ -3988,15 +4122,19 @@ const SETSECTIONS={
     </tbody></table>
     ${!types.length?'<p class="muted" style="font-size:12.5px;margin:10px 0 0">No asset types yet.</p>':''}</div>`;
   },
-  pricing:()=>{ const c=SETTINGS.config; return `<div class="card pad"><b style="font-family:var(--disp)">Pricing</b>
-    <p class="muted" style="font-size:12.5px;margin:6px 0 12px">Multi-day discount tiers, applied automatically at quote time.</p>
-    ${(c.multiday.length?c.multiday:[{minDays:3,pct:5}]).map((t,i)=>`<div data-tier="${i}" style="display:flex;gap:8px;align-items:center;margin-bottom:7px">
-      <span class="muted" style="font-size:12px">≥</span>
-      <input id="td-${i}" class="input" type="number" min="1" value="${t.minDays}" style="width:80px">
-      <span class="muted" style="font-size:12px">days →</span>
-      <input id="tp-${i}" class="input" type="number" min="0" max="90" value="${t.pct}" style="width:80px">
-      <span class="muted" style="font-size:12px">% off</span></div>`).join("")}
-    <div class="muted" style="font-size:11px;margin-bottom:10px">Longest qualifying tier wins. Set % to 0 to remove a tier.</div>
+  pricing:()=>{ const c=SETTINGS.config; const tiers=c.multiday.length?c.multiday:[{minDays:3,pct:5}];
+    return `<div class="card pad"><b style="font-family:var(--disp)">Multi-day discounts</b>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Longest qualifying tier wins, applied automatically at quote time.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      ${tiers.map((t,i)=>`<div data-tier="${i}" style="background:var(--ok-wash);border-radius:12px;padding:12px 14px;min-width:120px">
+        <div class="mono" style="font-size:20px;font-weight:700;color:var(--ok)">−${t.pct}%</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:6px;font-size:11px">
+          <span class="muted">≥</span><input id="td-${i}" class="input mono" type="number" min="1" value="${t.minDays}" style="width:44px;padding:3px 5px;font-size:11px">
+          <span class="muted">days</span></div>
+        <input id="tp-${i}" class="input mono" type="number" min="0" max="90" value="${t.pct}" style="width:100%;margin-top:6px;padding:3px 5px;font-size:11px" placeholder="% off">
+      </div>`).join("")}
+    </div>
+    <div class="muted" style="font-size:11px;margin-bottom:10px">Set % to 0 to remove a tier.</div>
     <button class="btn pri block" onclick="savePricing()">Save pricing</button></div>`; },
   maintenance:()=>{ const m=SETTINGS.config.maint; return `<div class="card pad"><b style="font-family:var(--disp)">Maintenance</b>
     <p class="muted" style="font-size:12.5px;margin:6px 0 12px">Whichever trigger is reached first flags an asset for service.</p>
