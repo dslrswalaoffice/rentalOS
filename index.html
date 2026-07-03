@@ -221,6 +221,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 /* Empty state: an icon, a plain-language line, and (optionally) the one
    action that belongs there — never just a bare "nothing here" line. */
 .empty{text-align:center;padding:38px 20px;color:var(--ink-4);border:1px dashed var(--line-2);border-radius:var(--r-lg)}
+.toggle{position:relative;display:inline-block;width:40px;height:23px;flex:none;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle .track{position:absolute;inset:0;background:var(--line-2);border-radius:20px;transition:background .15s}
+.toggle .track::before{content:"";position:absolute;width:17px;height:17px;left:3px;top:3px;background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(16,18,29,.2);transition:transform .15s}
+.toggle input:checked + .track{background:var(--ok)}
+.toggle input:checked + .track::before{transform:translateX(17px)}
 .empty .empty-ic{width:38px;height:38px;border-radius:10px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--ink-4)}
 .empty .empty-title{font-family:var(--disp);font-size:14.5px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
 .empty .empty-sub{font-size:12px;color:var(--ink-4);max-width:280px;margin:0 auto}
@@ -3026,12 +3032,30 @@ async function openAsset(assetId){
 VIEWS.assetdetail=()=> CUR_ASSET?assetDetailHtml(CUR_ASSET):loading('Asset');
 function assetDetailHtml(a){
   const admin=SESSION.user.role==='admin', c=MAINT_ST[a.status]||["pend",a.status];
-  const statusLbl=a.retired?'Retired':a.is_in_maintenance?'In maintenance — not bookable':a.is_available?'Available to book':'Out on rent';
-  const statusColor=a.retired?'var(--ink-4)':a.is_in_maintenance?'var(--warn)':a.is_available?'var(--ok)':'var(--brand-ink)';
-  return `<div class="head"><div><button class="btn sm" onclick="go('inventory')" style="margin-bottom:8px">← Inventory</button>
-    <div class="mono muted" style="font-size:12px">${esc(a.qr_code)||a.asset_id.slice(0,8)}</div>
-    <h1 class="h1" style="margin-top:4px">${esc(a.name)} <span class="chip ${c[0]}">${c[1]}</span></h1></div></div>
-  <div class="bkgrid">
+  const statusLbl=a.retired?'RETIRED':a.is_in_maintenance?'IN MAINTENANCE':a.is_available?'AVAILABLE':'OUT';
+  const statusDot={ok:'var(--ok)',warn:'var(--warn)',bad:'var(--bad)',pend:'var(--pend)'}[c[0]]||'var(--pend)';
+  const meta=[['ASSET ID', esc(a.qr_code)||a.asset_id.slice(0,8)], ['CATEGORY', esc(a.category)||'—'],
+    ['ACQUIRED', a.purchase_date?fmtDate(a.purchase_date):'—'],
+    ['INVESTOR', a.owner_type==='investor'?esc(a.investor_name||'—')+(a.investor_pct?' ('+a.investor_pct+'%)':''):'Business-owned']];
+  return `<div class="head"><button class="btn sm" onclick="go('inventory')">← Inventory</button></div>
+  <div class="card pad" style="display:flex;align-items:center;gap:18px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="width:72px;height:54px;flex:none;border-radius:10px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--ink-4)">${ICON_CAMERA}</div>
+    <div style="min-width:0;flex:1">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-family:var(--disp);font-weight:600;font-size:20px;letter-spacing:-.01em">${esc(a.name)}</span>
+        <span class="chip ${c[0]}">${statusLbl}</span>
+        <span class="chip ${a.condition==='good'?'ok':a.condition==='minor'?'warn':'bad'}">CONDITION ${(a.condition||'good').toUpperCase()}</span>
+        ${truthy(a.is_temp)?`<span class="chip warn">TEMP STOCK</span>`:''}
+      </div>
+      <div style="display:flex;gap:22px;margin-top:10px;flex-wrap:wrap">
+        ${meta.map(m=>`<div><div class="idcell" style="font-size:9px;letter-spacing:.06em;color:var(--ink-4)">${m[0]}</div><div style="font-size:12.5px;font-weight:500;margin-top:2px">${m[1]}</div></div>`).join("")}
+      </div>
+    </div>
+  </div>
+
+  ${a.pnl?assetPnlBlock(a.pnl):''}
+
+  <div class="bkgrid" style="margin-top:16px">
     <div>
       <div class="bkcard" style="margin-bottom:14px">
         <div class="bkhead">Service history</div>
@@ -3051,12 +3075,8 @@ function assetDetailHtml(a){
     </div>
 
     <div class="bkside">
-      <div class="bkcard" style="text-align:center;padding:14px 16px">
-        <div style="font-weight:700;font-size:14px;color:${statusColor}">${statusLbl}</div>
-        <div class="muted" style="font-size:11.5px;margin-top:2px">Condition: ${a.condition} · ${a.owner_type==='investor'?('Investor-owned · '+esc(a.investor_name||a.investor_id.slice(0,6))):'Business-owned'}</div>
-        ${a.retired&&a.retired_at?`<div class="muted" style="font-size:11px;margin-top:4px">Retired ${fmtDate(a.retired_at)}</div>`:''}
-        ${truthy(a.is_temp)?`<div style="margin-top:8px"><span class="chip warn plain">Temporary stock</span>${a.temp_expires_at?`<div class="muted" style="font-size:11px;margin-top:3px">Auto-retires ${fmtDate(a.temp_expires_at)}</div>`:''}</div>`:''}
-      </div>
+      ${a.retired&&a.retired_at?`<div class="bkcard"><div class="muted" style="font-size:11.5px">Retired ${fmtDate(a.retired_at)}</div></div>`:''}
+      ${truthy(a.is_temp)&&a.temp_expires_at?`<div class="bkcard"><div class="muted" style="font-size:11.5px">Auto-retires ${fmtDate(a.temp_expires_at)}</div></div>`:''}
       ${!a.retired?`<div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn pri" onclick="serviceModal('${a.asset_id}')">Log service</button>
         <button class="btn" onclick="assetFormModal('${a.asset_id}')">Edit details</button>
@@ -3074,8 +3094,6 @@ function assetDetailHtml(a){
           <div class="fact"><div class="k">Lifetime rentals</div><div class="v mono">${a.total_rentals}</div></div>
         </div>
       </div>
-
-      ${a.pnl?assetPnlBlock(a.pnl):''}
     </div>
   </div>`;
 }
@@ -3097,6 +3115,7 @@ function assetPnlBlock(p){
   const gross = p.lifetime_revenue>0?p.lifetime_revenue:0;
   const costPct = gross>0?Math.min(100,Math.round((totalCost/gross)*100)):0;
   const contribPct = 100-costPct;
+  const payback = (p.purchase_price>0) ? Math.min(100,Math.round((p.lifetime_revenue/p.purchase_price)*100)) : null;
 
   // A tight label-value row instead of a padded card — reads like a
   // statement, not a grid of mostly-empty boxes. Rows with no meaningful
@@ -3125,16 +3144,21 @@ function assetPnlBlock(p){
   return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 10px">Lifetime P&amp;L</p>
     ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below.</div>`:''}
 
-    <div style="background:var(--dark-hero);border-radius:14px;padding:16px 18px;margin-bottom:18px;display:grid;grid-template-columns:${roi!==null?'1fr auto':'1fr'};gap:16px;align-items:center">
-      <div>
+    <div style="display:grid;grid-template-columns:${roi!==null?'1.6fr 1fr 1fr':'1fr'};gap:1px;background:var(--ink);border-radius:14px;overflow:hidden;margin-bottom:18px">
+      <div style="background:var(--ink);padding:22px 24px;color:#fff">
         <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Net contribution · lifetime</div>
-        <div class="mono" style="font-size:30px;font-weight:700;color:#fff;margin-top:4px;line-height:1.1">${inr(p.net_contribution)}</div>
-        <div style="font-size:11px;color:var(--dark-muted);margin-top:5px">Revenue after maintenance &amp; repair costs${hasAcquisition?', vs. purchase price':''}.</div>
+        <div class="mono" style="font-size:36px;font-weight:700;color:#fff;margin-top:8px;line-height:1">${inr(p.net_contribution)}</div>
+        <div style="font-size:11.5px;color:var(--dark-muted);margin-top:10px">Revenue after maintenance &amp; repair costs${hasAcquisition?', vs. purchase price':''}.</div>
       </div>
-      ${roi!==null?`<div style="text-align:right;padding-left:16px;border-left:1px solid #2a2d3a">
+      ${roi!==null?`<div style="background:var(--dark-hero);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
         <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">ROI</div>
-        <div class="mono" style="font-size:22px;font-weight:700;color:${roiColor};margin-top:4px">${roi}</div>
-        <div style="font-size:10.5px;color:var(--dark-muted);margin-top:3px">on ${inr(p.purchase_price)} basis</div>
+        <div class="mono" style="font-size:26px;font-weight:700;color:${roiColor};margin-top:8px">${roi}</div>
+        <div style="font-size:10.5px;color:var(--dark-muted);margin-top:6px">on ${inr(p.purchase_price)} basis</div>
+      </div>
+      <div style="background:var(--dark-hero);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Payback</div>
+        <div class="mono" style="font-size:26px;font-weight:700;color:#fff;margin-top:8px">${payback}%</div>
+        <div style="font-size:10.5px;color:var(--dark-muted);margin-top:6px">${payback>=100?'fully recovered':'of purchase price recovered'}</div>
       </div>`:''}
     </div>
 
@@ -4264,7 +4288,7 @@ const SETSECTIONS={
   features:()=>`<div class="card pad"><b style="font-family:var(--disp)">Features</b>
     <p class="muted" style="font-size:12.5px;margin:6px 0 12px">Toggle optional modules for this workspace.</p>
     ${SETTINGS.flags.length?SETTINGS.flags.map(f=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px;text-transform:capitalize">${f.key.replace(/_/g,' ')}</span>
-      <button class="btn sm ${f.enabled?'pri':''}" onclick="flipFlag('${f.id}',${f.enabled?'false':'true'})">${f.enabled?'On':'Off'}</button></div>`).join(""):'<div class="muted" style="font-size:13px">No feature flags configured.</div>'}</div>`,
+      <label class="toggle"><input type="checkbox" ${f.enabled?'checked':''} onchange="flipFlag('${f.id}',this.checked)"><span class="track"></span></label></div>`).join(""):'<div class="muted" style="font-size:13px">No feature flags configured.</div>'}</div>`,
   demo:()=>`<div class="card pad"><b style="font-family:var(--disp)">Demo data</b>
     <p class="muted" style="font-size:12.5px;margin:6px 0 12px">Load sample data across every tab to preview the portal with realistic volume. Purge in one click before going live — only sample rows are removed.</p>
     ${(CACHE.demo&&CACHE.demo.active)
@@ -4281,7 +4305,7 @@ const SETSECTIONS={
     <p class="muted" style="font-size:12.5px;margin:6px 0 16px">Turn off what you don't need — a leaner portal is easier to learn and use. Nothing is deleted when you switch a module off, it's just hidden; flip it back on anytime and everything's still there.</p>
     ${MOD_INFO.map(([key,label,desc])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)">
       <div style="flex:1;padding-right:16px"><b style="font-size:13.5px">${label}</b><div class="muted" style="font-size:12px;margin-top:2px">${desc}</div></div>
-      <button class="btn sm ${m[key]!==false?'pri':''}" onclick="toggleModule('${key}',${m[key]===false})">${m[key]!==false?'On':'Off'}</button>
+      <label class="toggle"><input type="checkbox" ${m[key]!==false?'checked':''} onchange="toggleModule('${key}',this.checked)"><span class="track"></span></label>
     </div>`).join("")}
   </div>`; },
   users:()=>{ const all=SETTINGS.users||[]; const q=(USR_Q||'').trim().toLowerCase();
