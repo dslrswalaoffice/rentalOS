@@ -6,17 +6,18 @@
 <title>RentalOS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#16181d;--ink-2:#3c4150;--ink-3:#6b7280;--ink-4:#9aa1ad;
-  --surface:#fff;--panel:#f6f7f9;--panel-2:#eef0f4;--line:#e3e6ec;--line-2:#d3d7e0;
-  --brand:#2d44c7;--brand-ink:#2438a8;--brand-wash:#eef1fc;
-  --ok:#1f9d57;--ok-wash:#e7f6ed;--warn:#b9791b;--warn-wash:#fbf1df;
+  --ink:#16181d;--ink-2:#464a52;--ink-3:#5b616b;--ink-4:#9aa1ad;--ink-5:#8b9199;
+  --surface:#fff;--panel:#f6f7f9;--panel-2:#eef0f4;--line:#e3e6ea;--line-2:#d8dbe0;
+  --brand:#26235a;--brand-ink:#202058;--brand-wash:#ecebf4;
+  --accent:#e88020;--accent-ink:#8a5a12;--accent-wash:#fbeee0;
+  --ok:#1f9d57;--ok-ink:#177a45;--ok-wash:#e8f6ee;--warn:#b9791b;--warn-wash:#fbf1df;
   --bad:#cc3340;--bad-ink:#a3272f;--bad-wash:#fbe9eb;--bad-wash-2:#fdf7f7;--bad-border:#f3cfd2;--pend:#7a8294;--pend-wash:#eef0f4;
   --dark-hero:#20232b;--dark-muted:#8891a8;--ok-bright:#4ade80;--bad-bright:#ff8a94;
   --r:10px;--r-lg:14px;--sh:0 1px 2px rgba(16,18,29,.05);--sh-lg:0 8px 30px rgba(16,18,29,.10);
-  --font:"Inter",system-ui,sans-serif;--disp:"Space Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+  --font:"Inter",system-ui,sans-serif;--disp:"Sora",sans-serif;--mono:"JetBrains Mono",monospace;
 }
 *{box-sizing:border-box}html,body{margin:0;padding:0}
 body{font-family:var(--font);color:var(--ink);background:var(--panel);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -200,6 +201,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .hc-trigger:hover{border-bottom-color:var(--brand)}
 #hoverCard{position:fixed;z-index:70;min-width:230px;max-width:300px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-lg);padding:13px 14px;opacity:0;visibility:hidden;transform:translateY(-3px);transition:opacity .1s,transform .1s;pointer-events:none}
 #hoverCard.show{opacity:1;visibility:visible;transform:none}
+#hoverCard button{pointer-events:auto}
 #hoverCard .hc-head{font-family:var(--disp);font-weight:600;font-size:13.5px;margin-bottom:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 #hoverCard .hc-sub{display:block;font-family:var(--font);font-weight:400;font-size:11px;color:var(--ink-4)}
 #hoverCard .hc-row{font-size:12px;color:var(--ink-2);margin-bottom:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -819,6 +821,7 @@ const ICONS={dashboard:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="
    keep working unchanged since leaf keys never changed. */
 const HUB_MAP={
   timeline:{hub:'rentals',label:'Calendar'}, bookings:{hub:'rentals',label:'Bookings'},
+  bookingspipeline:{hub:'rentals',label:'Pipeline'},
   scan:{hub:'rentals',label:'Scan & dispatch'}, returns:{hub:'rentals',label:'Returns'},
   invoices:{hub:'billing',label:'Invoices'}, deposits:{hub:'billing',label:'Deposits'},
   inventory:{hub:'inventory',label:'Assets'}, maintenance:{hub:'inventory',label:'Maintenance'}, stockaudit:{hub:'inventory',label:'Stock audit'}, repairs:{hub:'inventory',label:'Repair tickets'},
@@ -878,10 +881,20 @@ function renderSide(){
   }).join("");
   $("#side").innerHTML=`<div class="navinner">${h}</div>`;
 }
+let PORTAL_TAB=null;
+const PORTAL_NAV={
+  investor:[['overview','OV','Overview'],['assets','AS','My Assets'],['payouts','PO','Payouts'],['documents','DC','Documents']],
+  client:[['bookings','BK','My Bookings'],['invoices','IN','Invoices'],['deposits','DP','Deposits'],['profile','PF','Profile']]
+};
+function portalGo(tab){ PORTAL_TAB=tab; render(); }
 function renderSideClient(){
   const role=SESSION.user.role;
-  const leaf=role==='investor'?'investorportal':'clientportal';
-  $("#side").innerHTML=`<div class="navinner"><div class="grp grp-first"><span class="lbl">Portal</span>${NAV_TGL()}</div>${navBtn(leaf,'My '+(role==='investor'?'investments':'account'),ICONS.dashboard)}</div>`;
+  const items=PORTAL_NAV[role]||PORTAL_NAV.client;
+  if(!PORTAL_TAB) PORTAL_TAB=items[0][0];
+  const btn=(tab,code,label)=>`<button class="nav ${PORTAL_TAB===tab?'on':''}" title="${label}" onclick="portalGo('${tab}')">
+    <span class="navcode">${code}</span><span class="lbl">${label}</span></button>`;
+  $("#side").innerHTML=`<div class="navinner"><div class="grp grp-first"><span class="lbl">${role==='investor'?'Investor':'Client'}</span>${NAV_TGL()}</div>
+    ${items.map(it=>btn(it[0],it[1],it[2])).join("")}</div>`;
 }
 async function go(v){
   VIEW=v; if(SESSION.user.role==='client'||SESSION.user.role==='investor'){ renderSideClient(); render(); return; }
@@ -1028,14 +1041,29 @@ function hcBooking(id){
   const items=(CACHE.booking_items||[]).filter(it=>it.booking_id===id && !truthy(it.is_optional_excluded));
   const dep=(CACHE.deposits||[]).find(d=>d.booking_id===id);
   const inv=(CACHE.invoices||[]).find(v=>v.booking_id===id);
-  const due=inv?Math.max(0,Number(inv.net_payable||0)-Number(inv.paid_amount||0)):null;
+  const paid=inv?Number(inv.paid_amount||0):0;
+  const due=inv?Math.max(0,Number(inv.net_payable||0)-paid):null;
+  const client=clientObjById(b.client_id)||{};
+  const bizState=(SETTINGS&&SETTINGS.profile&&SETTINGS.profile.state)||'Gujarat';
+  const intraState=!client.state || client.state===bizState;
+  const gstPct=inv&&(inv.subtotal-inv.discount)>0?Math.round(inv.gst/(inv.subtotal-inv.discount)*100):0;
   return `<div class="hc-head">${b.booking_number||id.slice(0,8)}${stageChip(b.status)}</div>
     <div class="hc-row">${clientName(b.client_id)} ${tier(b.tier_at_booking)}</div>
+    <div class="hc-row mono muted">${esc(client.phone_primary)||''}</div>
     <div class="hc-row muted">${fmtDateTime(b.start_date,b.start_time)} – ${fmtDateTime(b.end_date,b.end_time)} · ${items.length} item${items.length===1?'':'s'}</div>
-    <div class="hc-row mono" style="font-weight:600">${inr(b.total_estimated)}</div>
-    ${due!==null?`<div class="hc-row" style="color:${due>0?'var(--bad)':'var(--ok)'}">${due>0?inr(due)+' due':'Fully paid'}</div>`:''}
-    ${dep&&dep.held>0?`<div class="hc-row muted">${inr(dep.held)} deposit held</div>`:''}
-    ${!b.staff_id?'<div class="hc-row"><span class="chip brand plain">Storefront request</span></div>':''}`;
+    ${!b.staff_id?'<div class="hc-row"><span class="chip brand plain">Storefront request</span></div>':''}
+    ${inv?`<div style="border-top:1px dashed var(--line);margin-top:8px;padding-top:8px;font-size:11.5px">
+      <div class="hc-row" style="justify-content:space-between"><span class="muted">Subtotal</span><span class="mono">${inr(inv.subtotal)}</span></div>
+      ${inv.discount>0?`<div class="hc-row" style="justify-content:space-between;color:var(--ok-ink)"><span>Discount &amp; coupon</span><span class="mono">−${inr(inv.discount)}</span></div>`:''}
+      ${intraState?`<div class="hc-row" style="justify-content:space-between"><span class="muted">CGST @${Math.round(gstPct/2)}%</span><span class="mono">${inr(inv.gst/2)}</span></div>
+        <div class="hc-row" style="justify-content:space-between"><span class="muted">SGST @${Math.round(gstPct/2)}%</span><span class="mono">${inr(inv.gst/2)}</span></div>`
+        :`<div class="hc-row" style="justify-content:space-between"><span class="muted">IGST @${gstPct}%</span><span class="mono">${inr(inv.gst)}</span></div>`}
+      <div class="hc-row" style="justify-content:space-between;font-weight:700;border-top:1px dashed var(--line);padding-top:4px;margin-top:2px"><span>Total</span><span class="mono">${inr(inv.total)}</span></div>
+      ${paid>0?`<div class="hc-row" style="justify-content:space-between;color:var(--ok-ink)"><span>Paid</span><span class="mono">${inr(paid)}</span></div>`:''}
+      <div class="hc-row" style="justify-content:space-between;font-weight:700;color:${due>0?'var(--bad)':'var(--ok-ink)'}"><span>${due>0?'Pending':'Fully paid'}</span>${due>0?`<span class="mono">${inr(due)}</span>`:''}</div>
+    </div>`:`<div class="hc-row mono" style="font-weight:600">${inr(b.total_estimated)} estimated</div>`}
+    ${dep&&dep.held>0?`<div class="hc-row muted" style="margin-top:6px">${inr(dep.held)} deposit held</div>`:''}
+    <button class="btn sm pri block" style="margin-top:9px" onclick="event.stopPropagation();hcHide();openBooking('${id}')">Open booking →</button>`;
 }
 function hcAsset(id){
   const a=assetObjById(id); if(!a) return '';
@@ -1129,8 +1157,8 @@ const VIEWS={};
 /* ===================== CLIENT & INVESTOR PORTALS ===================== */
 let PORTAL_DATA=null;
 async function loadClientPortal(){
-  const [bookings,invoices,deposits,documents]=await Promise.allSettled([
-    api('my_bookings',{}), api('my_invoices',{}), api('my_deposits',{}), api('my_documents',{})]);
+  const [bookings,invoices,deposits,documents,profile]=await Promise.allSettled([
+    api('my_bookings',{}), api('my_invoices',{}), api('my_deposits',{}), api('my_documents',{}), api('my_profile',{})]);
   if([bookings,invoices,deposits,documents].every(r=>r.status==='rejected')){
     toast('Couldn\'t load your account — check your connection and reload.',true); return;
   }
@@ -1138,7 +1166,8 @@ async function loadClientPortal(){
     bookings: bookings.status==='fulfilled'?bookings.value:[],
     invoices: invoices.status==='fulfilled'?invoices.value:[],
     deposits: deposits.status==='fulfilled'?deposits.value:{held:0,bookings:[]},
-    documents: documents.status==='fulfilled'?documents.value:[]
+    documents: documents.status==='fulfilled'?documents.value:[],
+    profile: profile.status==='fulfilled'?profile.value:null
   };
   if([bookings,invoices,deposits,documents].some(r=>r.status==='rejected')) toast('Some information couldn\'t load — showing what we have.',true);
   if(VIEW==='clientportal') render();
@@ -1183,94 +1212,185 @@ function portalBookingPayment(p){
   if(p.mode==='estimate') return `<span class="muted" style="font-size:11px">Est. ${inr(p.total)}</span>`;
   return '';
 }
+function clientActiveHero_(d){
+  const outstanding=d.invoices.reduce((s,v)=>s+Math.max(0,Number(v.net_payable||0)-Number(v.paid_amount||0)),0);
+  const active=d.bookings.find(b=>['dispatched','open'].indexOf(b.status)>=0);
+  const dueInvoice=active?d.invoices.find(v=>v.booking_id===active.id && Number(v.net_payable||0)>Number(v.paid_amount||0)):null;
+  const depositHeld=active?(d.deposits.bookings.find(b=>b.booking_id===active.id)||{}):null;
+  if(!active) return outstanding>0?`<div style="background:var(--bad-wash-2);border:1px solid var(--bad-border);border-radius:14px;padding:16px 18px;margin-bottom:16px">
+    <div class="idcell" style="font-size:9.5px;letter-spacing:.08em;color:var(--bad-ink)">AMOUNT DUE</div>
+    <div class="mono" style="font-size:26px;font-weight:700;color:var(--bad);margin-top:4px">${inr(outstanding)}</div>
+  </div>`:'';
+  return `<div class="bkgrid" style="grid-template-columns:1.6fr 1fr;margin-bottom:16px">
+    <div class="card pad">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span class="idcell" style="font-size:10px;letter-spacing:.1em;color:var(--brand-ink)">ACTIVE RENTAL</span>
+        ${portalBookingChip(active.status)}
+      </div>
+      <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+        <span class="idcell" style="font-size:14px;font-weight:600;color:var(--brand)">${active.booking_number||active.id.slice(0,8)}</span>
+      </div>
+      <div class="idcell muted" style="font-size:12px;margin-top:6px">Out ${fmtDate(active.start_date)} · Due back ${fmtDate(active.end_date)}, ${active.end_time||'18:00'}</div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;gap:9px">
+        <button class="btn sm" onclick="portalViewBookingItems('${active.id}')">View items</button>
+        <button class="btn sm" onclick="portalExtendRental('${active.id}')">Extend rental</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${dueInvoice?`<div style="background:var(--bad-wash-2);border:1px solid var(--bad-border);border-radius:14px;padding:16px 18px">
+        <div class="idcell" style="font-size:9.5px;letter-spacing:.08em;color:var(--bad-ink)">AMOUNT DUE · ${dueInvoice.id.slice(0,8).toUpperCase()}</div>
+        <div class="mono" style="font-size:26px;font-weight:700;color:var(--bad);margin:6px 0 10px">${inr(Number(dueInvoice.net_payable||0)-Number(dueInvoice.paid_amount||0))}</div>
+        <button class="btn block" style="background:var(--bad);color:#fff;border:none" onclick="openInvoice('${dueInvoice.id}')">Pay now</button>
+      </div>`:''}
+      ${depositHeld&&depositHeld.held>0?`<div class="card pad">
+        <div class="idcell muted" style="font-size:9.5px;letter-spacing:.08em">DEPOSIT HELD</div>
+        <div class="mono" style="font-size:22px;font-weight:700;margin:5px 0 4px">${inr(depositHeld.held)}</div>
+        <div class="muted" style="font-size:11.5px">Refunded within 24h of return</div>
+      </div>`:''}
+    </div>
+  </div>`;
+}
 VIEWS.clientportal=()=>{
   if(!PORTAL_DATA) return loading('Your account');
   const d=PORTAL_DATA;
-  const outstanding=d.invoices.reduce((s,v)=>s+Math.max(0,Number(v.net_payable||0)-Number(v.paid_amount||0)),0);
-  return `<div class="head"><div><h1 class="h1">Hi ${esc(SESSION.user.name)}</h1><p class="sub">Here's everything on your account</p></div></div>
-  <div class="bkgrid">
-    <div>
-      <div class="bkcard" style="margin-bottom:14px">
-        <div class="bkhead">Your bookings <span class="muted" style="text-transform:none;font-weight:500">${d.bookings.length}</span></div>
-        ${d.bookings.length?d.bookings.map(b=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)">
-          <span><b style="font-size:13px">${b.booking_number||b.id.slice(0,8)}</b> <span class="muted" style="font-size:12px">${fmtDateTime(b.start_date,b.start_time)} – ${fmtDateTime(b.end_date,b.end_time)}</span></span>
-          <span style="display:flex;align-items:center;gap:6px">${portalBookingPayment(b.payment)}${portalBookingChip(b.status)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No bookings yet.</p>'}
-      </div>
-      <div class="bkcard">
-        <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${d.documents.length}</span></div>
-        <div class="doc-archlist">${portalDocList(d.documents)}</div>
-      </div>
+  const tab=PORTAL_TAB||'bookings';
+  const head=`<div class="head"><div>
+    <div class="idcell muted" style="font-size:9.5px;letter-spacing:.1em">HELLO</div>
+    <h1 class="h1" style="margin-top:2px">${esc(SESSION.user.name)}</h1></div>
+    <a class="btn pri" href="store.html" target="_blank" rel="noopener">Book equipment</a></div>`;
+
+  if(tab==='bookings') return head+clientActiveHero_(d)+`<div class="card" style="overflow:hidden">
+    <div class="idcell muted" style="font-size:10px;letter-spacing:.1em;padding:12px 18px;border-bottom:1px solid var(--line)">RENTAL HISTORY</div>
+    ${d.bookings.length?d.bookings.map(b=>`<div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line)">
+      <span class="idcell" style="font-size:12px;color:var(--brand);font-weight:500">${b.booking_number||b.id.slice(0,8)}</span>
+      <span style="flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.item_summary||''}</span>
+      <span class="idcell muted" style="font-size:11.5px">${fmtDate(b.start_date)}–${fmtDate(b.end_date)}</span>
+      ${portalBookingChip(b.status)}
+    </div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:16px 18px">No bookings yet.</p>'}
+  </div>`;
+
+  if(tab==='invoices') return head+`<div class="card" style="overflow:hidden">
+    <div class="idcell muted" style="font-size:10px;letter-spacing:.1em;padding:12px 18px;border-bottom:1px solid var(--line)">INVOICES</div>
+    ${d.invoices.length?d.invoices.map(v=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--line);font-size:13px">
+      <span class="muted">${fmtDate(v.created_at)}</span>${portalInvoiceLine(v)}</div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:16px 18px">None yet.</p>'}
+  </div>`;
+
+  if(tab==='deposits') return head+`<div class="card" style="overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)">
+      <span class="idcell muted" style="font-size:10px;letter-spacing:.1em">DEPOSITS</span>
+      <span class="mono" style="font-size:13px;font-weight:700">${inr(d.deposits.held)} held</span></div>
+    ${d.deposits.bookings.length?d.deposits.bookings.map(b=>{
+      const lbl=b.status==='agreed'?['pend','Due at pickup: '+inr(b.agreed)]:b.status==='held'?['ok',inr(b.held)+' held']:
+        b.status==='refunded'?['pend','Refunded']:b.status==='forfeited'?['bad','Forfeited — see documents']:['pend',inr(b.held)];
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--line);font-size:13px">
+      <span class="idcell" style="color:var(--brand)">${b.booking_number}</span><span class="chip ${lbl[0]}" style="font-size:11px">${lbl[1]}</span></div>`;}).join(""):'<p class="muted" style="font-size:12.5px;margin:16px 18px">No deposits on file.</p>'}
+  </div>`;
+
+  // profile
+  const p=d.profile||{};
+  return head+`<div class="card pad" style="max-width:480px">
+    <p class="muted" style="font-size:12px;margin:0 0 16px">Your name, phone, and tier are managed by our team — reach out if anything needs correcting. Everything below you can update yourself.</p>
+    <div class="split" style="margin-bottom:16px">
+      <div class="fact"><div class="k">Name</div><div class="v" style="font-size:14px">${esc(p.name)||'—'}</div></div>
+      <div class="fact"><div class="k">Phone</div><div class="v mono">${esc(p.phone_primary)||'—'}</div></div>
     </div>
-    <div class="bkside">
-      ${outstanding>0?`<div style="background:var(--bad-wash);border:1px solid var(--bad-border);border-radius:14px;padding:16px 18px">
-        <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--bad)">Amount due</div>
-        <div class="mono" style="font-size:26px;font-weight:700;color:var(--bad);margin-top:4px">${inr(outstanding)}</div>
-      </div>`:`<div class="bkcard" style="text-align:center;padding:18px 16px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px">Outstanding</div>
-        <div class="mono" style="font-size:26px;font-weight:700;color:var(--ok)">${inr(0)}</div>
-      </div>`}
-      <div class="bkcard">
-        <div class="bkhead">Invoices</div>
-        ${d.invoices.length?d.invoices.map(v=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
-          <span class="muted">${fmtDate(v.created_at)}</span>${portalInvoiceLine(v)}</div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None yet.</p>'}
-      </div>
-      <div class="bkcard">
-        <div class="bkhead">Deposits held <span class="muted" style="text-transform:none;font-weight:500">${inr(d.deposits.held)}</span></div>
-        ${d.deposits.bookings.length?d.deposits.bookings.map(b=>{
-          const lbl=b.status==='agreed'?['pend','Due at pickup: '+inr(b.agreed)]:b.status==='held'?['ok',inr(b.held)+' held']:
-            b.status==='refunded'?['pend','Refunded']:b.status==='forfeited'?['bad','Forfeited — see documents']:['pend',inr(b.held)];
-          return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px">
-          <span class="muted">${b.booking_number}</span><span class="chip ${lbl[0]}" style="font-size:11px">${lbl[1]}</span></div>`;}).join(""):'<p class="muted" style="font-size:12px;margin:0">No deposits on file.</p>'}
-      </div>
-    </div>
+    <label class="fld"><span>WhatsApp number <span class="muted" style="font-weight:400">(if different from phone)</span></span><input id="pfWa" class="input mono" type="tel" inputmode="numeric" maxlength="10" value="${esc(p.whatsapp_number)||''}" oninput="phoneInputHandler(this)"></label>
+    <label class="fld"><span>Email</span><input id="pfEmail" class="input" type="email" value="${esc(p.email)||''}"></label>
+    <label class="fld"><span>Company</span><input id="pfCompany" class="input" value="${esc(p.company)||''}"></label>
+    <label class="fld"><span>Address</span><input id="pfAddress" class="input" value="${esc(p.address)||''}"></label>
+    <button class="btn pri block" id="pfSaveBtn" onclick="portalSaveProfile()">Save changes</button>
   </div>`;
 };
+async function portalSaveProfile(){
+  const btn=$("#pfSaveBtn"); if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    const r=await api('my_profile_save',{whatsapp_number:$("#pfWa").value, email:$("#pfEmail").value, company:$("#pfCompany").value, address:$("#pfAddress").value});
+    PORTAL_DATA.profile=Object.assign(PORTAL_DATA.profile||{}, {whatsapp_number:$("#pfWa").value, email:$("#pfEmail").value, company:$("#pfCompany").value, address:$("#pfAddress").value});
+    toast('Saved.');
+  }catch(e){ toast(e.message,true); }
+  finally{ if(btn){btn.disabled=false;btn.textContent='Save changes';} }
+}
 async function portalRequestPayout(){
   const btn=$("#reqPayoutBtn"); if(btn){btn.disabled=true;btn.textContent='Sending…';}
   try{ await api('request_payout',{}); toast('Payout requested — the team will follow up.'); }
   catch(e){ toast(e.message,true); }
   finally{ if(btn){btn.disabled=false;btn.textContent='Request a payout';} }
 }
+function portalViewBookingItems(bookingId){
+  const b=(PORTAL_DATA.bookings||[]).find(x=>x.id===bookingId); if(!b) return;
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${b.booking_number||bookingId.slice(0,8)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    <p class="muted" style="font-size:12px;margin:0 0 12px">${fmtDate(b.start_date)} – ${fmtDate(b.end_date)}</p>
+    ${(b.items||[]).length?b.items.map(name=>`<div style="padding:9px 0;border-bottom:1px solid var(--line);font-size:13px">${esc(name)}</div>`).join(""):'<p class="muted" style="font-size:12.5px">No items on file.</p>'}
+  </div>`;
+  openOverlay($("#modal"));
+}
+function portalExtendRental(bookingId){
+  const biz=(SETTINGS&&SETTINGS.profile)||{};
+  toast('Extending a live rental needs a quick availability check on our end — '+(biz.phone?'call or WhatsApp us at '+biz.phone:'reach out to the team')+' and we\'ll sort it.');
+}
+function investorHero_(s,capitalDeployed){
+  return `<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:1px;background:var(--ink);border-radius:14px;overflow:hidden;margin-bottom:16px">
+    <div style="background:var(--ink);padding:22px 24px;color:#fff">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Lifetime returns</div>
+      <div class="mono" style="font-size:36px;font-weight:700;color:var(--ok-bright);margin-top:8px;line-height:1">${inr(s.total_share)}</div>
+      <div style="font-size:11.5px;color:var(--dark-muted);margin-top:10px">${inr(s.total_paid)} paid out across ${s.payouts.length} distribution${s.payouts.length===1?'':'s'}.</div>
+    </div>
+    <div style="background:var(--dark-hero);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Capital deployed</div>
+      <div class="mono" style="font-size:26px;font-weight:700;margin-top:8px">${inr(capitalDeployed)}</div>
+      <div style="font-size:10.5px;color:var(--dark-muted);margin-top:6px">across ${s.asset_count} asset${s.asset_count===1?'':'s'}</div>
+    </div>
+    <div style="background:var(--dark-hero);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Outstanding</div>
+      <div class="mono" style="font-size:26px;font-weight:700;color:${s.outstanding>0?'var(--bad-bright)':'var(--ok-bright)'};margin-top:8px">${inr(s.outstanding)}</div>
+      <div style="font-size:10.5px;color:var(--dark-muted);margin-top:6px">${s.pct}% revenue share</div>
+    </div>
+  </div>`;
+}
+function investorAssetsTable_(s,cap){
+  return `<div class="card" style="overflow:hidden">
+    <div style="padding:12px 18px;border-bottom:1px solid var(--line)" class="idcell muted" style="font-size:10px;letter-spacing:.1em">MY ASSETS</div>
+    <div style="display:grid;grid-template-columns:1.3fr 84px 92px 70px;gap:12px;padding:10px 18px;background:var(--panel);font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--ink-4)">
+      <span>ASSET</span><span style="text-align:right">CAPITAL</span><span style="text-align:right">REVENUE</span><span style="text-align:right">PAYBACK</span></div>
+    ${s.assets.length?s.assets.slice(0,cap).map(a=>`<div style="display:grid;grid-template-columns:1.3fr 84px 92px 70px;gap:12px;padding:13px 18px;border-top:1px solid var(--line);align-items:center">
+      <div><span style="font-size:13px;font-weight:600">${esc(a.name)}</span><br><span class="idcell" style="font-size:10px;color:var(--ink-4)">${a.utilization_90d_pct}% util · 90d</span></div>
+      <span class="idcell" style="text-align:right;color:var(--ink-3)">${inr(a.purchase_price)}</span>
+      <span class="idcell" style="text-align:right;font-weight:500">${inr(a.lifetime_revenue)}</span>
+      <span class="idcell" style="text-align:right;font-weight:600;color:${a.payback_pct>=100?'var(--ok)':'var(--ink-2)'}">${a.payback_pct!==null?a.payback_pct+'%':'—'}</span>
+    </div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:16px 18px">None tagged yet.</p>'}
+  </div>`;
+}
+function investorPayoutsList_(s,cap){
+  const rows=s.payouts.slice().reverse();
+  return `<div class="card" style="overflow:hidden">
+    <div class="idcell muted" style="font-size:10px;letter-spacing:.1em;padding:12px 18px;border-bottom:1px solid var(--line)">PAYOUT HISTORY</div>
+    ${rows.length?rows.slice(0,cap).map(p=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-top:1px solid var(--line)">
+      <div style="flex:1;min-width:0"><div class="idcell" style="font-size:12px;font-weight:500">${fmtDate(p.at)}</div>
+        <div class="muted" style="font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((p.notes||'').replace('payout:',''))||'Distribution'}</div></div>
+      <span class="moneycell" style="font-weight:600">${inr(p.amount)}</span>
+      <span class="chip ok plain" style="font-size:9px">PAID</span>
+    </div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:16px 18px">No payouts recorded yet.</p>'}
+  </div>`;
+}
 VIEWS.investorportal=()=>{
   if(!PORTAL_DATA) return loading('Your account');
   const s=PORTAL_DATA.summary, docs=PORTAL_DATA.documents;
-  return `<div class="head"><div><h1 class="h1">Hi ${esc(SESSION.user.name)}</h1><p class="sub">${s.pct}% share · ${s.asset_count} asset${s.asset_count===1?'':'s'} tagged to you</p></div></div>
-  <div style="background:var(--dark-hero);border-radius:14px;padding:16px 18px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center">
-    <div>
-      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Lifetime earned</div>
-      <div class="mono" style="font-size:28px;font-weight:700;color:var(--ok-bright);margin-top:4px">${inr(s.total_share)}</div>
-      <div style="font-size:11px;color:var(--dark-muted);margin-top:5px">${inr(s.total_paid)} paid out across ${s.statements.length} statement${s.statements.length===1?'':'s'}.</div>
-    </div>
-    <div style="text-align:right;padding-left:16px;border-left:1px solid #2a2d3a">
-      <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Outstanding</div>
-      <div class="mono" style="font-size:22px;font-weight:700;color:${s.outstanding>0?'var(--bad-bright)':'var(--ok-bright)'};margin-top:4px">${inr(s.outstanding)}</div>
-    </div>
-  </div>
-  <div class="bkgrid">
-    <div>
-      <div class="bkcard" style="margin-bottom:14px">
-        <div class="bkhead">Statements</div>
-        ${s.statements.length?s.statements.slice().reverse().map(st=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px">
-          <span>${fmtDate(st.period_start)}–${fmtDate(st.period_end)} <span class="muted">· gross ${inr(st.gross)}</span></span><span class="moneycell" style="display:inline-block">${inr(st.share)}</span></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No statements yet.</p>'}
-      </div>
-      <div class="bkcard">
-        <div class="bkhead">Documents <span class="muted" style="text-transform:none;font-weight:500">${docs.length}</span></div>
-        <div class="doc-archlist">${portalDocList(docs)}</div>
-      </div>
-    </div>
-    <div class="bkside">
-      ${s.outstanding>0?`<button class="btn pri block" id="reqPayoutBtn" onclick="portalRequestPayout()">Request a payout</button>`:''}
-      <div class="bkcard">
-        <div class="bkhead">Your assets <span class="muted" style="text-transform:none;font-weight:500">performance</span></div>
-        ${s.assets.length?s.assets.map(a=>`<div style="padding:9px 0;border-bottom:1px solid var(--line)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:550">${esc(a.name)}</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span class="muted" style="font-size:10.5px">Utilization (90d)</span><span class="mono" style="font-size:11.5px">${a.utilization_90d_pct}%</span></div>
-          <div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-bottom:7px"><div style="height:100%;width:${a.utilization_90d_pct}%;background:${a.utilization_90d_pct===0?'var(--bad)':a.utilization_90d_pct<25?'var(--warn)':'var(--ok)'}"></div></div>
-          ${a.payback_pct!==null?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span class="muted" style="font-size:10.5px">Payback (lifetime)</span><span class="mono" style="font-size:11.5px">${a.payback_pct}% · ${inr(a.lifetime_revenue)} of ${inr(a.purchase_price)}</span></div>
-          <div style="height:5px;border-radius:3px;background:var(--line);overflow:hidden"><div style="height:100%;width:${a.payback_pct}%;background:${a.payback_pct>=100?'var(--ok)':'var(--brand)'}"></div></div>`:''}
-        </div>`).join(""):'<p class="muted" style="font-size:12px;margin:0">None tagged yet.</p>'}
-      </div>
-    </div>
+  const capitalDeployed=s.assets.reduce((sum,a)=>sum+(a.purchase_price||0),0);
+  const tab=PORTAL_TAB||'overview';
+  const head=`<div class="head"><div>
+    <div class="idcell muted" style="font-size:9.5px;letter-spacing:.1em">WELCOME BACK</div>
+    <h1 class="h1" style="margin-top:2px">${esc(SESSION.user.name)}</h1></div></div>`;
+  if(tab==='overview') return head+investorHero_(s,capitalDeployed)+
+    (s.outstanding>0?`<button class="btn pri block" id="reqPayoutBtn" style="margin-bottom:16px" onclick="portalRequestPayout()">Request a payout</button>`:'')+
+    `<div class="bkgrid" style="grid-template-columns:1.4fr 1fr">${investorAssetsTable_(s,3)}${investorPayoutsList_(s,4)}</div>`;
+  if(tab==='assets') return head+investorAssetsTable_(s,999);
+  if(tab==='payouts') return head+
+    (s.outstanding>0?`<button class="btn pri block" id="reqPayoutBtn" style="margin-bottom:16px" onclick="portalRequestPayout()">Request a payout</button>`:'')+
+    investorPayoutsList_(s,999);
+  return head+`<div class="card pad">
+    <div class="bkhead" style="margin-bottom:10px">Documents <span class="muted" style="text-transform:none;font-weight:500">${docs.length}</span></div>
+    <div class="doc-archlist">${portalDocList(docs)}</div>
   </div>`;
 };
 
@@ -1527,6 +1647,7 @@ async function loadUtilization(){
 function utilFilter(k,v){ if(k==='from')UTIL_FROM=v; if(k==='to')UTIL_TO=v; if(k==='cat')UTIL_CAT=v; if(k==='owner')UTIL_OWNER=v; UTIL=null; loadUtilization(); render(); }
 VIEWS.utilization=()=>{
   if(!UTIL){ loadUtilization(); return loading('Utilization'); }
+  if(REPAIRS===null) loadRepairs();
   let rows=UTIL.rows;
   if(UTIL_OWNER==='business') rows=rows.filter(r=>r.owner==='Business');
   else if(UTIL_OWNER==='investor') rows=rows.filter(r=>r.owner!=='Business');
@@ -1550,19 +1671,22 @@ VIEWS.utilization=()=>{
       <label class="fld" style="min-width:130px"><span>Owner</span><select class="input" onchange="utilFilter('owner',this.value)"><option value="">All</option><option value="business" ${UTIL_OWNER==='business'?'selected':''}>Business</option><option value="investor" ${UTIL_OWNER==='investor'?'selected':''}>Investor</option></select></label>
     </div>
   </div>
-  ${catAvg.length>1?`<div class="card pad" style="margin-bottom:14px">
-    <p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 12px">Utilization by category · this period</p>
-    ${catAvg.map(c=>`<div style="display:flex;align-items:center;gap:12px;padding:6px 0">
-      <span style="width:100px;font-size:12.5px;flex:none">${esc(c.cat)}</span>
-      <div style="flex:1;height:7px;border-radius:4px;background:var(--panel-2);overflow:hidden"><div style="height:100%;width:${c.avg}%;background:${c.avg===0?'var(--bad)':c.avg<25?'var(--warn)':'var(--ok)'}"></div></div>
-      <span class="mono" style="font-size:12.5px;font-weight:700;width:36px;text-align:right">${c.avg}%</span></div>`).join("")}
-  </div>`:''}
-  <div class="card" style="margin-bottom:14px">${rows.length?`<table class="tbl"><thead><tr><th>Asset</th><th>Category</th><th>Owner</th><th>Utilization</th><th>Booked</th><th>Idle</th><th style="text-align:right">Revenue (period)</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr class="clickable${r.utilisation_pct===0?' exception':''}" onclick="openAsset('${r.asset_id}')"><td><b>${esc(r.name)}</b></td><td class="muted" style="font-size:12px">${esc(r.category)}</td><td style="font-size:12px">${esc(r.owner)}</td>
-      <td style="min-width:120px"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden"><div style="height:100%;width:${r.utilisation_pct}%;background:${r.utilisation_pct===0?'var(--bad)':r.utilisation_pct<25?'var(--warn)':'var(--ok)'}"></div></div><span class="mono" style="font-size:12px;min-width:32px">${r.utilisation_pct}%</span></div></td>
-      <td class="mono" style="font-size:12px">${r.booked_days}d</td><td class="mono muted" style="font-size:12px">${r.idle_days}d</td>
-      <td class="moneycell">${inr(r.revenue)}</td></tr>`).join("")}
-    </tbody></table>`:'<div class="empty">No assets match these filters.</div>'}</div>
+  <div class="bkgrid" style="grid-template-columns:1fr 1.5fr;margin-bottom:14px">
+    <div class="card pad">
+      <p class="idcell muted" style="font-size:10px;letter-spacing:.05em;margin:0 0 14px">UTILISATION BY CATEGORY</p>
+      ${catAvg.length?catAvg.map(c=>`<div style="margin-bottom:13px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span class="muted">${esc(c.cat)}</span><span class="mono" style="font-weight:700">${c.avg}%</span></div>
+        <div style="height:7px;border-radius:4px;background:var(--panel-2);overflow:hidden"><div style="height:100%;width:${c.avg}%;background:${c.avg===0?'var(--bad)':c.avg<25?'var(--warn)':'var(--ok)'}"></div></div>
+      </div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No categories to compare.</p>'}
+    </div>
+    <div class="card" style="overflow:hidden">${rows.length?`<table class="tbl"><thead><tr><th>Asset</th><th>Category</th><th>Owner</th><th style="text-align:right">Utilization</th><th style="text-align:right">Booked</th><th style="text-align:right">Revenue</th></tr></thead><tbody>
+      ${rows.map(r=>{const underRepair=(REPAIRS||[]).some(t=>t.asset_id===r.asset_id&&t.status!=='closed');
+        return `<tr class="clickable${r.utilisation_pct===0?' exception':''}" onclick="openAsset('${r.asset_id}')"><td><b>${esc(r.name)}</b></td><td class="muted" style="font-size:12px">${esc(r.category)}</td><td style="font-size:12px">${esc(r.owner)}</td>
+        <td style="text-align:right">${underRepair?`<span class="chip bad plain" style="font-size:9px">REPAIR</span>`:`<span class="mono" style="font-size:12.5px;font-weight:600">${r.utilisation_pct}%</span>`}</td>
+        <td class="idcell" style="text-align:right;color:var(--ink-3)">${r.booked_days}d</td>
+        <td class="moneycell">${inr(r.revenue)}</td></tr>`;}).join("")}
+      </tbody></table>`:'<div class="empty" style="margin:16px">No assets match these filters.</div>'}</div>
+  </div>
   ${idleRows.length>0?`<div class="card pad">
     <p class="muted" style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:0 0 10px">Idle assets · needs attention <span style="color:var(--bad)">${idleRows.length} tying up capital</span></p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1646,6 +1770,7 @@ VIEWS.reports=()=>{
 const GANTT_DAYS_BACK=7, GANTT_DAYS_FWD=75, GANTT_TOTAL=GANTT_DAYS_BACK+GANTT_DAYS_FWD;
 const GANTT_ZOOM_PX={month:26,week:64,day:140};
 let GANTT_ZOOM='week';
+let GT_QUERY='';
 let GT_CONFLICTS=null;
 async function loadGtConflicts(){
   const origin=gtOrigin(); const ws=origin.toISOString().slice(0,10);
@@ -1704,7 +1829,9 @@ function ganttRows(){
 }
 
 VIEWS.timeline=()=>{
-  const rows=ganttRows();
+  let rows=ganttRows();
+  const gq=(GT_QUERY||'').trim().toLowerCase();
+  if(gq) rows=rows.filter(r=>(r.name+' '+r.category).toLowerCase().includes(gq));
   setTimeout(gtJumpToday,0);
   if(GT_CONFLICTS===null) loadGtConflicts();
   const dayW=GANTT_ZOOM_PX[GANTT_ZOOM];
@@ -1750,6 +1877,7 @@ VIEWS.timeline=()=>{
     <span style="font-size:12.5px;color:var(--ink-2)"><strong style="color:var(--bad-ink)">${GT_CONFLICTS.length} real double-booking${GT_CONFLICTS.length===1?'':'s'} on specific units</strong> — ${esc(GT_CONFLICTS[0].asset_name)}: ${esc(GT_CONFLICTS[0].a)} overlaps ${esc(GT_CONFLICTS[0].b)}${GT_CONFLICTS.length>1?' (+'+(GT_CONFLICTS.length-1)+' more)':''}. This shouldn't happen — availability checks normally block it.</span>
   </div>`:''}
   <div class="gtoolbar">
+    <input class="input" style="max-width:220px" placeholder="Search product or category…" value="${(GT_QUERY||'').replace(/"/g,'&quot;')}" oninput="GT_QUERY=this.value;render()">
     <button class="btn sm" onclick="gtJumpToday()">Today</button>
     <div class="spacer"></div>
     <div class="gzoom">
@@ -1762,7 +1890,7 @@ VIEWS.timeline=()=>{
     <div class="gt-corner" style="grid-column:1;grid-row:1 / span 2"></div>
     ${monthHtml}${dayHtml}${labelHtml}${blockHtml}
     <div class="gt-today" style="left:${todayLeft}px;height:${gridHeightPx}px"></div>
-  </div></div>`:'<div class="card"><div class="gt-empty">No active fleet to show — add assets in Inventory first.</div></div>'}`;
+  </div></div>`:(gq?`<div class="empty">No products match "${esc(GT_QUERY)}".</div>`:'<div class="card"><div class="gt-empty">No active fleet to show — add assets in Inventory first.</div></div>')}`;
 };
 function gtZoom(z){ GANTT_ZOOM=z; render(); setTimeout(gtJumpToday,0); }
 function gtJumpToday(){
@@ -1781,6 +1909,59 @@ let DASH_ACT=null;
 async function loadDashActivity(){
   if(SESSION.user.role!=='admin') return;
   try{ DASH_ACT=await api('activity_log',{limit:8}); if(VIEW==='dashboard') render(); }catch(e){ /* non-critical, dashboard works fine without it */ }
+}
+let DASH_RANGE={go:'today',cb:'today'};
+let DASH_PICKER_OPEN=null;
+const DASH_PRESETS=[['today','Today'],['tomorrow','Tomorrow'],['week','This week'],['next7','Next 7 days']];
+function dashToggle(sec){ DASH_PICKER_OPEN=DASH_PICKER_OPEN===sec?null:sec; render(); }
+function dashPick(sec,key){ DASH_RANGE[sec]=key; DASH_PICKER_OPEN=null; render(); }
+function dashInRange_(dateStr,rangeKey){
+  if(!dateStr) return false;
+  const d=dateStr.slice(0,10), today=todayStr_();
+  const t=new Date(today+'T00:00:00');
+  if(rangeKey==='today') return d===today;
+  if(rangeKey==='tomorrow'){ const tm=new Date(t.getTime()+86400000).toISOString().slice(0,10); return d===tm; }
+  if(rangeKey==='week'){ const end=new Date(t.getTime()+ (6-t.getDay())*86400000).toISOString().slice(0,10); return d>=today&&d<=end; }
+  if(rangeKey==='next7'){ const end=new Date(t.getTime()+6*86400000).toISOString().slice(0,10); return d>=today&&d<=end; }
+  return d===today;
+}
+/** One "direction" panel — Going out (confirmed bookings due to dispatch) or
+ *  Coming back (dispatched/open bookings due to return). Both share the same
+ *  date-range-picker shape; "Coming back" additionally pins overdue returns
+ *  at the top regardless of the selected range, since those stay urgent no
+ *  matter what window is being browsed. */
+function dashDirectionPanel_(sec,title,dotColor,badgeBg,list,dateField,timeField,defaultTime,pinnedOverdue){
+  const range=DASH_RANGE[sec];
+  const inRange=list.filter(b=>dashInRange_(b[dateField],range) && !(pinnedOverdue&&pinnedOverdue.indexOf(b)>=0));
+  const overdueIds=pinnedOverdue?pinnedOverdue.map(b=>b.id):[];
+  const rangeLabel=(DASH_PRESETS.find(p=>p[0]===range)||['',''])[1];
+  const row=(b,overdue)=>`<div class="clickable" data-hb="${b.id}" onclick="openBooking('${b.id}')" style="display:flex;align-items:center;gap:13px;padding:12px 18px;border-bottom:1px solid var(--line);background:${overdue?'var(--bad-wash-2)':'transparent'}">
+      <span style="flex:none;width:76px;font-family:var(--mono);font-size:11px;color:${overdue?'var(--bad-ink)':'var(--ink-5)'};font-weight:${overdue?700:400}">${overdue?'OVERDUE':fmtDateTime(b[dateField],b[timeField]||defaultTime).split(' ').slice(-1)[0]}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${clientName(b.client_id)}</div>
+        <div class="muted" style="font-size:11px;margin-top:2px">${fmtDate(b[dateField])}</div>
+      </div>
+      <span class="idcell" style="flex:none;font-size:11.5px;font-weight:600;color:var(--brand)">${b.booking_number||b.id.slice(0,8)}</span>
+    </div>`;
+  const overdueRows=(pinnedOverdue||[]).map(b=>row(b,true)).join("");
+  const rangeRows=inRange.slice(0,6).map(b=>row(b,false)).join("");
+  const totalCount=(pinnedOverdue?pinnedOverdue.length:0)+inRange.length;
+  return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:visible;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--panel-2)">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${dotColor}"></span>
+        <span style="font-family:var(--disp);font-weight:600;font-size:14.5px">${title}</span>
+        <span class="idcell" style="font-size:10px;font-weight:700;color:${dotColor};background:${badgeBg};padding:2px 8px;border-radius:999px">${totalCount}</span>
+      </div>
+      <button onclick="dashToggle('${sec}')" style="display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--brand);background:var(--panel);border:1px solid var(--line);padding:6px 11px;border-radius:8px;cursor:pointer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M3 10h18M8 2v4M16 2v4"></path></svg>${rangeLabel} ▾</button>
+    </div>
+    ${DASH_PICKER_OPEN===sec?`<div style="position:absolute;right:18px;top:54px;z-index:30;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--sh-lg);padding:8px;min-width:150px">
+      ${DASH_PRESETS.map(p=>`<button onclick="dashPick('${sec}','${p[0]}')" style="display:block;width:100%;text-align:left;font-family:var(--font);font-size:12.5px;font-weight:500;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;margin-bottom:2px;background:${range===p[0]?'var(--brand)':'transparent'};color:${range===p[0]?'#fff':'var(--ink-2)'}">${p[1]}</button>`).join("")}
+    </div>`:''}
+    ${overdueRows}${rangeRows}
+    ${!overdueRows&&!rangeRows?`<div class="muted" style="padding:20px 18px;text-align:center;font-size:12.5px">Nothing ${sec==='go'?'going out':'due back'} in this range.</div>`:''}
+  </div>`;
 }
 VIEWS.dashboard=()=>{
   const a=CACHE.assets, bk=CACHE.bookings, today=todayStr_(), admin=SESSION.user.role==='admin';
@@ -1818,6 +1999,19 @@ VIEWS.dashboard=()=>{
   const revDelta=invoicedLastMonth>0?Math.round(((invoicedThisMonth-invoicedLastMonth)/invoicedLastMonth)*1000)/10:null;
   const monthLbl=new Date().toLocaleDateString('en-IN',{month:'short'});
 
+  const openRepairs=(REPAIRS||[]).filter(t=>t.status!=='closed').length;
+  if(REPAIRS===null) loadRepairs();
+  const byCat={}; a.filter(x=>!truthy(x.retirement_flag)).forEach(x=>{ const cat=x.category||'Other'; (byCat[cat]=byCat[cat]||{tot:0,out:0}).tot++; if(!truthy(x.is_available))byCat[cat].out++; });
+  const catRows=Object.keys(byCat).map(k=>({cat:k,pct:Math.round(byCat[k].out/byCat[k].tot*100)})).sort((x,y)=>y.pct-x.pct).slice(0,5);
+  const actTag=(l)=>{ const et=l.entity_type||'';
+    if(et==='payments') return ['PAY','var(--ok)','var(--ok-wash)'];
+    if(et==='repair_tickets') return ['RPR','var(--bad)','var(--bad-wash)'];
+    if(et==='bookings'&&l.action==='insert') return ['BKG','var(--warn)','var(--warn-wash)'];
+    if(et==='booking_items') return ['OUT','var(--brand)','var(--brand-wash)'];
+    if(et==='invoices') return ['INV','var(--brand-ink)','var(--brand-wash)'];
+    return ['UPD','var(--pend)','var(--pend-wash)'];
+  };
+
   return `${wizardShouldShow()?`<div class="card pad" style="background:var(--brand-wash);border-color:var(--brand);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
     <div><b style="font-family:var(--disp);font-size:14px;color:var(--brand-ink)">New here? Let's get RentalOS set up</b>
       <p class="muted" style="font-size:12px;margin:2px 0 0">Business info, tax settings, and a starting inventory — about 5 minutes.</p></div>
@@ -1826,7 +2020,7 @@ VIEWS.dashboard=()=>{
   <div class="head"><div><h1 class="h1">${_greeting_()}</h1><p class="sub">${a.length} assets · ${CACHE.clients.length} clients · here's what's on for today</p></div>
     <button class="btn pri" onclick="newQuote()">+ New quote</button></div>
 
-  <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+  <div class="kpis">
     <div class="kpi" onclick="go('invoices')"><div class="lbl">Revenue · ${monthLbl}</div><div class="val">${inr(invoicedThisMonth)}</div>
       ${revDelta!==null?`<div class="delta ${revDelta>=0?'up':'down'}">${revDelta>=0?'▲':'▼'} ${Math.abs(revDelta)}%</div>`:''}
       <div class="foot">Tap to view →</div></div>
@@ -1835,23 +2029,42 @@ VIEWS.dashboard=()=>{
     ${overdueReturns.length>0?`<div class="kpi alert" onclick="goBookings(['dispatched','open'])"><div class="lbl">Overdue returns</div><div class="val">${overdueReturns.length}</div>
       <div class="subrow">! ${overdueReturns.filter(b=>{const t=dueAt(b);return t&&(now-t)>48*3600000;}).length} over 48h</div></div>`
       :`<div class="kpi" onclick="go('bookings')"><div class="lbl">Live bookings</div><div class="val">${live}</div><div class="foot">Confirmed, dispatched, or open →</div></div>`}
+    ${openRepairs>0?`<div class="kpi" onclick="go('repairs')"><div class="lbl">Open repair tickets</div><div class="val">${openRepairs}</div><div class="foot">Tap to view →</div></div>`
+      :`<div class="kpi" onclick="go('clients')"><div class="lbl">Clients</div><div class="val">${CACHE.clients.length}</div><div class="foot">Tap to view →</div></div>`}
+  </div>
+
+  <div class="bkgrid" style="grid-template-columns:1.5fr 1fr;margin-bottom:16px">
+    <div class="card" style="overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)">
+        <span style="font-family:var(--disp);font-weight:600;font-size:14.5px">Recent activity</span>
+        <span class="idcell" style="font-size:10px;color:var(--ink-4);letter-spacing:.06em">LIVE</span>
+      </div>
+      ${admin?(DASH_ACT?(DASH_ACT.logs.length?DASH_ACT.logs.slice(0,7).map(l=>{const t=actTag(l);return `<div style="display:flex;align-items:center;gap:13px;padding:11px 18px;border-bottom:1px solid var(--line)">
+          <span style="flex:none;width:38px;text-align:center;font-family:var(--mono);font-size:9.5px;font-weight:700;padding:4px 0;border-radius:6px;background:${t[2]};color:${t[1]}">${t[0]}</span>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.summary)}</div>
+            <div class="idcell" style="font-size:10.5px;color:var(--ink-4);margin-top:2px">${esc(l.user_name)}</div></div>
+          <span class="idcell" style="flex:none;font-size:10.5px;color:var(--ink-4)">${(l.at||'').slice(11,16)}</span>
+        </div>`;}).join(""):'<p class="muted" style="font-size:12.5px;margin:12px 18px">No activity logged yet.</p>')
+        :'<p class="muted" style="font-size:12.5px;margin:12px 18px">Loading…</p>')
+        :'<p class="muted" style="font-size:12.5px;margin:12px 18px">Activity log is admin-only.</p>'}
+    </div>
+    <div class="card pad">
+      <div style="font-family:var(--disp);font-weight:600;font-size:14.5px;margin-bottom:2px">Fleet utilisation</div>
+      <div class="idcell" style="font-size:10px;color:var(--ink-4);letter-spacing:.06em;margin-bottom:16px">BY CATEGORY · RIGHT NOW</div>
+      ${catRows.length?catRows.map(r=>`<div style="margin-bottom:13px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span class="muted">${esc(r.cat)}</span><span class="mono" style="font-weight:700">${r.pct}%</span></div>
+        <div style="height:6px;border-radius:3px;background:var(--panel-2)"><div style="width:${r.pct}%;height:100%;border-radius:3px;background:${r.pct===0?'var(--bad)':r.pct<25?'var(--warn)':'var(--ok)'}"></div></div>
+      </div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No active fleet yet.</p>'}
+    </div>
+  </div>
+
+  <div class="bkgrid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+    ${dashDirectionPanel_('go','Going out','var(--brand)','var(--brand-wash)',bk.filter(b=>b.status==='confirmed'),'start_date','start_time','09:00')}
+    ${dashDirectionPanel_('cb','Coming back','var(--accent)','var(--accent-wash)',bk.filter(b=>['dispatched','open'].indexOf(b.status)>=0),'end_date','end_time','18:00',overdueReturns)}
   </div>
 
   <div class="bkgrid">
     <div>
-      <div class="bkcard" style="margin-bottom:14px">
-        <div class="bkhead" style="color:var(--bad)">Overdue returns <span class="muted" style="text-transform:none;font-weight:500">${overdueReturns.length}</span></div>
-        ${opsRow(overdueReturns,'Nothing overdue — clean.',b=>bkRow(b,fmtDateTime(b.end_date,b.end_time),'bad'))}
-      </div>
-      <div class="bkcard" style="margin-bottom:14px">
-        <div class="bkhead">Returns due today <span class="muted" style="text-transform:none;font-weight:500">${returnToday.length}</span></div>
-        ${opsRow(returnToday,'Nothing due back today.',b=>bkRow(b,'Due '+(b.end_time||'18:00'),'warn'))}
-      </div>
-      <div class="bkcard" style="margin-bottom:14px">
-        <div class="bkhead">Dispatches due today <span class="muted" style="text-transform:none;font-weight:500">${dispatchToday.length}</span></div>
-        ${opsRow(dispatchToday,'Nothing to send out today.',b=>bkRow(b,(b.start_time||'09:00'),'brand'))}
-      </div>
-
       <div class="bkcard"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
         <div class="bkhead" style="margin:0">Recent bookings</div><button class="btn sm" onclick="go('bookings')">View all</button></div>
         ${bk.length?bookingsTable(bk.slice(-6).reverse()):'<p class="muted" style="font-size:12.5px;margin:6px 0 0">No bookings yet — create your first quote.</p>'}
@@ -1887,15 +2100,62 @@ VIEWS.dashboard=()=>{
     </div>
   </div>`;
 };
+let BK_SORT={field:null,dir:1};
+function bkSort(field){ if(BK_SORT.field===field) BK_SORT.dir*=-1; else BK_SORT={field:field,dir:1}; render(); }
+function bkSortArrow(field){ return BK_SORT.field===field?(BK_SORT.dir>0?' ▲':' ▼'):''; }
+function bkDepositFor_(id){ return (CACHE.deposits||[]).find(d=>d.booking_id===id)||null; }
 function bookingsTable(rows){
   const today=new Date().toISOString().slice(0,10);
-  return `<table class="tbl"><thead><tr><th>Booking</th><th>Client</th><th>Stage</th><th>Dates</th><th style="text-align:right">Estimate</th></tr></thead><tbody>
+  if(BK_SORT.field){
+    rows=rows.slice().sort((x,y)=>{
+      let vx,vy;
+      if(BK_SORT.field==='id'){ vx=x.booking_number||''; vy=y.booking_number||''; }
+      else if(BK_SORT.field==='client'){ vx=clientName(x.client_id); vy=clientName(y.client_id); }
+      else if(BK_SORT.field==='out'){ vx=x.start_date||''; vy=y.start_date||''; }
+      else if(BK_SORT.field==='due'){ vx=x.end_date||''; vy=y.end_date||''; }
+      else if(BK_SORT.field==='amount'){ vx=Number(x.total_estimated)||0; vy=Number(y.total_estimated)||0; }
+      else if(BK_SORT.field==='deposit'){ vx=(bkDepositFor_(x.id)||{}).held||0; vy=(bkDepositFor_(y.id)||{}).held||0; }
+      if(vx<vy) return -1*BK_SORT.dir; if(vx>vy) return 1*BK_SORT.dir; return 0;
+    });
+  }
+  return `<table class="tbl"><thead><tr>
+    <th class="clickable" onclick="bkSort('id')">BOOKING${bkSortArrow('id')}</th>
+    <th class="clickable" onclick="bkSort('client')">CLIENT${bkSortArrow('client')}</th>
+    <th>ITEMS</th>
+    <th class="clickable" onclick="bkSort('out')">OUT${bkSortArrow('out')}</th>
+    <th class="clickable" onclick="bkSort('due')">DUE${bkSortArrow('due')}</th>
+    <th class="clickable" style="text-align:right" onclick="bkSort('amount')">AMOUNT${bkSortArrow('amount')}</th>
+    <th class="clickable" style="text-align:right" onclick="bkSort('deposit')">DEPOSIT${bkSortArrow('deposit')}</th>
+    <th style="text-align:right">PAYMENT</th></tr></thead><tbody>
   ${rows.map(b=>{const overdue=['dispatched','open'].indexOf(b.status)>=0 && b.end_date && b.end_date<today;
-    return `<tr class="clickable${overdue?' exception':''}" onclick="openBooking('${b.id}')">
-    <td class="idcell"><span class="hc-trigger" data-hb="${b.id}">${b.booking_number||b.id.slice(0,8)}</span></td>
-    <td><span class="hc-trigger" data-hc="${b.client_id}">${clientName(b.client_id)}</span> ${tier(b.tier_at_booking)}${!b.staff_id?' <span class="chip brand plain" style="font-size:10px">Storefront</span>':''}</td>
-    <td>${stageChip(b.status)}${overdue?' <span class="chip bad plain" style="font-size:9.5px">Overdue</span>':''}</td><td class="muted">${fmtDateTime(b.start_date,b.start_time)} – ${fmtDateTime(b.end_date,b.end_time)}</td>
-    <td class="moneycell">${inr(b.total_estimated)}</td></tr>`;}).join("")}</tbody></table>`;}
+    const items=(CACHE.booking_items||[]).filter(it=>it.booking_id===b.id && !truthy(it.is_optional_excluded));
+    const itemSummary=items.length?(items.length===1?(assetObjById(items[0].asset_id)||{}).name||'Item':(assetObjById(items[0].asset_id)||{}).name+' +'+(items.length-1)):'—';
+    const dep=bkDepositFor_(b.id);
+    const inv=(CACHE.invoices||[]).find(v=>v.booking_id===b.id);
+    const pay=inv?paymentState(inv.net_payable,inv.paid_amount):null;
+    return `<tr class="clickable${overdue?' exception':''}" data-hb="${b.id}" onclick="openBooking('${b.id}')">
+    <td class="idcell">${b.booking_number||b.id.slice(0,8)}</td>
+    <td><span class="hc-trigger" data-hc="${b.client_id}">${clientName(b.client_id)}</span> ${tier(b.tier_at_booking)}${!b.staff_id?' <span class="chip brand plain" style="font-size:10px">Storefront</span>':''}${overdue?' <span class="chip bad plain" style="font-size:9.5px">Overdue</span>':''}</td>
+    <td class="muted" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${esc(itemSummary)}</td>
+    <td class="idcell muted">${fmtDate(b.start_date)}</td>
+    <td class="idcell muted">${fmtDate(b.end_date)}</td>
+    <td class="moneycell">${inr(b.total_estimated)}</td>
+    <td class="idcell muted" style="text-align:right">${dep&&dep.held>0?inr(dep.held):'—'}</td>
+    <td style="text-align:right;white-space:nowrap">
+      ${pay?`<span class="chip ${pay.state==='paid'?'ok':pay.state==='partial'?'warn':'bad'} plain" style="font-size:9.5px">${pay.state==='paid'?'Paid':pay.state==='partial'?'Partial':'Unpaid'}</span>`:''}
+      ${b.status==='confirmed'?`<button class="btn sm" title="Mark picked up" style="padding:5px 7px" onclick="event.stopPropagation();startDispatch('${b.id}')">✓</button>`:''}
+      ${['dispatched','open'].indexOf(b.status)>=0?`<button class="btn sm" title="Mark returned" style="padding:5px 7px" onclick="event.stopPropagation();startReturn('${b.id}')">↩</button>`:''}
+      <button class="btn sm" title="Duplicate" style="padding:5px 7px" onclick="event.stopPropagation();duplicateBooking('${b.id}')">⧉</button>
+    </td></tr>`;}).join("")}</tbody></table>`;}
+function duplicateBooking(id){
+  const b=bookingById(id); if(!b) return;
+  const items=(CACHE.booking_items||[]).filter(it=>it.booking_id===id && !truthy(it.is_optional_excluded));
+  openNewBookingWizard();
+  NB.client_id=b.client_id;
+  NB.cart=items.map(it=>it.asset_id);
+  toast('Duplicated '+(b.booking_number||'booking')+' — pick new dates, client and items carried over');
+  render();
+}
 
 function bkStatusCounts(){
   const all=CACHE.bookings||[];
@@ -1932,7 +2192,6 @@ function bookingsListHtml(){
   return bookingsTable(shown)+(filt.length>BK_CAP?`<div class="muted" style="padding:9px 14px;font-size:12px;border-top:1px solid var(--line)">Showing ${BK_CAP} of ${filt.length} — refine your search to narrow.</div>`:'');
 }
 function renderBookingsList(){ _preserveFocus_(()=>{ const el=$("#bkList"); if(el) el.innerHTML=bookingsListHtml(); }); }
-let BK_VIEW_MODE='list';
 function bkColumns(){
   const all=bookingsFiltered();
   const cols=[
@@ -1946,10 +2205,25 @@ function bkColumns(){
   cols.forEach(c=>{ c.items=all.filter(b=>c.statuses.indexOf(b.status)>=0); });
   return cols;
 }
+let PIPE_DRAG_ID=null;
+function pipeDragStart(e,id){ PIPE_DRAG_ID=id; e.dataTransfer.effectAllowed='move'; }
+function pipeDragOver(e){ e.preventDefault(); }
+function pipeDrop(e,targetKey){
+  e.preventDefault();
+  const id=PIPE_DRAG_ID; PIPE_DRAG_ID=null; if(!id) return;
+  const b=bookingById(id); if(!b) return;
+  // Only real, existing transitions are honored — no silent status flips.
+  // Anything else (skipping a stage, dragging backward, or a stage with no
+  // manual trigger) is rejected with a clear reason rather than faked.
+  if(b.status==='confirmed' && targetKey==='dispatched'){ startDispatch(id); return; }
+  if((b.status==='dispatched'||b.status==='open') && targetKey==='finalised'){ startReturn(id); return; }
+  if(b.status===targetKey) return;
+  toast('Can not move straight from '+(BK_STATUS_LABEL[b.status]||b.status)+' to '+(BK_STATUS_LABEL[targetKey]||targetKey)+' — open the booking to change its stage properly.',true);
+}
 function bookingsBoardHtml(){
   const cols=bkColumns();
   return `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;overflow-x:auto">
-    ${cols.map(c=>`<div style="background:var(--panel-2);border-radius:12px;padding:8px;min-height:200px">
+    ${cols.map(c=>`<div ondragover="pipeDragOver(event)" ondrop="pipeDrop(event,'${c.key}')" style="background:var(--panel-2);border-radius:12px;padding:8px;min-height:200px">
       <div style="display:flex;align-items:center;gap:7px;padding:7px 9px 10px">
         <span style="width:6px;height:6px;border-radius:50%;background:${c.dot}"></span>
         <span class="idcell" style="font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--ink-3)">${c.title.toUpperCase()}</span>
@@ -1957,7 +2231,7 @@ function bookingsBoardHtml(){
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         ${c.items.slice(0,25).map(b=>{const overdue=['dispatched','open'].indexOf(b.status)>=0 && b.end_date && b.end_date<new Date().toISOString().slice(0,10);
-          return `<div class="clickable" onclick="openBooking('${b.id}')" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;border-left:3px solid ${overdue?'var(--bad)':c.dot};box-shadow:var(--sh)">
+          return `<div class="clickable" draggable="true" ondragstart="pipeDragStart(event,'${b.id}')" onclick="openBooking('${b.id}')" style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 12px;border-left:3px solid ${overdue?'var(--bad)':c.dot};box-shadow:var(--sh);cursor:grab">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
             <span class="idcell" style="font-size:10.5px;font-weight:600;color:var(--brand-ink)">${b.booking_number||b.id.slice(0,8)}</span>
             <span class="mono" style="font-size:11px;font-weight:600">${inr(b.total_estimated)}</span>
@@ -1975,11 +2249,8 @@ VIEWS.bookings=()=>{
   const c=bkStatusCounts();
   return `<div class="head"><div><h1 class="h1">Bookings</h1><p class="sub">${bookingsFiltered().length} shown of ${CACHE.bookings.length} total</p></div>
   <div style="display:flex;gap:10px;align-items:center">
-    ${BK_VIEW_MODE==='list'?`<input class="input" style="max-width:200px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">`:''}
-    <div style="display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden">
-      <button style="font-family:var(--font);font-weight:600;font-size:12.5px;color:${BK_VIEW_MODE==='board'?'#fff':'var(--ink-2)'};background:${BK_VIEW_MODE==='board'?'var(--ink)':'#fff'};border:none;padding:8px 14px;cursor:pointer" onclick="BK_VIEW_MODE='board';render()">Board</button>
-      <button style="font-family:var(--font);font-weight:600;font-size:12.5px;color:${BK_VIEW_MODE==='list'?'#fff':'var(--ink-2)'};background:${BK_VIEW_MODE==='list'?'var(--ink)':'#fff'};border:none;padding:8px 14px;cursor:pointer" onclick="BK_VIEW_MODE='list';render()">List</button>
-    </div>
+    <input class="input" style="max-width:200px" placeholder="Search bookings…" value="${BK_Q.replace(/"/g,'&quot;')}" oninput="BK_Q=this.value;renderBookingsList()">
+    <button class="btn" onclick="go('bookingspipeline')">Pipeline view</button>
     <button class="btn pri" onclick="newQuote()">+ New quote</button></div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     ${bkFilterPill('All',c.all,!BK_STATUS&&!BK_OVERDUE,"bkPillFilter(null)")}
@@ -1990,7 +2261,14 @@ VIEWS.bookings=()=>{
     ${bkFilterPill('Finalised',c.finalised,BK_STATUS&&BK_STATUS.length>1,"bkPillFilter(['finalised','tax_invoice','paid','closed'])")}
     ${c.overdue>0?bkFilterPill('Overdue',c.overdue,BK_OVERDUE,"bkPillFilter(null,true)",true):''}
   </div>
-  ${BK_VIEW_MODE==='board'?bookingsBoardHtml():`<div class="card" id="bkList">${bookingsListHtml()}</div>`}`;
+  <div class="card" id="bkList">${bookingsListHtml()}</div>`;
+};
+VIEWS.bookingspipeline=()=>{
+  return `<div class="head"><div>
+    <div class="idcell muted" style="font-size:9.5px;letter-spacing:.1em">ORDER LIFECYCLE · DRAG TO ADVANCE</div>
+    <h1 class="h1" style="margin-top:2px">Booking pipeline</h1></div>
+    <button class="btn pri" onclick="newQuote()">+ New quote</button></div>
+  ${bookingsBoardHtml()}`;
 };
 
 let INV_FILTER='', IVQ='', INV_TYPE='', INV_OWNER='', INV_COND='', INV_PAGE=1;
@@ -2004,6 +2282,9 @@ function invClass_(a){
 }
 const INV_FILTER_LABEL={onrent:'On rent',available:'Available',maintenance:'In maintenance',retired:'Retired'};
 const INV_COND_LABEL={good:'Good',minor:'Minor damage',major:'Major damage',non_functional:'Non-functional',retired:'Retired'};
+let INV_SORT={field:null,dir:1};
+function invSort(field){ if(INV_SORT.field===field) INV_SORT.dir*=-1; else INV_SORT={field:field,dir:1}; INV_PAGE=1; render(); }
+function invSortArrow(field){ return INV_SORT.field===field?(INV_SORT.dir>0?' ▲':' ▼'):''; }
 function invFiltered(){
   let a=CACHE.assets;
   if(INV_FILTER) a=a.filter(x=>invClass_(x)===INV_FILTER);
@@ -2012,6 +2293,16 @@ function invFiltered(){
   if(INV_COND) a=a.filter(x=>x.condition_status===INV_COND);
   const q=IVQ.trim().toLowerCase();
   if(q) a=a.filter(x=>((x.name||'')+' '+(x.qr_code||'')+' '+(x.serial_number||'')).toLowerCase().includes(q));
+  if(INV_SORT.field){
+    a=a.slice().sort((x,y)=>{
+      let vx,vy;
+      if(INV_SORT.field==='name'){ vx=x.name||''; vy=y.name||''; }
+      else if(INV_SORT.field==='type'){ vx=(CACHE.asset_types.find(t=>t.id===x.asset_type_id)||{}).name||''; vy=(CACHE.asset_types.find(t=>t.id===y.asset_type_id)||{}).name||''; }
+      else if(INV_SORT.field==='rate'){ vx=Number(x.daily_rate)||0; vy=Number(y.daily_rate)||0; }
+      else if(INV_SORT.field==='rev'){ vx=(INV_REV&&INV_REV[x.id])||0; vy=(INV_REV&&INV_REV[y.id])||0; }
+      if(vx<vy) return -1*INV_SORT.dir; if(vx>vy) return 1*INV_SORT.dir; return 0;
+    });
+  }
   return a;
 }
 function invSetFilter(k,v){
@@ -2070,15 +2361,22 @@ function invBodyHtml(){
     <div class="spacer"></div><button class="btn sm" onclick="INV_SELECTED=new Set();renderInvBody()">Clear</button></div>`:''}
   <div class="card"><table class="tbl"><thead><tr>
     <th class="nosort"><input type="checkbox" ${allOnPageSelected?'checked':''} onchange='invToggleSelAll(this.checked,${JSON.stringify(pageIds)})'></th>
-    <th>QR / Asset</th><th>Type</th><th>Rate/day</th><th>Owner</th><th>Condition</th><th>Status</th></tr></thead><tbody>
+    <th class="clickable" onclick="invSort('name')">ASSET${invSortArrow('name')}</th>
+    <th class="clickable" onclick="invSort('type')">TYPE${invSortArrow('type')}</th>
+    <th class="clickable" onclick="invSort('rate')">RATE/DAY${invSortArrow('rate')}</th>
+    <th>OWNER</th><th>CONDITION</th><th>STATUS</th>
+    <th class="clickable" style="text-align:right" onclick="invSort('rev')">LIFETIME REV${invSortArrow('rev')}</th>
+    <th style="text-align:right">ACTIONS</th></tr></thead><tbody>
   ${page.length?page.map(a=>`<tr class="clickable">
     <td class="nosort" onclick="event.stopPropagation()"><input type="checkbox" ${INV_SELECTED.has(a.id)?'checked':''} onchange="invToggleSel('${a.id}',this.checked)"></td>
-    <td onclick="openAsset('${a.id}')"><div class="mono" style="font-size:12px">${a.qr_code||'—'}</div><div><span class="hc-trigger" data-ha="${a.id}">${esc(a.name)}</span>${truthy(a.is_temp)?' <span class="chip warn plain" style="font-size:9px">TMP</span>':''}</div></td>
+    <td onclick="openAsset('${a.id}')"><div class="idcell" style="font-size:12px">${a.qr_code||'—'}</div><div><span class="hc-trigger" data-ha="${a.id}">${esc(a.name)}</span>${truthy(a.is_temp)?' <span class="chip warn plain" style="font-size:9px">TMP</span>':''}</div></td>
     <td class="muted" onclick="openAsset('${a.id}')">${(CACHE.asset_types.find(t=>t.id===a.asset_type_id)||{}).name||'—'}</td>
-    <td class="mono" onclick="openAsset('${a.id}')">${inr(a.daily_rate)}</td>
+    <td class="idcell" onclick="openAsset('${a.id}')">${inr(a.daily_rate)}</td>
     <td class="muted" onclick="openAsset('${a.id}')">${a.owner_type==='investor'?'Investor':'Business'}</td>
     <td onclick="openAsset('${a.id}')">${a.condition_status==='good'?'<span class="chip ok">Good</span>':'<span class="chip warn">'+(INV_COND_LABEL[a.condition_status]||a.condition_status||'—')+'</span>'}</td>
-    <td onclick="openAsset('${a.id}')">${truthy(a.is_available)?'<span class="chip ok plain">Available</span>':'<span class="chip brand plain">On rent</span>'}</td></tr>`).join(""):`<tr><td colspan="7"><div class="empty">No assets match these filters.</div></td></tr>`}
+    <td onclick="openAsset('${a.id}')">${truthy(a.is_available)?'<span class="chip ok plain">Available</span>':'<span class="chip brand plain">On rent</span>'}</td>
+    <td class="moneycell" onclick="openAsset('${a.id}')">${INV_REV?inr(INV_REV[a.id]||0):'…'}</td>
+    <td style="text-align:right" onclick="event.stopPropagation()"><button class="btn sm" title="Duplicate asset" style="padding:5px 7px" onclick="duplicateAsset('${a.id}')">⧉</button></td></tr>`).join(""):`<tr><td colspan="9"><div class="empty">No assets match these filters.</div></td></tr>`}
   </tbody></table></div>
   ${pages>1?`<div class="pager"><span class="pginfo">Page ${INV_PAGE} of ${pages}</span>
     <button ${INV_PAGE<=1?'disabled':''} onclick="INV_PAGE=1;renderInvBody()">«</button>
@@ -2092,40 +2390,32 @@ const ivSearchDebounced=debounce_(v=>{ IVQ=v; INV_PAGE=1; renderInvBody(); }, 80
 VIEWS.inventory=()=>{
   const typesInUse=[...new Map(CACHE.assets.map(a=>[a.asset_type_id,(CACHE.asset_types.find(t=>t.id===a.asset_type_id)||{}).name||a.asset_type_id])).entries()].sort((a,b)=>a[1].localeCompare(b[1]));
   const anyFilter=INV_FILTER||IVQ||INV_TYPE||INV_OWNER||INV_COND;
+  if(INV_REV===null) loadInvRevenues();
 
-  const sidebar=`<div class="invside">
-    <details class="invgrp" open><summary>Status</summary>
-      <select class="input" onchange="invSetFilter('INV_FILTER',this.value)">
-        <option value="">All</option>
-        ${Object.keys(INV_FILTER_LABEL).map(k=>`<option value="${k}" ${INV_FILTER===k?'selected':''}>${INV_FILTER_LABEL[k]}</option>`).join("")}
-      </select></details>
-    <details class="invgrp" open><summary>Product type</summary>
-      <select class="input" onchange="invSetFilter('INV_TYPE',this.value)">
-        <option value="">All</option>${typesInUse.map(t=>`<option value="${t[0]}" ${INV_TYPE===t[0]?'selected':''}>${t[1]}</option>`).join("")}
-      </select></details>
-    <details class="invgrp" open><summary>Owner</summary>
-      <select class="input" onchange="invSetFilter('INV_OWNER',this.value)">
-        <option value="">All</option><option value="business" ${INV_OWNER==='business'?'selected':''}>Business</option>
-        <option value="investor" ${INV_OWNER==='investor'?'selected':''}>Investor</option>
-      </select></details>
-    <details class="invgrp" open><summary>Condition</summary>
-      <select class="input" onchange="invSetFilter('INV_COND',this.value)">
-        <option value="">All</option>${Object.keys(INV_COND_LABEL).map(k=>`<option value="${k}" ${INV_COND===k?'selected':''}>${INV_COND_LABEL[k]}</option>`).join("")}
-      </select></details>
-    ${anyFilter?`<button class="btn sm block" style="margin-top:14px" onclick="invClearFilters()">Clear all filters</button>`:''}
-    <button class="btn sm block" style="margin-top:10px" onclick="invExport()">↓ Export CSV</button>
-  </div>`;
-
-  return `<div class="head"><div><h1 class="h1">Inventory</h1></div>
+  return `<div class="head"><div><h1 class="h1">Assets / inventory</h1><p class="sub">The fleet as a filterable ledger.</p></div>
     <button class="btn pri" onclick="assetFormModal()">+ Add asset</button></div>
-  <div class="invwrap">
-    ${sidebar}
-    <div class="invmain">
-      <div class="invtoolbar"><input class="input" placeholder="Search name, QR, serial…" value="${IVQ.replace(/"/g,'&quot;')}" oninput="ivSearchDebounced(this.value)"></div>
-      <div id="invBody">${invBodyHtml()}</div>
-    </div>
-  </div>`;
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+    <input class="input" style="max-width:280px" placeholder="Search assets by name, ID, category…" value="${IVQ.replace(/"/g,'&quot;')}" oninput="ivSearchDebounced(this.value)">
+    <select class="input" style="max-width:160px" onchange="invSetFilter('INV_TYPE',this.value)">
+      <option value="">Product type</option>${typesInUse.map(t=>`<option value="${t[0]}" ${INV_TYPE===t[0]?'selected':''}>${t[1]}</option>`).join("")}</select>
+    <select class="input" style="max-width:140px" onchange="invSetFilter('INV_OWNER',this.value)">
+      <option value="">Owner</option><option value="business" ${INV_OWNER==='business'?'selected':''}>Business</option>
+      <option value="investor" ${INV_OWNER==='investor'?'selected':''}>Investor</option></select>
+    <select class="input" style="max-width:150px" onchange="invSetFilter('INV_COND',this.value)">
+      <option value="">Condition</option>${Object.keys(INV_COND_LABEL).map(k=>`<option value="${k}" ${INV_COND===k?'selected':''}>${INV_COND_LABEL[k]}</option>`).join("")}</select>
+    ${anyFilter?`<button class="btn sm" onclick="invClearFilters()">Clear filters</button>`:''}
+    <button class="btn sm" onclick="invExport()">↓ Export CSV</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    ${bkFilterPill('All',CACHE.assets.length,!INV_FILTER,"invSetFilter('INV_FILTER','')")}
+    ${Object.keys(INV_FILTER_LABEL).map(k=>{const c=CACHE.assets.filter(x=>invClass_(x)===k).length; return c>0?bkFilterPill(INV_FILTER_LABEL[k],c,INV_FILTER===k,`invSetFilter('INV_FILTER','${k}')`,k==='maintenance'):'';}).join("")}
+  </div>
+  <div id="invBody">${invBodyHtml()}</div>`;
 };
+let INV_REV=null;
+async function loadInvRevenues(){
+  try{ INV_REV=await api('asset_lifetime_revenues',{}); if(VIEW==='inventory') renderInvBody(); }catch(e){ /* non-critical — column just shows blank */ }
+}
 
 let CL_Q='', CL_FILTER='', CL_TIER='';
 const CL_FILTER_LABEL={new:'New',building:'Building',established:'Established',trusted:'Trusted',watchlist:'Watchlisted',blacklist:'Blacklisted'};
@@ -2629,13 +2919,27 @@ function invoiceDetailHtml(v){
   const bizState=(SETTINGS&&SETTINGS.profile&&SETTINGS.profile.state)||'Gujarat';
   const intraState=!client.state || client.state===bizState;
   const gstPct=(v.subtotal-v.discount)>0?Math.round(v.gst/(v.subtotal-v.discount)*100):0;
+  const gstin=(SETTINGS&&SETTINGS.profile&&SETTINGS.profile.gstin)||'';
+  const invMeta=[
+    ['REFERENCE', v.type==='consolidated'?'Consolidated':(v.id.slice(0,8))],
+    ['BOOKING', v.type==='consolidated'?'—':(bk.booking_number||'—')],
+    ['ISSUED', v.created_at?fmtDate(v.created_at):'—'],
+    ['GSTIN', gstin||'—'],
+    ['PLACE OF SUPPLY', intraState?esc(bizState):esc(client.state||'—')],
+    ['STATUS', (stages.find(s=>s[0]===v.status)||['',v.status])[1]]
+  ];
   let linesHtml='';
   if(v.type==='consolidated'){
-    linesHtml=lines.map(g=>`<div style="padding:7px 0;border-bottom:1px solid var(--line)"><div class="idcell muted" style="font-size:11px">${g.booking}</div>
-      ${(g.lines||[]).filter(l=>l.amount>0).map(l=>`<div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(l.name)} · ${l.days}d</span><span class="moneycell" style="display:inline-block">${inr(l.amount)}</span></div>`).join("")}</div>`).join("");
+    linesHtml=lines.map(g=>`<div style="padding:9px 18px;border-top:1px solid var(--line);background:var(--panel)"><div class="idcell muted" style="font-size:11px">${g.booking}</div></div>`+
+      (g.lines||[]).filter(l=>l.amount>0).map(l=>`<div style="display:grid;grid-template-columns:1fr 74px 40px 88px;gap:12px;padding:10px 18px;border-top:1px solid var(--line);align-items:center">
+        <span style="font-size:13px">${esc(l.name)}</span><span class="idcell" style="text-align:right;color:var(--ink-3)">${inr(l.rate||0)}</span><span class="idcell" style="text-align:right;color:var(--ink-3)">${l.days}</span><span class="moneycell">${inr(l.amount)}</span></div>`).join("")
+    ).join("");
   } else {
-    linesHtml=lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;${l.chargeable?'':'opacity:.5'}">
-      <span>${esc(l.name)} <span class="muted">${l.rate?'· '+inr(l.rate)+'×'+l.days+'d'+(l.rental_days&&l.rental_days!==l.days?' billed ('+l.rental_days+'d reserved)':''):''}</span>${l.chargeable?'':' <span class="chip pend plain">₹0</span>'}</span><span class="moneycell" style="display:inline-block">${inr(l.amount)}</span></div>`).join("");
+    linesHtml=lines.map(l=>`<div style="display:grid;grid-template-columns:1fr 74px 40px 88px;gap:12px;padding:12px 18px;border-top:1px solid var(--line);align-items:center;${l.chargeable?'':'opacity:.5'}">
+      <span style="font-size:13px;font-weight:500">${esc(l.name)}${l.rental_days&&l.rental_days!==l.days?`<div class="muted" style="font-size:10.5px;margin-top:2px">billed (${l.rental_days}d reserved)</div>`:''}${l.chargeable?'':' <span class="chip pend plain" style="font-size:9px">₹0</span>'}</span>
+      <span class="idcell" style="text-align:right;color:var(--ink-3)">${inr(l.rate||0)}</span>
+      <span class="idcell" style="text-align:right;color:var(--ink-3)">${l.days}</span>
+      <span class="moneycell">${inr(l.amount)}</span></div>`).join("");
   }
   const taxRow=(k,v2,color,title)=>`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px"${title?` title="${title}"`:''}>
     <span class="muted">${k}</span><span class="mono" style="font-weight:600${color?`;color:${color}`:''}">${v2}</span></div>`;
@@ -2644,10 +2948,17 @@ function invoiceDetailHtml(v){
     <h1 class="h1" style="margin-top:4px"><span class="hc-trigger" data-hc="${v.client_id}">${clientName(v.client_id)}</span> ${v.type==='consolidated'?'<span class="chip brand plain">VIP</span>':''}</h1></div></div>
   <div class="detailpage">
     <div style="overflow-x:auto;margin-bottom:16px"><div class="steps">${stages.map((s,i)=>`<div class="step ${i<idx?'done':i===idx?'now':''}"><span class="dot">${i<idx?'✓':i+1}</span><span class="nm">${s[1]}</span></div>${i<stages.length-1?'<span class="bar"></span>':''}`).join("")}</div></div>
+    <div class="card pad" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px">
+      ${invMeta.map(m=>`<div><div class="idcell" style="font-size:9px;letter-spacing:.07em;color:var(--ink-4)">${m[0]}</div><div class="idcell" style="font-size:12.5px;font-weight:500;margin-top:4px">${m[1]}</div></div>`).join("")}
+    </div>
     <div class="bkgrid">
       <div>
         <p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 6px">Line items</p>
-        <div class="card pad" style="padding:12px 14px">${linesHtml||'<div class="muted" style="font-size:12px">No chargeable lines</div>'}</div>
+        <div class="card" style="overflow:hidden">
+          ${linesHtml?`<div style="display:grid;grid-template-columns:1fr 74px 40px 88px;gap:12px;padding:11px 18px;background:var(--panel);font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;color:var(--ink-4)">
+            <span>DESCRIPTION</span><span style="text-align:right">RATE/D</span><span style="text-align:right">DAYS</span><span style="text-align:right">AMOUNT</span></div>${linesHtml}`
+            :'<div class="empty" style="margin:16px">No chargeable lines</div>'}
+        </div>
       </div>
       <div class="bkside">
         <div class="bkcard">
@@ -2932,7 +3243,7 @@ let MAINT_FILTER='', MNT_Q='';
 /* ===================== REPAIR TICKETS ===================== */
 let REPAIRS=null, REPAIR_STATUS_F='';
 async function loadRepairs(){
-  try{ REPAIRS=await api('repair_list',{status:REPAIR_STATUS_F}); if(VIEW==='repairs') render(); }catch(e){ toast(e.message,true); }
+  try{ REPAIRS=await api('repair_list',{status:REPAIR_STATUS_F}); if(VIEW==='repairs'||VIEW==='dashboard'||VIEW==='utilization') render(); }catch(e){ toast(e.message,true); }
 }
 const REPAIR_ST_LBL={open:['bad','Open'],in_progress:['warn','In progress'],closed:['ok','Closed']};
 /** Icon + plain-language line + one action — never just a bare "nothing
@@ -2973,14 +3284,34 @@ function repairTicketModal(ticketId){
   const t=(REPAIRS||[]).find(x=>x.id===ticketId); if(!t) return;
   const stages=[["open","Reported"],["in_progress","In repair"],["closed","Closed"]];
   const idx=stages.findIndex(s=>s[0]===t.status);
+  const daysIdle=t.status!=='closed'?Math.max(0,Math.round((Date.now()-new Date(t.opened_at))/86400000)):null;
+  const exposure=daysIdle!==null?daysIdle*t.daily_rate:0;
+  const others=(REPAIRS||[]).filter(x=>x.id!==ticketId && x.status!=='closed').slice(0,4);
   $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${esc(t.asset_name)}</b><button class="x" onclick="closeOverlays()">✕</button></div>
   <div class="db">
-    <div style="overflow-x:auto;margin-bottom:14px"><div class="steps">${stages.map((s,i)=>`<div class="step ${i<idx?'done':i===idx?'now':''}"><span class="dot">${i<idx?'✓':i+1}</span><span class="nm">${s[1]}</span></div>${i<stages.length-1?'<span class="bar"></span>':''}`).join("")}</div></div>
-    ${t.description?`<p class="muted" style="font-size:12.5px;margin:0 0 12px">${esc(t.description)}</p>`:''}
+    ${t.description?`<p class="muted" style="font-size:12.5px;margin:0 0 14px">${esc(t.description)}</p>`:''}
+    <div style="overflow-x:auto;margin-bottom:16px"><div class="steps">${stages.map((s,i)=>`<div class="step ${i<idx?'done':i===idx?'now':''}"><span class="dot">${i<idx?'✓':i+1}</span><span class="nm">${s[1]}</span></div>${i<stages.length-1?'<span class="bar"></span>':''}`).join("")}</div></div>
+
     <div class="split" style="margin-bottom:14px">
       <div class="fact"><div class="k">Opened</div><div class="v mono">${fmtDate(t.opened_at)}</div></div>
+      <div class="fact"><div class="k">Assigned to</div><div class="v" style="font-size:14px">${esc(t.assigned_to)||'Unassigned'}</div></div>
       <div class="fact"><div class="k">Est. cost</div><div class="v mono">${inr(t.estimated_cost)}</div></div>
+      <div class="fact"><div class="k">Booking</div><div class="v" style="font-size:13px">${t.booking_number?`<span class="hc-trigger" data-hb="${t.booking_id}">${t.booking_number}</span>`:'—'}</div></div>
     </div>
+
+    ${daysIdle!==null&&exposure>0?`<div style="margin:0 0 14px;padding:10px 12px;background:var(--bad-wash-2);border:1px solid var(--bad-border);border-radius:9px">
+      <div class="idcell" style="font-size:9px;letter-spacing:.07em;color:var(--bad-ink)">LOST-RENTAL EXPOSURE</div>
+      <div class="mono" style="font-size:14px;font-weight:600;color:var(--bad);margin-top:3px">${inr(exposure)} · ${daysIdle} day${daysIdle===1?'':'s'} idle</div>
+    </div>`:''}
+
+    ${others.length?`<div class="bkcard" style="margin-bottom:16px">
+      <div class="bkhead">Other open tickets</div>
+      ${others.map(o=>`<div class="clickable" onclick="repairTicketModal('${o.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+        <span class="muted" style="flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.asset_name)}${o.description?' · '+esc(o.description):''}</span>
+        <span class="chip ${o.status==='open'?'bad':'warn'} plain" style="font-size:9.5px">${o.status==='open'?'Open':'In repair'}</span>
+      </div>`).join("")}
+    </div>`:''}
+
     <label class="fld"><span>Assigned to</span><input id="rtAssign" class="input" value="${esc(t.assigned_to)||''}" placeholder="who's fixing it"></label>
     <label class="fld"><span>Status</span><select id="rtStatus" class="input"><option value="open" ${t.status==='open'?'selected':''}>Open</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>In progress</option></select></label>
     <button class="btn block" style="margin-bottom:16px" onclick="submitRepairUpdate('${ticketId}')">Save</button>
@@ -3030,6 +3361,7 @@ async function openAsset(assetId){
   catch(e){ toast(e.message,true); }
 }
 VIEWS.assetdetail=()=> CUR_ASSET?assetDetailHtml(CUR_ASSET):loading('Asset');
+let ASSET_TAB='history';
 function assetDetailHtml(a){
   const admin=SESSION.user.role==='admin', c=MAINT_ST[a.status]||["pend",a.status];
   const statusLbl=a.retired?'RETIRED':a.is_in_maintenance?'IN MAINTENANCE':a.is_available?'AVAILABLE':'OUT';
@@ -3057,9 +3389,20 @@ function assetDetailHtml(a){
 
   <div class="bkgrid" style="margin-top:16px">
     <div>
-      <div class="bkcard" style="margin-bottom:14px">
-        <div class="bkhead">Service history</div>
-        ${a.history.length?a.history.slice().reverse().map(h=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><b style="font-size:13px">${esc(h.category)}${h.description?' · '+esc(h.description):''}</b><span class="mono">${inr(h.cost)}</span></div><div class="muted" style="font-size:11px">${h.performed_at?fmtDate(h.performed_at):''}${h.vendor?' · '+esc(h.vendor):''}${h.performed_by?' · logged by '+esc(h.performed_by):''}${h.next_due_at?' · next '+fmtDate(h.next_due_at):''}</div></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0">No service logged yet.</p>'}
+      <div class="bkcard" style="margin-bottom:14px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)">
+          <button onclick="ASSET_TAB='history';render()" class="idcell" style="font-size:10.5px;letter-spacing:.06em;font-weight:700;padding:7px 13px;border-radius:8px;cursor:pointer;background:${ASSET_TAB!=='downtime'?'var(--brand-ink)':'var(--panel)'};color:${ASSET_TAB!=='downtime'?'#fff':'var(--ink-2)'};border:1px solid ${ASSET_TAB!=='downtime'?'var(--brand-ink)':'var(--line)'}">RENTAL HISTORY</button>
+          <button onclick="ASSET_TAB='downtime';render()" class="idcell" style="font-size:10.5px;letter-spacing:.06em;font-weight:700;padding:7px 13px;border-radius:8px;cursor:pointer;background:${ASSET_TAB==='downtime'?'var(--brand-ink)':'var(--panel)'};color:${ASSET_TAB==='downtime'?'#fff':'var(--ink-2)'};border:1px solid ${ASSET_TAB==='downtime'?'var(--brand-ink)':'var(--line)'}">DOWNTIME · REPAIR &amp; SERVICE</button>
+          <span class="idcell muted" style="margin-left:auto;font-size:10px">${a.qr_code||''} · lifetime</span>
+        </div>
+        ${ASSET_TAB==='downtime'?
+          (a.history.length?a.history.slice().reverse().map(h=>`<div style="padding:10px 16px;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between"><b style="font-size:13px">${esc(h.category)}${h.description?' · '+esc(h.description):''}</b><span class="mono">${inr(h.cost)}</span></div><div class="muted" style="font-size:11px">${h.performed_at?fmtDate(h.performed_at):''}${h.vendor?' · '+esc(h.vendor):''}${h.performed_by?' · logged by '+esc(h.performed_by):''}${h.next_due_at?' · next '+fmtDate(h.next_due_at):''}</div></div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0;padding:16px">No service logged yet.</p>')
+          :(a.rental_history&&a.rental_history.length?a.rental_history.map(r=>`<div class="clickable" onclick="openBooking('${r.booking_id}')" style="display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line)">
+              <span class="idcell" style="font-size:12px;color:var(--brand);font-weight:500">${r.booking_number||r.booking_id.slice(0,8)}</span>
+              <span style="flex:1;font-size:13px;font-weight:500">${esc(r.client_name)}</span>
+              <span class="idcell muted" style="font-size:11.5px">${fmtDate(r.start_date)}–${fmtDate(r.end_date)}</span>
+              ${stageChip(r.status)}
+            </div>`).join(""):'<p class="muted" style="font-size:12.5px;margin:0;padding:16px">No rental history yet.</p>')}
       </div>
 
       <div class="bkcard">
@@ -3109,7 +3452,6 @@ async function astAddNote(assetId){
 }
 function assetPnlBlock(p){
   const roi=p.roi_pct===null?null:(p.roi_pct>=0?'+':'')+p.roi_pct+'%';
-  const roiColor=p.roi_pct>=0?'var(--ok-bright)':'var(--bad-bright)';
   const hasAcquisition = p.purchase_price>0 || p.age_days!==null;
   const totalCost = p.maintenance_cost + p.repair_absorbed;
   const gross = p.lifetime_revenue>0?p.lifetime_revenue:0;
@@ -3144,21 +3486,21 @@ function assetPnlBlock(p){
   return `<p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 10px">Lifetime P&amp;L</p>
     ${p.open_repair_estimate>0?`<div style="background:var(--warn-wash);border:1px solid #f0b429;border-left:3px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--ink-2)">⚠ ${inr(p.open_repair_estimate)} estimated repair cost still open — not yet counted below.</div>`:''}
 
-    <div style="display:grid;grid-template-columns:${roi!==null?'1.6fr 1fr 1fr':'1fr'};gap:1px;background:var(--ink);border-radius:14px;overflow:hidden;margin-bottom:18px">
-      <div style="background:var(--ink);padding:22px 24px;color:#fff">
+    <div style="display:grid;grid-template-columns:${roi!==null?'1.6fr 1fr 1fr':'1fr'};gap:1px;background:var(--brand-ink);border-radius:14px;overflow:hidden;margin-bottom:18px">
+      <div style="background:var(--brand-ink);padding:22px 24px;color:#fff">
         <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Net contribution · lifetime</div>
-        <div class="mono" style="font-size:36px;font-weight:700;color:#fff;margin-top:8px;line-height:1">${inr(p.net_contribution)}</div>
-        <div style="font-size:11.5px;color:var(--dark-muted);margin-top:10px">Revenue after maintenance &amp; repair costs${hasAcquisition?', vs. purchase price':''}.</div>
+        <div class="mono" style="font-size:52px;font-weight:700;color:#fff;margin-top:10px;line-height:1;letter-spacing:-.02em">${inr(p.net_contribution)}</div>
+        <div style="font-size:12.5px;color:var(--dark-muted);margin-top:12px">Revenue after maintenance &amp; repair costs${hasAcquisition?', vs. purchase price':''}.</div>
       </div>
-      ${roi!==null?`<div style="background:var(--dark-hero);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
+      ${roi!==null?`<div style="background:var(--brand-ink);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
         <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">ROI</div>
-        <div class="mono" style="font-size:26px;font-weight:700;color:${roiColor};margin-top:8px">${roi}</div>
-        <div style="font-size:10.5px;color:var(--dark-muted);margin-top:6px">on ${inr(p.purchase_price)} basis</div>
+        <div class="mono" style="font-size:34px;font-weight:700;color:${p.roi_pct>=0?'#fff':'var(--bad-bright)'};margin-top:8px;letter-spacing:-.02em">${roi}</div>
+        <div style="font-size:11.5px;color:var(--dark-muted);margin-top:8px">on ${inr(p.purchase_price)} basis</div>
       </div>
-      <div style="background:var(--dark-hero);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
+      <div style="background:var(--brand-ink);padding:22px 20px;color:#fff;display:flex;flex-direction:column;justify-content:center">
         <div style="font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dark-muted)">Payback</div>
-        <div class="mono" style="font-size:26px;font-weight:700;color:#fff;margin-top:8px">${payback}%</div>
-        <div style="font-size:10.5px;color:var(--dark-muted);margin-top:6px">${payback>=100?'fully recovered':'of purchase price recovered'}</div>
+        <div class="mono" style="font-size:34px;font-weight:700;color:#fff;margin-top:8px;letter-spacing:-.02em">${payback}%</div>
+        <div style="font-size:11.5px;color:var(--dark-muted);margin-top:8px">${payback>=100?'fully recovered':'of purchase price recovered'}</div>
       </div>`:''}
     </div>
 
@@ -3256,6 +3598,18 @@ function assetFormModal(assetId){
     <button class="btn pri block" id="asBtn" onclick="submitAsset('${assetId||''}')">${edit?'Save changes':'Add asset'}</button>
   </div>`;
   openOverlay($("#modal"));
+}
+function duplicateAsset(id){
+  const src=(CACHE.assets||[]).find(x=>x.id===id); if(!src) return;
+  assetFormModal();
+  setTimeout(()=>{
+    const nm=$("#asName"), ty=$("#asType"), rt=$("#asRate"), lf=$("#asLife");
+    if(nm) nm.value=(src.name||'')+' (copy)';
+    if(ty) ty.value=src.asset_type_id||'';
+    if(rt) rt.value=src.daily_rate||'';
+    if(lf && src.useful_life_years) lf.value=src.useful_life_years;
+    toast('Name, type, and rate carried over — QR code, serial, and purchase details are left blank for the new unit.');
+  },30);
 }
 async function submitAsset(assetId){
   const name=($("#asName")||{}).value||'';
@@ -4192,7 +4546,26 @@ const SETSECTIONS={
     <label class="fld"><span>Quote follow-up</span><textarea id="seTplQuote" class="input" rows="3" style="resize:vertical">${t.quote_followup}</textarea></label>
     <label class="fld"><span>Return reminder</span><textarea id="seTplReturn" class="input" rows="3" style="resize:vertical">${t.return_reminder}</textarea></label>
     <button class="btn pri block" id="seTplBtn" onclick="saveTemplates()">Save</button></div>`; },
-  general:()=>{ const p=SETTINGS.profile; return `<div class="card pad"><b style="font-family:var(--disp)">Company info</b>
+  general:()=>{ const p=SETTINGS.profile, cfg=SETTINGS.config, tax=cfg.tax||{gst_pct:18,tds_pct:2}, m=cfg.maint||{rental_threshold:8,time_threshold_days:90};
+    const tierCount=(cfg.multiday||[]).length;
+    const valChip=(label,sub,val,goto)=>`<div class="clickable" onclick="go('settings');setGo('${goto}')" style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid var(--line)">
+      <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600">${label}</div><div class="muted" style="font-size:11.5px;margin-top:2px">${sub}</div></div>
+      <span class="idcell" style="flex:none;font-size:12.5px;font-weight:600;padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px">${val}</span></div>`;
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="card" style="overflow:hidden">
+        <div class="idcell muted" style="font-size:10px;letter-spacing:.1em;padding:14px 18px;border-bottom:1px solid var(--line)">INVOICING</div>
+        ${valChip('GST rate','Applied to all taxable line items',tax.gst_pct+'%','pricing')}
+        ${valChip('Default TDS','Section 194C, for company clients',tax.tds_pct+'%','pricing')}
+        ${valChip('Booking prefix','On every new booking reference',esc(cfg.numbering.booking_prefix),'numbering')}
+      </div>
+      <div class="card" style="overflow:hidden">
+        <div class="idcell muted" style="font-size:10px;letter-spacing:.1em;padding:14px 18px;border-bottom:1px solid var(--line)">OPERATIONS</div>
+        ${valChip('Service after','Rentals since last maintenance',m.rental_threshold+' rentals','maintenance')}
+        ${valChip('Or after','Days since last maintenance',m.time_threshold_days+'d','maintenance')}
+        ${valChip('Multi-day discount tiers','Applied automatically at quote time',tierCount+' tier'+(tierCount===1?'':'s'),'pricing')}
+      </div>
+    </div>
+    <div class="card pad"><b style="font-family:var(--disp)">Company info</b>
     <p class="muted" style="font-size:12.5px;margin:6px 0 12px">Used across documents, invoices and customer messages.</p>
     <label class="fld"><span>Business name</span><input id="seName" class="input" value="${p.business_name||''}"></label>
     <label class="fld"><span>GSTIN</span><input id="seGstin" class="input" value="${p.gstin||''}"></label>
@@ -4233,22 +4606,30 @@ const SETSECTIONS={
     if(!RULESETS){ loadRulesets(); return '<div class="card pad"><p class="muted" style="font-size:12.5px;margin:0">Loading…</p></div>'; }
     const types=CACHE.asset_types||[];
     const byType={}; RULESETS.forEach(r=>byType[r.asset_type_id]=r);
-    return `<div class="card pad"><b style="font-family:var(--disp)">Advanced pricing</b>
-    <p class="muted" style="font-size:12.5px;margin:6px 0 14px">Reserve 3 days, bill 2 — exclude pickup/return day from charges. Stack weekend or seasonal surcharges on top. One rule set per asset type; rules apply top-down. Types with no rules price exactly as before.</p>
-    <table class="tbl"><thead><tr><th>Type</th><th>Rules</th><th>Status</th><th></th></tr></thead><tbody>
-    ${types.map(t=>{const r=byType[t.id];
-      const summary=r?(r.rules.filter(x=>x.enabled).map(x=>{
-        if(x.kind==='exclude_pickup_day')return 'Exclude pickup day';
-        if(x.kind==='exclude_return_day')return 'Exclude return day';
-        if(x.kind==='weekend_surcharge')return 'Weekend +'+x.pct+'%';
-        if(x.kind==='seasonal')return (x.label||'Seasonal')+' '+(x.pct>=0?'+':'')+x.pct+'%';
-        return x.kind;
-      }).join(', ')||'No rules enabled'):'No rules set';
-      return `<tr><td><b>${esc(t.name)}</b></td><td class="muted" style="font-size:12px">${esc(summary)}</td>
-      <td>${r?(r.is_active?'<span class="chip ok plain">Active</span>':'<span class="chip pend plain">Off</span>'):'<span class="muted">—</span>'}</td>
-      <td style="text-align:right"><button class="btn sm" onclick="rulesetModal('${t.id}','${esc(t.name).replace(/'/g,'')}')">${r?'Edit':'Set up'}</button></td></tr>`;}).join("")}
-    </tbody></table>
-    ${!types.length?'<p class="muted" style="font-size:12.5px;margin:10px 0 0">No asset types yet.</p>':''}</div>`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div><b style="font-family:var(--disp);font-size:15px">Advanced pricing</b>
+      <p class="muted" style="font-size:12.5px;margin:4px 0 0">Reserve 3 days, bill 2 — exclude pickup/return day from charges. Stack weekend or seasonal surcharges on top. Types with no rules price exactly as before.</p></div>
+    </div>
+    ${types.length?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+      ${types.map(t=>{const r=byType[t.id];
+        const enabled=r?r.rules.filter(x=>x.enabled):[];
+        const ruleRow=(label,val,color)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line)"><span style="font-size:13px;color:var(--ink-2)">${label}</span><span class="mono" style="font-size:12.5px;font-weight:600${color?`;color:${color}`:''}">${val}</span></div>`;
+        const rows=enabled.map(x=>{
+          if(x.kind==='exclude_pickup_day')return ruleRow('Exclude pickup day','On');
+          if(x.kind==='exclude_return_day')return ruleRow('Exclude return day','On');
+          if(x.kind==='weekend_surcharge')return ruleRow('Weekend surcharge','+'+x.pct+'%','var(--warn)');
+          if(x.kind==='seasonal')return ruleRow(esc(x.label||'Seasonal'),(x.pct>=0?'+':'')+x.pct+'%','var(--warn)');
+          return '';
+        }).join("");
+        return `<div class="card pad">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <span style="font-family:var(--disp);font-weight:600;font-size:14.5px">${esc(t.name)}</span>
+            <button class="btn sm" style="background:var(--brand-wash);color:var(--brand-ink);border:none" onclick="rulesetModal('${t.id}','${esc(t.name).replace(/'/g,'')}')">${r?'Edit':'Set up'}</button>
+          </div>
+          ${r?(r.is_active?'<span class="chip ok plain" style="font-size:9.5px">Active</span>':'<span class="chip pend plain" style="font-size:9.5px">Off</span>'):''}
+          ${rows||`<p class="muted" style="font-size:12.5px;margin:10px 0 0">No rules set — prices exactly as before.</p>`}
+        </div>`;}).join("")}
+    </div>`:'<div class="empty">No asset types yet.</div>'}`;
   },
   pricing:()=>{ const c=SETTINGS.config; const tiers=c.multiday.length?c.multiday:[{minDays:3,pct:5}];
     return `<div class="card pad"><b style="font-family:var(--disp)">Multi-day discounts</b>
@@ -4855,21 +5236,28 @@ function bookingDetailHtml(b){
           </div>
         </div>
 
-        <div class="bkcard">
-          <div class="bkhead">Items <span class="muted" style="text-transform:none;font-weight:500">${items.length}</span></div>
-          ${items.length?items.map(it=>{const st=BKI_STATUS[it.status]||["pend",it.status];
+        <div class="bkcard" style="overflow:hidden">
+          <div class="bkhead" style="padding-left:16px">Items <span class="muted" style="text-transform:none;font-weight:500">${items.length}</span></div>
+          ${items.length?`<div style="display:grid;grid-template-columns:1fr 74px 50px 84px 90px;gap:10px;padding:9px 16px;background:var(--panel);font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--ink-4)">
+            <span>ITEM</span><span style="text-align:right">RATE/D</span><span style="text-align:right">DAYS</span><span style="text-align:right">SUBTOTAL</span><span style="text-align:right">STATUS</span></div>
+          ${items.map(it=>{const st=BKI_STATUS[it.status]||["pend",it.status];
             const condLbl={good:['ok','Good'],minor:['warn','Minor damage'],major:['bad','Major damage'],non_functional:['bad','Non-functional']}[it.condition_at_return];
             const waived=truthy(it.is_optional_excluded);
-            return `<div class="bkitemrow">
-              <div class="nm"><b class="hc-trigger" data-ha="${it.asset_id}">${esc(it.name)||assetName(it.asset_id)}</b>
-                <span>${esc(it.qr_code)||''}${it.serial_number?' · S/N '+esc(it.serial_number):''}${it.owner_type==='investor'?' · investor-owned':''}</span>
+            const days=Math.max(1,Math.round((new Date(b.end_date)-new Date(b.start_date))/86400000)+1);
+            const subtotal=waived?0:(it.daily_rate||0)*days;
+            return `<div style="display:grid;grid-template-columns:1fr 74px 50px 84px 90px;gap:10px;padding:12px 16px;border-top:1px solid var(--line);align-items:center">
+              <div><b class="hc-trigger" data-ha="${it.asset_id}" style="font-size:13px">${esc(it.name)||assetName(it.asset_id)}</b>
+                <div class="muted idcell" style="font-size:11px">${esc(it.qr_code)||''}${it.serial_number?' · S/N '+esc(it.serial_number):''}${it.owner_type==='investor'?' · investor-owned':''}</div>
                 ${it.damage_description?`<div class="bkdmg">⚠ ${esc(it.damage_description)}${it.repair_cost?' · '+inr(it.repair_cost)+(it.repair_cost_recovered?' (recovered)':' (outstanding)'):''}</div>`:''}
                 ${condLbl?`<div style="margin-top:3px"><span class="chip ${condLbl[0]} plain" style="font-size:10px">Returned: ${condLbl[1]}</span></div>`:''}
                 ${waived?`<div class="muted" style="font-size:11px;margin-top:3px">Waived — ${esc(it.waiver_reason)||'no reason given'} <a href="#" onclick="event.preventDefault();unwaiveItem('${it.id}')" style="margin-left:4px">undo</a></div>`
                   :`<div style="margin-top:3px"><a href="#" onclick="event.preventDefault();waiveItemFlow('${it.id}')" class="muted" style="font-size:10.5px;text-decoration:underline">Waive charge</a></div>`}
               </div>
-              <span class="chip ${st[0]}">${st[1]}</span>
-            </div>`;}).join(""):'<div class="empty" style="padding:20px 0">No items.</div>'}
+              <span class="idcell" style="text-align:right;color:var(--ink-3)">${inr(it.daily_rate||0)}</span>
+              <span class="idcell" style="text-align:right;color:var(--ink-3)">${days}</span>
+              <span class="moneycell" style="font-weight:600${waived?';opacity:.5':''}">${inr(subtotal)}</span>
+              <span style="text-align:right"><span class="chip ${st[0]}" style="font-size:10px">${st[1]}</span></span>
+            </div>`;}).join("")}`:'<div class="empty" style="margin:16px">No items.</div>'}
         </div>
 
         <div class="bkcard" style="margin-top:14px">
