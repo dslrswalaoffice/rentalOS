@@ -217,7 +217,7 @@ button{font-family:inherit;cursor:pointer}a{color:inherit;text-decoration:none}
     <div class="steps">
       <div class="step"><div class="num">1</div><b>Pick your dates</b><p>See live availability for every category the moment you set a date range.</p></div>
       <div class="step"><div class="num">2</div><b>Select what you need</b><p>Add items to your request — bodies, lenses, lighting, audio, whatever the shoot calls for.</p></div>
-      <div class="step"><div class="num">3</div><b>We confirm & you shoot</b><p>Our team reviews your request, confirms pricing, and locks in your booking.</p></div>
+      <div class="step"><div class="num">3</div><b>We confirm & you shoot</b><p>Our team reviews your request, confirms pricing, and locks in your order.</p></div>
     </div>
   </section>
 
@@ -279,7 +279,7 @@ button{font-family:inherit;cursor:pointer}a{color:inherit;text-decoration:none}
 <div id="stCartBar" class="cartbar hide">
   <div class="cartbar-inner">
     <div class="ct"><b id="stCartCount">0 items</b><span class="muted">selected</span></div>
-    <button class="btn pri" onclick="stOpenRequest()">Request booking</button>
+    <button class="btn pri" onclick="stOpenRequest()">Request order</button>
   </div>
 </div>
 
@@ -376,7 +376,7 @@ function renderOffers(offers){
     const val = o.discount_type==='percent' ? o.discount_value+'% off'
       : o.discount_type==='flat' ? '₹'+o.discount_value.toLocaleString('en-IN')+' off'
       : o.discount_value+' free day'+(o.discount_value===1?'':'s');
-    return `<div class="offercard"><span class="tag">Limited offer</span><b>${esc(o.title)}</b><span>${val} — mention it when you request your booking</span></div>`;
+    return `<div class="offercard"><span class="tag">Limited offer</span><b>${esc(o.title)}</b><span>${val} — mention it when you request your order</span></div>`;
   }).join("");
 }
 function renderPromoBanner(tiers){
