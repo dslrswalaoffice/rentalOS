@@ -2288,14 +2288,26 @@ function invBodyHtml(){
 }
 function renderInvBody(){ _preserveFocus_(()=>{ const el=$("#invBody"); if(el) el.innerHTML=invBodyHtml(); }); }
 const ivSearchDebounced=debounce_(v=>{ IVQ=v; INV_PAGE=1; renderInvBody(); }, 80);
+let ASSET_TAB_MAIN='products';
 VIEWS.inventory=()=>{
   const typesInUse=[...new Map(CACHE.assets.map(a=>[a.asset_type_id,(CACHE.asset_types.find(t=>t.id===a.asset_type_id)||{}).name||a.asset_type_id])).entries()].sort((a,b)=>a[1].localeCompare(b[1]));
   const anyFilter=INV_FILTER||IVQ||INV_TYPE||INV_OWNER||INV_COND;
   if(INV_REV===null) loadInvRevenues();
+  const mainTabs=[['products','Products'],['bundles','Bundles'],['collections','Collections'],['downtime','Downtime']];
 
-  return `<div class="head"><div><h1 class="h1">Assets / inventory</h1><p class="sub">The fleet as a filterable ledger.</p></div>
-    <button class="btn pri" onclick="assetFormModal()">+ Add asset</button></div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+  const head=`<div class="head"><div><h1 class="h1">Assets / inventory</h1><p class="sub">The fleet as a filterable ledger.</p></div>
+    ${ASSET_TAB_MAIN==='products'?`<button class="btn pri" onclick="assetFormModal()">+ Add asset</button>`
+      :ASSET_TAB_MAIN==='bundles'?`<button class="btn pri" onclick="kitModal()">+ New kit</button>`
+      :ASSET_TAB_MAIN==='collections'?`<button class="btn pri" onclick="collectionModal()">+ Add collection</button>`:''}</div>
+  <div style="display:flex;gap:2px;margin-bottom:18px;border-bottom:1px solid var(--line)">
+    ${mainTabs.map(t=>`<button onclick="ASSET_TAB_MAIN='${t[0]}';render()" style="font-family:var(--disp);font-weight:${ASSET_TAB_MAIN===t[0]?600:500};font-size:13px;padding:9px 14px;border:none;background:transparent;color:${ASSET_TAB_MAIN===t[0]?'var(--brand)':'var(--ink-3)'};cursor:pointer;border-bottom:2px solid ${ASSET_TAB_MAIN===t[0]?'var(--accent)':'transparent'};margin-bottom:-1px">${t[1]}</button>`).join("")}
+  </div>`;
+
+  if(ASSET_TAB_MAIN==='bundles') return head+kitsTabHtml();
+  if(ASSET_TAB_MAIN==='collections') return head+collectionsTabHtml();
+  if(ASSET_TAB_MAIN==='downtime') return head+downtimeTabHtml();
+
+  return head+`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
     <input class="input" style="max-width:280px" placeholder="Search assets by name, ID, category…" value="${IVQ.replace(/"/g,'&quot;')}" oninput="ivSearchDebounced(this.value)">
     <select class="input" style="max-width:160px" onchange="invSetFilter('INV_TYPE',this.value)">
       <option value="">Product type</option>${typesInUse.map(t=>`<option value="${t[0]}" ${INV_TYPE===t[0]?'selected':''}>${t[1]}</option>`).join("")}</select>
@@ -2316,6 +2328,116 @@ VIEWS.inventory=()=>{
 let INV_REV=null;
 async function loadInvRevenues(){
   try{ INV_REV=await api('asset_lifetime_revenues',{}); if(VIEW==='inventory') renderInvBody(); }catch(e){ /* non-critical — column just shows blank */ }
+}
+
+let KITS_LIST=null;
+async function loadKits(){
+  try{ KITS_LIST=await api('kits_list',{}); if(VIEW==='inventory'&&ASSET_TAB_MAIN==='bundles') render(); }catch(e){ toast(e.message,true); }
+}
+function kitsTabHtml(){
+  if(KITS_LIST===null){ loadKits(); return loading('Bundles'); }
+  if(!KITS_LIST.length) return emptyState(EMPTY_ICONS.list,'No kits yet','Bundle several products together as one priced, bookable unit.');
+  return `<div class="card" style="overflow:hidden">
+    ${KITS_LIST.map(k=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid var(--line)">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--disp);font-weight:600;font-size:14px">${esc(k.name)}${k.sku?` <span class="idcell muted" style="font-size:10.5px;font-weight:400">${esc(k.sku)}</span>`:''}</div>
+        <div class="muted" style="font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(k.items_summary)||'No components yet'}</div>
+      </div>
+      <span class="moneycell" style="font-weight:600">${inr(k.daily_rate)}<span class="muted" style="font-weight:400"> /day</span></span>
+      <span class="chip ${k.is_storefront_visible?'ok':'pend'} plain" style="font-size:9.5px">${k.is_storefront_visible?'Visible':'Hidden'}</span>
+      <button class="btn sm" onclick="kitModal('${k.id}')">Edit</button>
+      <button class="btn sm" style="color:var(--bad)" onclick="deleteKitConfirm('${k.id}')">Delete</button>
+    </div>`).join("")}
+  </div>`;
+}
+function kitModal(id){
+  const k=id?(KITS_LIST||[]).find(x=>x.id===id):null;
+  const items=k?k.items.slice():[];
+  window._kitItemsDraft=items;
+  const typeOpts=(CACHE.asset_types||[]).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  $("#modal").innerHTML=`<div class="dh"><b style="font-family:var(--disp);font-size:17px">${k?'Edit':'New'} kit</b><button class="x" onclick="closeOverlays()">✕</button></div>
+  <div class="db">
+    <label class="fld"><span>Kit name</span><input id="kitName" class="input" value="${k?esc(k.name):''}"></label>
+    <div style="display:flex;gap:10px">
+      <label class="fld" style="flex:1"><span>SKU <span class="muted" style="font-weight:400">(optional)</span></span><input id="kitSku" class="input mono" value="${k?esc(k.sku):''}"></label>
+      <label class="fld" style="flex:1"><span>Daily rate ₹</span><input id="kitRate" class="input mono" inputmode="numeric" value="${k?k.daily_rate:''}"></label>
+    </div>
+    <label class="fld"><span>Description <span class="muted" style="font-weight:400">(optional)</span></span><input id="kitDesc" class="input" value="${k?esc(k.description):''}"></label>
+    <label class="fld" style="display:flex;align-items:center;gap:8px;flex-direction:row"><input id="kitActive" type="checkbox" ${!k||k.is_active?'checked':''}><span>Active</span></label>
+    <label class="fld" style="display:flex;align-items:center;gap:8px;flex-direction:row"><input id="kitVisible" type="checkbox" ${k&&k.is_storefront_visible?'checked':''}><span>Visible on storefront</span></label>
+    <p class="idcell muted" style="font-size:10px;letter-spacing:.06em;margin:14px 0 8px">COMPONENTS</p>
+    <div id="kitItemsList">${kitItemRowsHtml()}</div>
+    <button class="btn sm" onclick="kitItemAdd()">+ Add component</button>
+    <button class="btn pri block" style="margin-top:14px" id="kitBtn" onclick="submitKit('${id||''}')">${k?'Save':'Create'} kit</button>
+  </div>`;
+  openOverlay($("#modal"));
+}
+function kitItemRowsHtml(){
+  const types=CACHE.asset_types||[];
+  return (window._kitItemsDraft||[]).map((it,i)=>`<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+    <select class="input" style="flex:1" onchange="window._kitItemsDraft[${i}].asset_type_id=this.value">
+      ${types.map(t=>`<option value="${t.id}" ${it.asset_type_id===t.id?'selected':''}>${esc(t.name)}</option>`).join("")}</select>
+    <input class="input mono" style="max-width:70px" type="number" min="1" value="${it.quantity}" onchange="window._kitItemsDraft[${i}].quantity=Number(this.value)||1">
+    <select class="input" style="max-width:130px" onchange="window._kitItemsDraft[${i}].inclusion_type=this.value">
+      <option value="mandatory" ${it.inclusion_type==='mandatory'?'selected':''}>Mandatory</option>
+      <option value="optional_included" ${it.inclusion_type==='optional_included'?'selected':''}>Optional · included</option>
+      <option value="optional_excluded" ${it.inclusion_type==='optional_excluded'?'selected':''}>Optional · excluded</option></select>
+    <button class="btn sm" style="color:var(--bad)" onclick="kitItemRemove(${i})">✕</button>
+  </div>`).join("")||'<p class="muted" style="font-size:12px;margin:0 0 8px">No components added yet.</p>';
+}
+function kitItemAdd(){
+  const types=CACHE.asset_types||[]; if(!types.length){ toast('No asset types exist yet',true); return; }
+  window._kitItemsDraft=window._kitItemsDraft||[];
+  window._kitItemsDraft.push({asset_type_id:types[0].id, quantity:1, inclusion_type:'mandatory'});
+  document.getElementById('kitItemsList').innerHTML=kitItemRowsHtml();
+}
+function kitItemRemove(i){ window._kitItemsDraft.splice(i,1); document.getElementById('kitItemsList').innerHTML=kitItemRowsHtml(); }
+async function submitKit(id){
+  const name=$("#kitName").value.trim();
+  if(!name){ toast('Kit name required',true); return; }
+  const btn=$("#kitBtn"); btn.disabled=true; btn.textContent='Saving…';
+  try{
+    await api('kit_save',{id:id||undefined, patch:{name, sku:$("#kitSku").value.trim(), daily_rate:$("#kitRate").value,
+      description:$("#kitDesc").value.trim(), is_active:$("#kitActive").checked, is_storefront_visible:$("#kitVisible").checked,
+      items:window._kitItemsDraft||[]}});
+    toast('Kit saved'); closeOverlays(); KITS_LIST=null; window._kitItemsDraft=null; await loadKits(); render();
+  }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent='Save kit'; }
+}
+async function deleteKitConfirm(id){
+  if(!confirm('Delete this kit? This only removes the bundle grouping — the individual assets in it are untouched.')) return;
+  try{ await api('kit_delete',{id}); toast('Kit deleted'); KITS_LIST=null; await loadKits(); render(); }
+  catch(e){ toast(e.message,true); }
+}
+
+function collectionsTabHtml(){
+  if(!COLLECTIONS_LIST){ loadCollections(); return loading('Collections'); }
+  if(!COLLECTIONS_LIST.length) return emptyState(EMPTY_ICONS.list,'No collections yet','Curate storefront groupings — separate from your internal category.');
+  return `<div class="card" style="overflow:hidden">
+    ${COLLECTIONS_LIST.map(c=>`<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid var(--line)">
+      <div style="flex:1"><div style="font-family:var(--disp);font-weight:600;font-size:14px">${esc(c.name)}</div>
+        <div class="muted" style="font-size:12px;margin-top:2px">${c.product_count} product${c.product_count===1?'':'s'}</div></div>
+      <span class="chip ${c.is_active?'ok':'pend'} plain" style="font-size:9.5px">${c.is_active?'Visible':'Hidden'}</span>
+      <button class="btn sm" onclick="collectionModal('${c.id}')">Edit</button>
+      <button class="btn sm" style="color:var(--bad)" onclick="deleteCollectionConfirm('${c.id}')">Delete</button>
+    </div>`).join("")}
+  </div>`;
+}
+
+const DOWNTIME_KIND_LBL={repair:['bad','In repair'],service:['warn','Service'],reserved:['brand','Reserved'],out:['pend','Out']};
+let DOWNTIME_LIST=null;
+async function loadDowntime(){
+  try{ DOWNTIME_LIST=await api('downtime_list',{}); if(VIEW==='inventory'&&ASSET_TAB_MAIN==='downtime') render(); }catch(e){ toast(e.message,true); }
+}
+function downtimeTabHtml(){
+  if(DOWNTIME_LIST===null){ loadDowntime(); return loading('Downtime'); }
+  if(!DOWNTIME_LIST.length) return emptyState(EMPTY_ICONS.list,'Nothing out of rotation','Every unit is either available or shown correctly as booked.');
+  return `<div class="card" style="overflow:hidden">
+    ${DOWNTIME_LIST.map(d=>{const l=DOWNTIME_KIND_LBL[d.kind]||['pend',d.kind];return `<div class="clickable" onclick="openAsset('${d.asset_id}')" style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid var(--line)">
+      <div style="flex:1"><span style="font-size:13.5px;font-weight:600">${esc(d.name)}</span>
+        <div class="muted" style="font-size:12px;margin-top:2px">${esc(d.reason)}${d.start_date?' · '+fmtDate(d.start_date)+'–'+fmtDate(d.end_date):''}</div></div>
+      <span class="chip ${l[0]} plain" style="font-size:9.5px">${l[1]}</span>
+    </div>`;}).join("")}
+  </div>`;
 }
 
 let CL_Q='', CL_FILTER='', CL_TIER='';
